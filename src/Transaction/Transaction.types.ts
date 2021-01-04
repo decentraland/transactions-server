@@ -13,5 +13,5 @@ export const transactionSchema = Object.freeze({
   },
   additionalProperties: false,
   removeAdditional: true,
-  required: ['to', 'data']
+  required: ['userAddress', 'params']
 })
