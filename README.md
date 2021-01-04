@@ -2,16 +2,23 @@
 
 Relay meta-transactions services.
 
-## RUN
-
-Check `.env.example` and create your own `.env` file. Some properties have defaults.
+## BUILD
 
 ```bash
-# Update env. The DEFAULT_USER_ID is important
-
-# Update state
+# Check `.env.example` and create your own `.env` file. Some properties have defaults.
 npm i
 
-# Start
+npm build
+```
+
+## RUN
+
+```bash
 npm start
+```
+
+## DEV
+
+```bash
+npm run start:watch
 ```
