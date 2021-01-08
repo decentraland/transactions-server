@@ -1,17 +1,24 @@
 import { GlobalContext } from '../types'
-import { handleThings } from './handlers'
+import { getUserTransactions, sendTransaction } from './handlers'
 
-export function setupRoutes(globalContext: GlobalContext) {
+export async function setupRoutes(globalContext: GlobalContext) {
   const { components } = globalContext
   const { config, server } = components
 
   server.get(
     globalContext,
-    addAPIVersion('/transactions/:user_address'),
-    handleThings(components)
+    await addAPIVersion('/transactions/:user_address'),
+    getUserTransactions(components)
   )
 
-  function addAPIVersion(uri: string) {
-    return `/${config.getString('API_VERSION')}${uri}`
+  server.post(
+    globalContext,
+    await addAPIVersion('/transactions'),
+    sendTransaction(components)
+  )
+
+  async function addAPIVersion(uri: string) {
+    const apiVersion = await config.requireString('API_VERSION')
+    return `/${apiVersion}${uri}`
   }
 }

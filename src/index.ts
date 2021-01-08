@@ -16,7 +16,7 @@ async function main(components: AppComponents) {
   }
 
   setupLogs(components)
-  setupRoutes(globalContext)
+  await setupRoutes(globalContext)
 }
 
 async function initComponents(): Promise<AppComponents> {
