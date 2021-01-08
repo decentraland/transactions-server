@@ -4,16 +4,18 @@ import { Request } from 'express'
 import Ajv from 'ajv'
 import 'isomorphic-fetch'
 
-
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { TransactionAttributes, transactionSchema } from './Transaction.types'
+import {
+  TransactionAttributes,
+  MetaTransactionResponse,
+  transactionSchema
+} from './Transaction.types'
 
 const ajv = new Ajv()
 
 const BICONOMY_API_KEY = env.get('BICONOMY_API_KEY', '')
 const BICONOMY_API_ID = env.get('BICONOMY_API_ID', '')
-
 
 export class TransactionRouter extends Router {
   mount() {
@@ -32,11 +34,13 @@ export class TransactionRouter extends Router {
       '/transactions/:user_address',
       server.handleRequest(this.getTransactionsByUserAddress)
     )
-
   }
 
   async relayTransaction(req: Request) {
-    const transactionJSON: TransactionAttributes = server.extractFromReq(req, 'transaction')
+    const transactionJSON: TransactionAttributes = server.extractFromReq(
+      req,
+      'transaction'
+    )
     const validator = ajv.compile(transactionSchema)
     validator(transactionJSON)
 
@@ -47,20 +51,20 @@ export class TransactionRouter extends Router {
     const transaction: TransactionAttributes = transactionJSON
 
     const result = await fetch(
-      "https://api.biconomy.io/api/v2/meta-tx/native",
+      'https://api.biconomy.io/api/v2/meta-tx/native',
       {
         headers: {
           'x-api-key': BICONOMY_API_KEY,
-          'content-type': 'application/json',
+          'content-type': 'application/json'
         },
         body: JSON.stringify({
           apiId: BICONOMY_API_ID,
           ...transaction
         }),
-        method: "POST",
+        method: 'POST'
       }
     )
-    const jsonRes = await result.json()
+    const jsonRes: MetaTransactionResponse = await result.json()
 
     return jsonRes
   }
