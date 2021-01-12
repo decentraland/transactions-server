@@ -1,3 +1,5 @@
+import { Router } from '@well-known-components/http-server'
+import { createTransactionMiddleware } from '../logic/transaction-middleware'
 import { GlobalContext } from '../types'
 import { getUserTransactions, sendTransaction } from './handlers'
 
@@ -5,20 +7,16 @@ export async function setupRoutes(globalContext: GlobalContext) {
   const { components } = globalContext
   const { config, server } = components
 
-  server.get(
-    globalContext,
-    await addAPIVersion('/transactions/:user_address'),
-    getUserTransactions(components)
-  )
+  const router = new Router()
 
-  server.post(
-    globalContext,
-    await addAPIVersion('/transactions'),
-    sendTransaction(components)
-  )
+  const apiVersion = await config.requireString('API_VERSION')
 
-  async function addAPIVersion(uri: string) {
-    const apiVersion = await config.requireString('API_VERSION')
-    return `/${apiVersion}${uri}`
-  }
+  router.prefix(`/${apiVersion}`)
+
+  router.get('/transactions/:user_address', getUserTransactions(components))
+
+  router.use('/transactions', createTransactionMiddleware(components))
+  router.post('/transactions', sendTransaction(components))
+
+  server.use(router.middleware())
 }

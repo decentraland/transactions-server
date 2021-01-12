@@ -1,9 +1,16 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { AppComponents } from '../types'
+import { Transaction } from '../ports/transaction/types'
+import { AppComponents, Context } from '../types'
 
-export function getUserTransactions<T>(
+type SendTransactionRequest = {
+  transaction: Transaction
+}
+
+export function getUserTransactions(
   components: Pick<AppComponents, 'logs'>
-): IHttpServerComponent.IRequestHandler<T> {
+): IHttpServerComponent.IRequestHandler<
+  Context<'/transactions/:user_address'>
+> {
   const { logs } = components
   const logger = logs.getLogger('transactions-server')
 
@@ -16,29 +23,14 @@ export function getUserTransactions<T>(
   }
 }
 
-export function sendTransaction<T>(
+export function sendTransaction(
   components: Pick<AppComponents, 'logs'>
-): IHttpServerComponent.IRequestHandler<T> {
+): IHttpServerComponent.IRequestHandler<Context<'/transactions'>> {
   const { logs } = components
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
-    const { transaction } = await context.request.json()
-    /*
-    {
-      "transaction": {
-        "userAddress": "0x1d9aa2025b67f0f21d1603ce521bda7869098f8a",
-        "to": "0xfe4F5145f6e09952a5ba9e956ED0C25e3Fa4c7F1",
-        "params": [
-          "0x1d9aa2025b67f0f21d1603ce521bda7869098f8a",
-          "0xa9059cbb000000000000000000000000a8d82b0bf686eee78eb5ec882cac98fdd1335ef50000000000000000000000000000000000000000000000000000000000000001",
-          "0x4a91a2a73c9c37f6581f408f2a3991161d945687ccfbcb20d7a7bed747ca0238",
-          "0x1e6ee21e7a472a21700946008463dd9855bdb429ff46f871fb0e9b7577fc3f18",
-          "0x1c"
-        ]
-      }
-    }
-    */
+    const { transaction }: SendTransactionRequest = await context.request.json()
 
     logger.info(`Sending transaction for ${transaction.userAddress}`)
     return {
