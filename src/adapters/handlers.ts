@@ -1,9 +1,9 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { Transaction } from '../ports/transaction/types'
+import { TransactionData } from '../ports/transaction/types'
 import { AppComponents, Context } from '../types'
 
 type SendTransactionRequest = {
-  transaction: Transaction
+  transaction: TransactionData
 }
 
 export function getUserTransactions(
@@ -24,18 +24,32 @@ export function getUserTransactions(
 }
 
 export function sendTransaction(
-  components: Pick<AppComponents, 'logs'>
+  components: Pick<AppComponents, 'logs' | 'transaction'>
 ): IHttpServerComponent.IRequestHandler<Context<'/transactions'>> {
-  const { logs } = components
+  const { logs, transaction } = components
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
-    const { transaction }: SendTransactionRequest = await context.request.json()
+    const sendTransactionRequest: SendTransactionRequest = await context.request.json()
+    const transactionData = sendTransactionRequest.transaction
 
-    logger.info(`Sending transaction for ${transaction.userAddress}`)
-    return {
-      status: 200,
-      body: { ok: true },
+    try {
+      logger.info(`Sending transaction for ${transactionData.userAddress}`)
+      await transaction.sendMetaTransaction(transactionData)
+
+      return {
+        status: 200,
+        body: { ok: true },
+      }
+    } catch (error) {
+      logger.info(
+        `Error sending a transaction for ${transactionData.userAddress}`,
+        error.message
+      )
+      return {
+        status: 500,
+        body: { ok: false },
+      }
     }
   }
 }

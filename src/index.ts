@@ -8,6 +8,8 @@ import { createLogComponent } from '@well-known-components/logger'
 import { Lifecycle } from '@well-known-components/interfaces'
 import { setupRoutes } from './adapters/routes'
 import { setupLogs } from './adapters/logs'
+import { createTransactionComponent } from './ports/transaction/component'
+import { createValidationComponent } from './ports/validation/component'
 import { AppComponents, AppConfig, GlobalContext } from './types'
 
 async function main(components: AppComponents) {
@@ -27,20 +29,31 @@ async function initComponents(): Promise<AppComponents> {
     HTTP_SERVER_PORT: '5000',
     HTTP_SERVER_HOST: '0.0.0.0',
     API_VERSION: 'v1',
+    BICONOMY_API_URL: 'https://api.biconomy.io/api/v2/meta-tx/native',
   }
 
   const config = createConfigComponent<AppConfig>(process.env, defaultValues)
+
+  const cors = {
+    origin: await config.getString('CORS_ORIGIN'),
+    method: await config.getString('CORS_METHOD'),
+  }
+
   const logs = createLogComponent()
   const server = await createServerComponent(
     { config, logs },
-    { cors: {}, compression: {} }
+    { cors, compression: {} }
   )
+  const transaction = await createTransactionComponent({ config, logs })
+  const validation = await createValidationComponent({ logs })
   const statusChecks = await createStatusCheckComponent({ server })
 
   return {
     config,
-    server,
     logs,
+    server,
+    transaction,
+    validation,
     statusChecks,
   }
 }

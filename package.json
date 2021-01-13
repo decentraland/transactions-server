@@ -29,6 +29,7 @@
     "@well-known-components/http-server": "^1.0.0-20210110194859.commit-87fe052",
     "@well-known-components/interfaces": "^1.0.0-20210108210230.commit-be9269a",
     "@well-known-components/logger": "^1.0.0-20210110175006.commit-9c592da",
+    "ajv": "^7.0.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "isomorphic-fetch": "^3.0.0",
