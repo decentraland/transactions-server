@@ -12,12 +12,12 @@ export function createTransactionMiddleware(
   const transactionSchema: Schema<TransactionData> = {
     type: 'object',
     properties: {
-      userAddress: { type: 'string' },
+      from: { type: 'string' },
       to: { type: 'string' },
       params: { type: 'array', items: { type: 'string' } },
     },
     additionalProperties: false,
-    required: ['userAddress', 'params'],
+    required: ['from', 'to', 'params'],
   }
 
   return async (context, next) => {
@@ -33,14 +33,13 @@ export function createTransactionMiddleware(
         )
       }
 
-      if (!validation.validate(transactionSchema, transactionData)) {
+      try {
+        validation.require(transactionSchema, transactionData)
+        await transaction.checkTransactionData(transactionData)
+      } catch (error) {
         throw new Error(
-          'The requested transaction data are invalid. Check the body of the request'
+          `The transaction data is invalid. Check the body of the request.\nError: ${error.message}`
         )
-      }
-
-      if (!(await transaction.isValidTransactionData(transactionData))) {
-        throw new Error(`Service currently unavailable`)
       }
 
       return await next()

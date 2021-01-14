@@ -7,7 +7,6 @@ CREATE TABLE transactions (
   txHash TEXT NOT NULL UNIQUE,
   userAddress TEXT NOT NULL,
   contractAddress TEXT NOT NULL,
-  ip TEXT NOT NULL,
   createdAt DATE DEFAULT (datetime('now', 'localtime'))
 );
 

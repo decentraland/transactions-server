@@ -2,6 +2,7 @@ import sqlite3 from 'sqlite3'
 import { open, Database, IMigrate, ISqlite } from 'sqlite'
 import { AppComponents } from '../../types'
 import { IDatabaseComponent } from './types'
+import { SQLStatement } from 'sql-template-strings'
 
 export async function createDatabaseComponent(
   components: Pick<AppComponents, 'logs'>
@@ -28,9 +29,9 @@ export async function createDatabaseComponent(
     }
   }
 
-  async function query<T>(sql: string, ...values: any[]) {
+  async function query<T>(sql: string | SQLStatement) {
     logger.debug(`Query SQL: ${sql}`)
-    const rows = await db.all<T[]>(sql, values)
+    const rows = await db.all<T[]>(sql)
     return {
       rows,
       rowCount: rows.length,
@@ -41,7 +42,7 @@ export async function createDatabaseComponent(
     logger.debug(`Run SQL: ${sql}`)
     const { lastID }: ISqlite.RunResult<sqlite3.Statement> = await db.run(
       sql,
-      values
+      ...values
     )
     return lastID
   }

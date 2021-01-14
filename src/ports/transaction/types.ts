@@ -1,7 +1,7 @@
 import { IDatabase } from '@well-known-components/interfaces'
 
 export type TransactionData = {
-  userAddress: string
+  from: string
   to: string
   params: string[]
 }
@@ -23,7 +23,6 @@ export type TransactionRow = {
   txHash: string
   userAddress: string
   contractAddress: string
-  ip: string
   createdAt: Date
 }
 
@@ -36,5 +35,5 @@ export interface ITransactionComponent {
     userAddress: string
   ) => Promise<IDatabase.IQueryResult<TransactionRow>>
 
-  isValidTransactionData: (transactionData: TransactionData) => Promise<boolean>
+  checkTransactionData: (transactionData: TransactionData) => Promise<void>
 }

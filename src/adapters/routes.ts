@@ -13,7 +13,7 @@ export async function setupRoutes(globalContext: GlobalContext) {
 
   router.prefix(`/${apiVersion}`)
 
-  router.get('/transactions/:user_address', getUserTransactions(components))
+  router.get('/transactions/:userAddress', getUserTransactions(components))
 
   router.use('/transactions', createTransactionMiddleware(components))
   router.post('/transactions', sendTransaction(components))

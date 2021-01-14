@@ -1,4 +1,5 @@
 import 'isomorphic-fetch'
+import SQL from 'sql-template-strings'
 import { AppComponents } from '../../types'
 import {
   ITransactionComponent,
@@ -21,7 +22,6 @@ export async function createTransactionComponent(
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
   )
-  const whitelistedContracts = ['0xfe4f5145f6e09952a5ba9e956ed0c25e3fa4c7f1'] // TODO: Environments
 
   logger.log(`URL for meta transactions: ${biconomyAPIURL}`)
   logger.log(
@@ -31,7 +31,9 @@ export async function createTransactionComponent(
   // Methods
   // TODO: This method is doing too many things
   async function sendMetaTransaction(transactionData: TransactionData) {
-    logger.debug(`Sending meta transaction ${JSON.stringify(transactionData)}`)
+    logger.debug(
+      `Meta transaction data to send: ${JSON.stringify(transactionData)}`
+    )
 
     const body: MetaTransactionRequest = {
       apiId: biconomiAPIId,
@@ -48,7 +50,7 @@ export async function createTransactionComponent(
     })
     const data: MetaTransactionResponse = await result.json()
 
-    if (data.code) {
+    if (data.code !== 200) {
       throw new Error(
         `An error occurred trying to send the meta transaction ${data.message}`
       )
@@ -56,15 +58,14 @@ export async function createTransactionComponent(
 
     await database.run(
       `INSERT INTO transactions(
-        txHash, userAddress, contractAddress, ip
+        txHash, userAddress, contractAddress
       ) VALUES (
-        $txHash, $userAddress, $contractAddress, $ip
+        $txHash, $userAddress, $contractAddress
     )`,
       {
         $txHash: data.txHash,
-        $userAddress: transactionData.userAddress,
+        $userAddress: transactionData.from,
         $contractAddress: transactionData.to,
-        $ip: '192.168.0.2', // TODO: Use the real IP
       }
     )
 
@@ -73,45 +74,31 @@ export async function createTransactionComponent(
 
   async function getByUserAddress(userAddress: string) {
     return database.query<TransactionRow>(
-      `SELECT *
+      SQL`SELECT *
         FROM transactions
-        WHERE userAddress = $1`,
-      [userAddress]
+        WHERE userAddress = ${userAddress}`
     )
   }
 
-  async function isValidTransactionData(transactionData: TransactionData) {
-    const { userAddress, to } = transactionData
+  async function checkTransactionData(transactionData: TransactionData) {
+    const { from } = transactionData
 
-    if (!whitelistedContracts.includes(to.toLowerCase())) {
-      logger.info(
-        `Trying to send transaction to invalid contract address ${to}`
-      )
-      return false
-    }
-
-    const todayAddressTransactions = await database.query<TransactionRow[]>(
-      `SELECT *
+    const todayAddressTransactions = await database.query<{ count: number }>(
+      SQL`SELECT COUNT (*) as count
         FROM transactions
-        WHERE userAddress = $1
-          AND createdAt >= date('now', 'start of day')`,
-      [userAddress]
+        WHERE userAddress = ${from}
+          AND createdAt >= date('now', 'start of day')`
     )
-    // TODO: Do the same for IPs
 
-    if (todayAddressTransactions.rowCount >= maxTransactionsPerDay) {
-      logger.info(
-        `Max amount of transactions reached for address ${userAddress}`
-      )
-      return false
+    const result = todayAddressTransactions.rows[0]
+    if (result.count >= maxTransactionsPerDay) {
+      throw new Error(`Max amount of transactions reached for address ${from}`)
     }
-
-    return true
   }
 
   return {
     sendMetaTransaction,
     getByUserAddress,
-    isValidTransactionData,
+    checkTransactionData,
   }
 }
