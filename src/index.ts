@@ -7,7 +7,7 @@ import {
 import { createLogComponent } from '@well-known-components/logger'
 import { Lifecycle } from '@well-known-components/interfaces'
 import { setupRoutes } from './adapters/routes'
-import { setupLogs } from './adapters/logs'
+import { createDatabaseComponent } from './ports/database/component'
 import { createTransactionComponent } from './ports/transaction/component'
 import { createValidationComponent } from './ports/validation/component'
 import { AppComponents, AppConfig, GlobalContext } from './types'
@@ -17,7 +17,6 @@ async function main(components: AppComponents) {
     components,
   }
 
-  setupLogs(components)
   await setupRoutes(globalContext)
 }
 
@@ -44,7 +43,12 @@ async function initComponents(): Promise<AppComponents> {
     { config, logs },
     { cors, compression: {} }
   )
-  const transaction = await createTransactionComponent({ config, logs })
+  const database = await createDatabaseComponent({ logs })
+  const transaction = await createTransactionComponent({
+    config,
+    logs,
+    database,
+  })
   const validation = await createValidationComponent({ logs })
   const statusChecks = await createStatusCheckComponent({ server })
 
@@ -52,6 +56,7 @@ async function initComponents(): Promise<AppComponents> {
     config,
     logs,
     server,
+    database,
     transaction,
     validation,
     statusChecks,

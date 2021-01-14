@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv'
 
-export type IValidationComponent = {
+export interface IValidationComponent {
   require: <T>(schema: Schema<T>, data: any) => void
   validate: <T>(schema: Schema<T>, data: any) => data is T
 }

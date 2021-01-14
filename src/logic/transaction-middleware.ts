@@ -4,9 +4,9 @@ import { Schema } from '../ports/validation/types'
 import { AppComponents, Context } from '../types'
 
 export function createTransactionMiddleware(
-  components: Pick<AppComponents, 'logs' | 'validation'>
+  components: Pick<AppComponents, 'logs' | 'validation' | 'transaction'>
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
-  const { logs, validation } = components
+  const { logs, validation, transaction } = components
   const logger = logs.getLogger('transaction-wrapper')
 
   const transactionSchema: Schema<TransactionData> = {
@@ -26,12 +26,16 @@ export function createTransactionMiddleware(
       logger.debug(
         'Checking the validity of the request before sending the transaction'
       )
-      const { transaction } = await context.request.json()
+      const { transactionData } = await context.request.json()
 
-      if (!validation.validate(transactionSchema, transaction)) {
+      if (!validation.validate(transactionSchema, transactionData)) {
         throw new Error(
-          `The requested transaction params are invalid. Check the body of the request`
+          'The requested transaction params are invalid. Check the body of the request'
         )
+      }
+
+      if (!(await transaction.isValidTransactionData(transactionData))) {
+        throw new Error(`Service currently unavailable`)
       }
 
       return await next()

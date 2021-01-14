@@ -5,6 +5,7 @@ import type {
   IHttpServerComponent,
   IBaseComponent,
 } from '@well-known-components/interfaces'
+import { IDatabaseComponent } from './ports/database/types'
 import { ITransactionComponent } from './ports/transaction/types'
 import { IValidationComponent } from './ports/validation/types'
 
@@ -20,6 +21,7 @@ export type AppConfig = {
 export type AppComponents<C extends object = {}> = {
   config: IConfigComponent
   logs: ILoggerComponent
+  database: IDatabaseComponent
   server: IHttpServerComponent<C>
   transaction: ITransactionComponent
   validation: IValidationComponent

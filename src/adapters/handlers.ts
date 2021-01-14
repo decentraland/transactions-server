@@ -3,7 +3,7 @@ import { TransactionData } from '../ports/transaction/types'
 import { AppComponents, Context } from '../types'
 
 type SendTransactionRequest = {
-  transaction: TransactionData
+  transactionData: TransactionData
 }
 
 export function getUserTransactions(
@@ -31,7 +31,7 @@ export function sendTransaction(
 
   return async (context) => {
     const sendTransactionRequest: SendTransactionRequest = await context.request.json()
-    const transactionData = sendTransactionRequest.transaction
+    const { transactionData } = sendTransactionRequest
 
     try {
       logger.info(`Sending transaction for ${transactionData.userAddress}`)
