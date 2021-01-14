@@ -3,9 +3,9 @@ import { AppComponents } from '../../types'
 import {
   ITransactionComponent,
   MetaTransactionRequest,
-  MetaTransactionResponse,
   TransactionRow,
   TransactionData,
+  MetaTransactionResponse,
 } from './types'
 
 export async function createTransactionComponent(
@@ -29,11 +29,15 @@ export async function createTransactionComponent(
   )
 
   // Methods
+  // TODO: This method is doing too many things
   async function sendMetaTransaction(transactionData: TransactionData) {
+    logger.debug(`Sending meta transaction ${JSON.stringify(transactionData)}`)
+
     const body: MetaTransactionRequest = {
       apiId: biconomiAPIId,
       ...transactionData,
     }
+
     const result = await fetch(biconomyAPIURL, {
       headers: {
         'x-api-key': biconomyAPIKey,
@@ -43,6 +47,12 @@ export async function createTransactionComponent(
       method: 'POST',
     })
     const data: MetaTransactionResponse = await result.json()
+
+    if (data.code) {
+      throw new Error(
+        `An error occurred trying to send the meta transaction ${data.message}`
+      )
+    }
 
     await database.run(
       `INSERT INTO transactions(
@@ -65,7 +75,7 @@ export async function createTransactionComponent(
     return database.query<TransactionRow>(
       `SELECT *
         FROM transactions
-        WHERE user_address = $1`,
+        WHERE userAddress = $1`,
       [userAddress]
     )
   }
@@ -83,7 +93,7 @@ export async function createTransactionComponent(
     const todayAddressTransactions = await database.query<TransactionRow[]>(
       `SELECT *
         FROM transactions
-        WHERE user_address = $1
+        WHERE userAddress = $1
           AND createdAt >= date('now', 'start of day')`,
       [userAddress]
     )

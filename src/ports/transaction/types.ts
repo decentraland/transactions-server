@@ -11,9 +11,11 @@ export type MetaTransactionRequest = TransactionData & {
 }
 
 export type MetaTransactionResponse = {
-  txHash: string
+  txHash?: string
   log: string
   flag: number
+  code?: number
+  message?: string
 }
 
 export type TransactionRow = {

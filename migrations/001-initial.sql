@@ -3,16 +3,17 @@
 --------------------------------------------------------------------------------
 
 CREATE TABLE transactions (
-  id   INTEGER PRIMARY KEY,
-  txHash TEXT,
-  userAddress: TEXT NOT NULL
-  contractAddress: TEXT NOT NULL
-  ip: TEXT NOT NULL
-  createdAt: DATE NOT NULL DEFAULT DATE('now')
+  id INTEGER PRIMARY KEY,
+  txHash TEXT NOT NULL UNIQUE,
+  userAddress TEXT NOT NULL,
+  contractAddress TEXT NOT NULL,
+  ip TEXT NOT NULL,
+  createdAt DATE DEFAULT (datetime('now', 'localtime'))
 );
+
 
 --------------------------------------------------------------------------------
 -- Down
 --------------------------------------------------------------------------------
 
-DROP INDEX transactions;
+DROP TABLE transactions;

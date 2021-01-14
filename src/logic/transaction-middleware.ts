@@ -17,7 +17,6 @@ export function createTransactionMiddleware(
       params: { type: 'array', items: { type: 'string' } },
     },
     additionalProperties: false,
-    removeAdditional: true,
     required: ['userAddress', 'params'],
   }
 
@@ -26,11 +25,17 @@ export function createTransactionMiddleware(
       logger.debug(
         'Checking the validity of the request before sending the transaction'
       )
-      const { transactionData } = await context.request.json()
+      const { transactionData } = await context.request.clone().json()
+
+      if (!transactionData) {
+        throw new Error(
+          'Missing transaction data. Please add it to the body of the request as `transactionData`'
+        )
+      }
 
       if (!validation.validate(transactionSchema, transactionData)) {
         throw new Error(
-          'The requested transaction params are invalid. Check the body of the request'
+          'The requested transaction data are invalid. Check the body of the request'
         )
       }
 
@@ -46,7 +51,7 @@ export function createTransactionMiddleware(
       })
       return {
         status: 401,
-        body: { ok: false },
+        body: { ok: false, message: error.message },
       }
     }
   }

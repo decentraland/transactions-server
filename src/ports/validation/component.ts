@@ -17,7 +17,7 @@ export async function createValidationComponent(
     const validator = ajv.compile<T>(schema)
     validator(data)
     if (validator.errors) {
-      throw new Error(`Invalid schema: ${JSON.stringify(validator.errors)}`)
+      throw new Error(`Invalid data: ${JSON.stringify(validator.errors)}`)
     }
   }
 

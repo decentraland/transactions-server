@@ -7,18 +7,21 @@ type SendTransactionRequest = {
 }
 
 export function getUserTransactions(
-  components: Pick<AppComponents, 'logs'>
+  components: Pick<AppComponents, 'logs' | 'transaction'>
 ): IHttpServerComponent.IRequestHandler<
   Context<'/transactions/:user_address'>
 > {
-  const { logs } = components
+  const { logs, transaction } = components
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
     logger.info(`Returning transactions for ${context.params.user_address}`)
+    const { rows: transactions } = await transaction.getByUserAddress(
+      context.params.user_address
+    )
     return {
       status: 200,
-      body: 'OK',
+      body: transactions,
     }
   }
 }
@@ -30,16 +33,18 @@ export function sendTransaction(
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
-    const sendTransactionRequest: SendTransactionRequest = await context.request.json()
+    const sendTransactionRequest: SendTransactionRequest = await context.request
+      .clone()
+      .json()
     const { transactionData } = sendTransactionRequest
 
     try {
       logger.info(`Sending transaction for ${transactionData.userAddress}`)
-      await transaction.sendMetaTransaction(transactionData)
+      const { txHash } = await transaction.sendMetaTransaction(transactionData)
 
       return {
         status: 200,
-        body: { ok: true },
+        body: { txHash },
       }
     } catch (error) {
       logger.info(
@@ -48,7 +53,7 @@ export function sendTransaction(
       )
       return {
         status: 500,
-        body: { ok: false },
+        body: { ok: false, message: error.message },
       }
     }
   }
