@@ -17,6 +17,7 @@ export function getUserTransactions(
     const { rows: transactions } = await transaction.getByUserAddress(
       context.params.userAddress
     )
+
     return {
       status: 200,
       body: transactions,
@@ -25,9 +26,9 @@ export function getUserTransactions(
 }
 
 export function sendTransaction(
-  components: Pick<AppComponents, 'logs' | 'transaction'>
+  components: Pick<AppComponents, 'logs' | 'transaction' | 'database'>
 ): IHttpServerComponent.IRequestHandler<Context<'/transactions'>> {
-  const { logs, transaction } = components
+  const { logs, transaction, database } = components
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
@@ -38,7 +39,9 @@ export function sendTransaction(
 
     try {
       logger.info(`Sending transaction for ${transactionData.from}`)
-      const { txHash } = await transaction.sendMetaTransaction(transactionData)
+      // { sendMetaTransaction } = logic/transaction
+      const { txHash } = await sendMetaTransaction(transactionData)
+      // insertar en la base de datos
 
       return {
         status: 200,

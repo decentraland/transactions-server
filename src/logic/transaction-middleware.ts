@@ -1,12 +1,13 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { TransactionData } from '../ports/transaction/types'
-import { Schema } from '../ports/validation/types'
+import { check } from '../logic/validation'
+import { Schema } from '../types/validation'
+import { TransactionData } from '../types/transaction'
 import { AppComponents, Context } from '../types'
 
 export function createTransactionMiddleware(
-  components: Pick<AppComponents, 'logs' | 'validation' | 'transaction'>
+  components: Pick<AppComponents, 'logs' | 'transaction'>
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
-  const { logs, validation, transaction } = components
+  const { logs, transaction } = components
   const logger = logs.getLogger('transaction-wrapper')
 
   const transactionSchema: Schema<TransactionData> = {
@@ -34,7 +35,7 @@ export function createTransactionMiddleware(
       }
 
       try {
-        validation.require(transactionSchema, transactionData)
+        check(transactionSchema, transactionData)
         await transaction.checkTransactionData(transactionData)
       } catch (error) {
         throw new Error(

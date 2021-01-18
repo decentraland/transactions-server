@@ -1,5 +1,3 @@
-import { IDatabase } from '@well-known-components/interfaces'
-
 export type TransactionData = {
   from: string
   to: string
@@ -24,16 +22,4 @@ export type TransactionRow = {
   userAddress: string
   contractAddress: string
   createdAt: Date
-}
-
-export interface ITransactionComponent {
-  sendMetaTransaction: (
-    transactionData: TransactionData
-  ) => Promise<MetaTransactionResponse>
-
-  getByUserAddress: (
-    userAddress: string
-  ) => Promise<IDatabase.IQueryResult<TransactionRow>>
-
-  checkTransactionData: (transactionData: TransactionData) => Promise<void>
 }

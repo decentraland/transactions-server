@@ -7,7 +7,7 @@ export async function setupRoutes(globalContext: GlobalContext) {
   const { components } = globalContext
   const { config, server } = components
 
-  const router = new Router()
+  const router = new Router<GlobalContext>()
 
   const apiVersion = await config.requireString('API_VERSION')
 
