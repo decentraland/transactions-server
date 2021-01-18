@@ -7,7 +7,6 @@ import type {
 } from '@well-known-components/interfaces'
 import { IDatabaseComponent } from './ports/database/types'
 import { ITransactionComponent } from './ports/transaction/types'
-import { IValidationComponent } from './ports/validation/types'
 
 export type AppConfig = {
   HTTP_SERVER_PORT: string
@@ -18,18 +17,20 @@ export type AppConfig = {
   BICONOMY_API_ID: string
 }
 
-export type AppComponents<C extends object = {}> = {
-  config: IConfigComponent
-  logs: ILoggerComponent
-  database: IDatabaseComponent
-  server: IHttpServerComponent<C>
-  transaction: ITransactionComponent
-  validation: IValidationComponent
-  statusChecks: IBaseComponent
-}
-
 export type GlobalContext = {
   components: AppComponents
 }
 
-export type Context<Path extends string = any> = RoutedContext<{}, Path>
+export type AppComponents = {
+  config: IConfigComponent
+  logs: ILoggerComponent
+  database: IDatabaseComponent
+  server: IHttpServerComponent<GlobalContext>
+  transaction: ITransactionComponent
+  statusChecks: IBaseComponent
+}
+
+export type Context<Path extends string = any> = RoutedContext<
+  GlobalContext,
+  Path
+>
