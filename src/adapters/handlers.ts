@@ -1,20 +1,18 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { TransactionData } from '../ports/transaction/types'
+import { getByUserAddress, sendMetaTransaction } from '../logic/transaction'
+import { SendTransactionRequest } from '../types/transaction'
 import { AppComponents, Context } from '../types'
 
-type SendTransactionRequest = {
-  transactionData: TransactionData
-}
-
 export function getUserTransactions(
-  components: Pick<AppComponents, 'logs' | 'transaction'>
+  components: Pick<AppComponents, 'logs' | 'database'>
 ): IHttpServerComponent.IRequestHandler<Context<'/transactions/:userAddress'>> {
-  const { logs, transaction } = components
+  const { logs, database } = components
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
     logger.info(`Returning transactions for ${context.params.userAddress}`)
-    const { rows: transactions } = await transaction.getByUserAddress(
+    const { rows: transactions } = await getByUserAddress(
+      { database },
       context.params.userAddress
     )
 
@@ -26,9 +24,9 @@ export function getUserTransactions(
 }
 
 export function sendTransaction(
-  components: Pick<AppComponents, 'logs' | 'transaction' | 'database'>
+  components: Pick<AppComponents, 'logs' | 'config' | 'database'>
 ): IHttpServerComponent.IRequestHandler<Context<'/transactions'>> {
-  const { logs, transaction, database } = components
+  const { logs, config, database } = components
   const logger = logs.getLogger('transactions-server')
 
   return async (context) => {
@@ -39,8 +37,10 @@ export function sendTransaction(
 
     try {
       logger.info(`Sending transaction for ${transactionData.from}`)
-      // { sendMetaTransaction } = logic/transaction
-      const { txHash } = await sendMetaTransaction(transactionData)
+      const { txHash } = await sendMetaTransaction(
+        { database, config },
+        transactionData
+      )
       // insertar en la base de datos
 
       return {
