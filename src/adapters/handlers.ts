@@ -1,6 +1,10 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { getByUserAddress, sendMetaTransaction } from '../logic/transaction'
-import { SendTransactionRequest } from '../types/transaction'
+import {
+  getByUserAddress,
+  insertTransaction,
+  sendMetaTransaction,
+} from '../logic/transaction'
+import { SendTransactionRequest, transactionSchema } from '../types/transaction'
 import { AppComponents, Context } from '../types'
 
 export function getUserTransactions(
@@ -37,11 +41,16 @@ export function sendTransaction(
 
     try {
       logger.info(`Sending transaction for ${transactionData.from}`)
-      const { txHash } = await sendMetaTransaction(
-        { database, config },
-        transactionData
+      const txHash = await sendMetaTransaction({ config }, transactionData)
+
+      await insertTransaction(
+        { database },
+        {
+          txHash,
+          userAddress: transactionData.from,
+          contractAddress: transactionData.to,
+        }
       )
-      // insertar en la base de datos
 
       return {
         status: 200,
