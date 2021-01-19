@@ -6,7 +6,6 @@ import type {
   IBaseComponent,
 } from '@well-known-components/interfaces'
 import { IDatabaseComponent } from './ports/database/types'
-import { ITransactionComponent } from './ports/transaction/types'
 
 export type AppConfig = {
   HTTP_SERVER_PORT: string
@@ -26,7 +25,6 @@ export type AppComponents = {
   logs: ILoggerComponent
   database: IDatabaseComponent
   server: IHttpServerComponent<GlobalContext>
-  transaction: ITransactionComponent
   statusChecks: IBaseComponent
 }
 

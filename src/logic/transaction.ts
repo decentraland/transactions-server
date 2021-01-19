@@ -1,13 +1,14 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
-import { IDatabaseComponent } from '../ports/database/types'
-import { AppComponents } from '../types'
 import {
   MetaTransactionRequest,
   MetaTransactionResponse,
   TransactionData,
   TransactionRow,
+  transactionSchema,
 } from '../types/transaction'
+import { AppComponents } from '../types'
+import { generateValidator } from './validation'
 
 export async function sendMetaTransaction(
   components: Pick<AppComponents, 'config' | 'database'>,
@@ -57,9 +58,10 @@ export async function sendMetaTransaction(
 }
 
 export async function getByUserAddress(
-  database: IDatabaseComponent,
+  components: Pick<AppComponents, 'database'>,
   userAddress: string
 ): Promise<IDatabase.IQueryResult<TransactionRow>> {
+  const { database } = components
   return database.query<TransactionRow>(
     SQL`SELECT *
         FROM transactions
@@ -67,7 +69,7 @@ export async function getByUserAddress(
   )
 }
 
-export async function checkTransactionData(
+export async function ensureTransactionData(
   components: Pick<AppComponents, 'config' | 'database'>,
   transactionData: TransactionData
 ) {
@@ -90,3 +92,5 @@ export async function checkTransactionData(
     throw new Error(`Max amount of transactions reached for address ${from}`)
   }
 }
+
+export const validateTrasactionSchema = generateValidator(transactionSchema)

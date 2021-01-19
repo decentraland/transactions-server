@@ -1,25 +1,12 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { check } from '../logic/validation'
-import { Schema } from '../types/validation'
-import { TransactionData } from '../types/transaction'
 import { AppComponents, Context } from '../types'
+import { ensureTransactionData, validateTrasactionSchema } from './transaction'
 
 export function createTransactionMiddleware(
-  components: Pick<AppComponents, 'logs' | 'transaction'>
+  components: Pick<AppComponents, 'logs' | 'config' | 'database'>
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
-  const { logs, transaction } = components
+  const { logs, config, database } = components
   const logger = logs.getLogger('transaction-wrapper')
-
-  const transactionSchema: Schema<TransactionData> = {
-    type: 'object',
-    properties: {
-      from: { type: 'string' },
-      to: { type: 'string' },
-      params: { type: 'array', items: { type: 'string' } },
-    },
-    additionalProperties: false,
-    required: ['from', 'to', 'params'],
-  }
 
   return async (context, next) => {
     try {
@@ -35,8 +22,14 @@ export function createTransactionMiddleware(
       }
 
       try {
-        check(transactionSchema, transactionData)
-        await transaction.checkTransactionData(transactionData)
+        if (!validateTrasactionSchema(transactionData)) {
+          throw new Error(
+            `Invalid transaction data: ${JSON.stringify(
+              validateTrasactionSchema.errors
+            )}`
+          )
+        }
+        await ensureTransactionData({ config, database }, transactionData)
       } catch (error) {
         throw new Error(
           `The transaction data is invalid. Check the body of the request.\nError: ${error.message}`
