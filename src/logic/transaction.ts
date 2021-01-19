@@ -50,14 +50,13 @@ export async function insertTransaction(
   const { database } = components
   await database.run(
     `INSERT INTO transactions(
-        txHash, userAddress, contractAddress
+        txHash, userAddress
       ) VALUES (
         $txHash, $userAddress, $contractAddress
     )`,
     {
       $txHash: row.txHash,
       $userAddress: row.userAddress,
-      $contractAddress: row.contractAddress,
     }
   )
 }

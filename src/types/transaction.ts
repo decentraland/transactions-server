@@ -2,8 +2,7 @@ import { Schema } from './validation'
 
 export type TransactionData = {
   from: string
-  to: string
-  params: string[]
+  params: [string, string] // manaAddress, txData
 }
 
 export type MetaTransactionRequest = TransactionData & {
@@ -26,7 +25,6 @@ export type TransactionRow = {
   id: number
   txHash: string
   userAddress: string
-  contractAddress: string
   createdAt: Date
 }
 
@@ -34,9 +32,13 @@ export const transactionSchema: Schema<TransactionData> = {
   type: 'object',
   properties: {
     from: { type: 'string' },
-    to: { type: 'string' },
-    params: { type: 'array', items: { type: 'string' } },
+    params: {
+      type: 'array',
+      items: [{ type: 'string' }, { type: 'string' }],
+      additionalItems: false,
+      minItems: 2,
+    },
   },
   additionalProperties: false,
-  required: ['from', 'to', 'params'],
+  required: ['from', 'params'],
 }

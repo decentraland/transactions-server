@@ -45,11 +45,7 @@ export function sendTransaction(
 
       await insertTransaction(
         { database },
-        {
-          txHash,
-          userAddress: transactionData.from,
-          contractAddress: transactionData.to,
-        }
+        { txHash, userAddress: transactionData.from }
       )
 
       return {
