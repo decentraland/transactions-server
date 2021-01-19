@@ -4,7 +4,7 @@ import {
   insertTransaction,
   sendMetaTransaction,
 } from '../logic/transaction'
-import { SendTransactionRequest, transactionSchema } from '../types/transaction'
+import { SendTransactionRequest } from '../types/transaction'
 import { AppComponents, Context } from '../types'
 
 export function getUserTransactions(
