@@ -1,6 +1,6 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
 import { AppComponents, Context } from '../types'
-import { ensureTransactionData, validateTrasactionSchema } from './transaction'
+import { checkTransactionData, validateTrasactionSchema } from './transaction'
 
 export function createTransactionMiddleware(
   components: Pick<AppComponents, 'logs' | 'config' | 'database'>
@@ -29,7 +29,7 @@ export function createTransactionMiddleware(
             )}`
           )
         }
-        await ensureTransactionData({ config, database }, transactionData)
+        await checkTransactionData({ config, database }, transactionData)
       } catch (error) {
         throw new Error(
           `The transaction data is invalid. Check the body of the request.\nError: ${error.message}`

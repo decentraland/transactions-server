@@ -11,10 +11,10 @@ import { AppComponents } from '../types'
 import { generateValidator } from './validation'
 
 export async function sendMetaTransaction(
-  components: Pick<AppComponents, 'config' | 'database'>,
+  components: Pick<AppComponents, 'config'>,
   transactionData: TransactionData
-) {
-  const { config, database } = components
+): Promise<string> {
+  const { config } = components
 
   const biconomiAPIId = await config.requireString('BICONOMY_API_ID')
   const biconomyAPIKey = await config.requireString('BICONOMY_API_KEY')
@@ -40,7 +40,14 @@ export async function sendMetaTransaction(
       `An error occurred trying to send the meta transaction ${data.message}`
     )
   }
+  return data.txHash!
+}
 
+export async function insertTransaction(
+  components: Pick<AppComponents, 'database'>,
+  row: Omit<TransactionRow, 'id' | 'createdAt'>
+) {
+  const { database } = components
   await database.run(
     `INSERT INTO transactions(
         txHash, userAddress, contractAddress
@@ -48,13 +55,11 @@ export async function sendMetaTransaction(
         $txHash, $userAddress, $contractAddress
     )`,
     {
-      $txHash: data.txHash,
-      $userAddress: transactionData.from,
-      $contractAddress: transactionData.to,
+      $txHash: row.txHash,
+      $userAddress: row.userAddress,
+      $contractAddress: row.contractAddress,
     }
   )
-
-  return data
 }
 
 export async function getByUserAddress(
@@ -69,7 +74,7 @@ export async function getByUserAddress(
   )
 }
 
-export async function ensureTransactionData(
+export async function checkTransactionData(
   components: Pick<AppComponents, 'config' | 'database'>,
   transactionData: TransactionData
 ) {
