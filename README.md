@@ -27,7 +27,7 @@ Check [`./src/adapters/routes.ts`](https://github.com/decentraland/transactions-
 
 Relays a meta transaction. It accepts a body with the data. Check [`transactionSchema`](https://github.com/decentraland/transactions-server/blob/master/src/types/transaction.ts#L31) for an up to date version of the data you need to supply.
 
-You can also check this [`Playground`](https://web3playground.io/QmZNr3Gj4cR2jzxuzkH15dBRgPgqgB5vZ4mE99YJHsCacm)
+You can also check this [`Playground`](https://web3playground.io/Qmd2WcPpBwM3NqBHL7VU8edU1M64cg1Y7TAPB67yfwsmuH)
 
 ### GET /transactions/:userAddress
 

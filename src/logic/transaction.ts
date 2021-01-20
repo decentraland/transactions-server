@@ -53,7 +53,7 @@ export async function insertTransaction(
     `INSERT INTO transactions(
         txHash, userAddress
       ) VALUES (
-        $txHash, $userAddress, $contractAddress
+        $txHash, $userAddress
     )`,
     {
       $txHash: row.txHash,

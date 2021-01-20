@@ -1,8 +1,8 @@
 import sqlite3 from 'sqlite3'
+import { SQLStatement } from 'sql-template-strings'
 import { open, Database, IMigrate, ISqlite } from 'sqlite'
 import { AppComponents } from '../../types'
 import { IDatabaseComponent } from './types'
-import { SQLStatement } from 'sql-template-strings'
 
 export async function createDatabaseComponent(
   components: Pick<AppComponents, 'logs'>
@@ -30,7 +30,7 @@ export async function createDatabaseComponent(
   }
 
   async function query<T>(sql: string | SQLStatement) {
-    logger.debug(`Query SQL: ${sql}`)
+    logger.debug(`Query SQL: ${sql instanceof SQLStatement ? sql.text : sql}`)
     const rows = await db.all<T[]>(sql)
     return {
       rows,

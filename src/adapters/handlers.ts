@@ -40,7 +40,7 @@ export function sendTransaction(
     const { transactionData } = sendTransactionRequest
 
     try {
-      logger.info(`Sending transaction for ${transactionData.from}`)
+      logger.info(`Sending transaction ${JSON.stringify(transactionData)}`)
       const txHash = await sendMetaTransaction({ config }, transactionData)
 
       await insertTransaction(
