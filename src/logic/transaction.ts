@@ -1,5 +1,6 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
+import fetch from 'node-fetch'
 import {
   MetaTransactionRequest,
   MetaTransactionResponse,
