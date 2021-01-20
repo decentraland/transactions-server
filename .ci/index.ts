@@ -4,8 +4,9 @@ import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { env, envTLD } from 'dcl-ops-lib/domain'
 
 export = async function main() {
+  const config = new pulumi.Config()
   const revision = process.env['CI_COMMIT_SHA']
-  const image = `decentraland/transactions-server:${revision}`
+  const image = `${process.env['CI_REGISTRY_REPOSITORY_AWS']}/transactions-server:${revision}`
 
   const hostname = 'transactions-api.decentraland.' + envTLD
 
@@ -25,6 +26,14 @@ export = async function main() {
       {
         name: 'BICONOMY_API_URL',
         value: 'https://api.biconomy.io/api/v2/meta-tx/native',
+      },
+      {
+        name: 'BICONOMY_API_KEY',
+        value: config.requireSecret('BICONOMY_API_KEY'),
+      },
+      {
+        name: 'BICONOMY_API_ID',
+        value: config.requireSecret('BICONOMY_API_ID'),
       },
     ],
     hostname,
