@@ -1,8 +1,12 @@
 # Transactions Server
 
-Relay meta-transactions services.
+Server to relay meta-transactions.
 
-## BUILD
+# Run the project
+
+The server only dependency is sqlite3
+
+### BUILD
 
 ```bash
 # Check `.env.example` and create your own `.env` file. Some properties have defaults.
