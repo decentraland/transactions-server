@@ -4,25 +4,31 @@ Server to relay meta-transactions.
 
 # Run the project
 
-The server only dependency is sqlite3
-
-### BUILD
+The server's only dependency is sqlite3 which needs to be initialized first.
 
 ```bash
-# Check `.env.example` and create your own `.env` file. Some properties have defaults.
-npm i
-
-npm build
+npm install
+npm run migrate
 ```
 
-## RUN
+After that you'll need to up check the `.env.example` file and create your own `.env` file. Some properties have defaults. Once you're done, you can run the project!
 
 ```bash
-npm start
+npm start # runs npm run build behind the scenes
+
+npm run start:watch # will watch for changes
 ```
 
-## DEV
+# Endpoints
 
-```bash
-npm run start:watch
-```
+Check [`./src/adapters/routes.ts`](https://github.com/decentraland/transactions-server/blob/master/src/adapters/routes.ts) for an up to date list of all the endpoints. The most important ones are:
+
+### POST /transactions
+
+Relays a meta transaction. It accepts a body with the data. Check [`transactionSchema`](https://github.com/decentraland/transactions-server/blob/master/src/types/transaction.ts#L31) for an up to date version of the data you need to supply.
+
+You can also check this [`Playground`](https://web3playground.io/QmZNr3Gj4cR2jzxuzkH15dBRgPgqgB5vZ4mE99YJHsCacm)
+
+### GET /transactions/:userAddress
+
+Returns the transactions an address relayed
