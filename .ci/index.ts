@@ -21,6 +21,11 @@ export = async function main() {
       { name: 'SERVER_PORT', value: '5000' },
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
+      { name: 'MAX_TRANSACTIONS_PER_DAY', value: '1000' },
+      {
+        name: 'BICONOMY_API_URL',
+        value: 'https://api.biconomy.io/api/v2/meta-tx/native',
+      },
     ],
     hostname,
     {
@@ -30,16 +35,16 @@ export = async function main() {
         interval: 60,
         timeout: 10,
         unhealthyThreshold: 10,
-        healthyThreshold: 3
+        healthyThreshold: 3,
       },
       version: '1',
-      memoryReservation: 1024
+      memoryReservation: 1024,
     }
   )
 
   const publicUrl = transactionsAPI.endpoint
 
   return {
-    publicUrl
+    publicUrl,
   }
 }
