@@ -25,7 +25,7 @@
     "printWidth": 80
   },
   "dependencies": {
-    "@types/sqlite3": "^3.1.6",
+    "@types/sqlite3": "^3.1.7",
     "@well-known-components/env-config-provider": "^1.0.0-20210105235608.commit-d09ded4",
     "@well-known-components/http-server": "^1.0.0-20210110194859.commit-87fe052",
     "@well-known-components/interfaces": "^1.0.0-20210108210230.commit-be9269a",
