@@ -27,7 +27,7 @@
   "dependencies": {
     "@types/sqlite3": "^3.1.6",
     "@well-known-components/env-config-provider": "^1.0.0-20210105235608.commit-d09ded4",
-    "@well-known-components/http-server": "^1.0.0-20210110194859.commit-87fe052",
+    "@well-known-components/http-server": "^1.0.0",
     "@well-known-components/interfaces": "^1.0.0-20210108210230.commit-be9269a",
     "@well-known-components/logger": "^1.0.0-20210110175006.commit-9c592da",
     "ajv": "^7.0.3",
