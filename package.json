@@ -29,7 +29,7 @@
     "@well-known-components/env-config-provider": "^1.0.0-20210105235608.commit-d09ded4",
     "@well-known-components/http-server": "^1.0.0",
     "@well-known-components/interfaces": "^1.0.0-20210108210230.commit-be9269a",
-    "@well-known-components/logger": "^1.0.0-20210110175006.commit-9c592da",
+    "@well-known-components/logger": "^1.0.0",
     "ajv": "^7.0.4",
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.1",
