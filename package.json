@@ -30,7 +30,7 @@
     "@well-known-components/http-server": "^1.0.0-20210110194859.commit-87fe052",
     "@well-known-components/interfaces": "^1.0.0-20210108210230.commit-be9269a",
     "@well-known-components/logger": "^1.0.0",
-    "ajv": "^7.0.4",
+    "ajv": "^7.1.0",
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.1",
     "sql-template-strings": "^2.2.2",
