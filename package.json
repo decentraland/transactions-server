@@ -35,7 +35,7 @@
     "node-fetch": "^2.6.1",
     "sql-template-strings": "^2.2.2",
     "sqlite": "^4.0.19",
-    "sqlite3": "^5.0.1"
+    "sqlite3": "^5.0.2"
   },
   "devDependencies": {
     "@types/compression": "^1.7.0",
