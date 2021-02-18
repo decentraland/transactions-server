@@ -2,6 +2,7 @@ import { IHttpServerComponent } from '@well-known-components/interfaces'
 import {
   getByUserAddress,
   insertTransaction,
+  MetaTransactionError,
   sendMetaTransaction,
 } from '../logic/transaction'
 import { SendTransactionRequest } from '../types/transaction'
@@ -59,7 +60,11 @@ export function sendTransaction(
       )
       return {
         status: 500,
-        body: { ok: false, message: error.message },
+        body: {
+          ok: false,
+          message: error.message,
+          code: (error as MetaTransactionError).code,
+        },
       }
     }
   }

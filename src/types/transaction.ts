@@ -13,8 +13,19 @@ export type MetaTransactionResponse = {
   txHash?: string
   log: string
   flag: number
-  code?: number
+  code?: MetaTransactionErrorCode
   message?: string
+}
+
+export enum MetaTransactionErrorCode {
+  DAPP_LIMIT = 150,
+  USER_LIMIT = 151,
+  API_LIMIT = 152,
+  GAS_LIMIT = 153,
+  NOT_FOUND = 404,
+  CONFLICT = 409,
+  EXPECTATION_FAILED = 417,
+  INTERNAL_SERVER_ERROR = 500,
 }
 
 export type SendTransactionRequest = {
