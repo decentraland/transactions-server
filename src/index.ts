@@ -29,7 +29,7 @@ async function initComponents(): Promise<AppComponents> {
     BICONOMY_API_URL: 'https://api.biconomy.io/api/v2/meta-tx/native',
   }
 
-  const config = createConfigComponent<AppConfig>(process.env, defaultValues)
+  const config = createConfigComponent(process.env, defaultValues)
 
   const cors = {
     origin: await config.getString('CORS_ORIGIN'),
