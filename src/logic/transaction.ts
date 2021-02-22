@@ -2,6 +2,7 @@ import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
 import fetch from 'node-fetch'
 import {
+  MetaTransactionErrorCode,
   MetaTransactionRequest,
   MetaTransactionResponse,
   TransactionData,
@@ -37,8 +38,9 @@ export async function sendMetaTransaction(
   const data: MetaTransactionResponse = await result.json()
 
   if (data.code !== 200) {
-    throw new Error(
-      `An error occurred trying to send the meta transaction ${data.message}`
+    throw new MetaTransactionError(
+      `An error occurred trying to send the meta transaction ${data.message}`,
+      data.code
     )
   }
   return data.txHash!
@@ -99,3 +101,13 @@ export async function checkTransactionData(
 }
 
 export const validateTrasactionSchema = generateValidator(transactionSchema)
+
+export class MetaTransactionError extends Error {
+  code?: MetaTransactionErrorCode
+
+  // For more info on error codes, see https://docs.biconomy.io/api/native-meta-tx
+  constructor(message: string, code?: MetaTransactionErrorCode) {
+    super(message)
+    this.code = code
+  }
+}
