@@ -25,4 +25,4 @@ RUN npm ci --only=production
 FROM node:lts
 WORKDIR /app
 COPY --from=builder /app /app
-CMD [ "npm", "run", "start" ]
+ENTRYPOINT [ "./entrypoint.sh" ]
