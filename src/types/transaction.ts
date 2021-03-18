@@ -53,4 +53,4 @@ export const transactionSchema: Schema<TransactionData> = {
   },
   additionalProperties: false,
   required: ['from', 'params'],
-}
+} as any

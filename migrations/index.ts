@@ -3,10 +3,10 @@ import { createDatabaseComponent } from '../src/ports/database/component'
 
 async function migrate() {
   const logs = createLogComponent()
-  const db = await createDatabaseComponent({ logs })
+  const db = await createDatabaseComponent({ logs }, { filename: 'database.db' })
 
   try {
-    await db.start()
+    await db.start({} as any)
     await db.migrate()
   } catch (error) {
     // Nothing

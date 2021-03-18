@@ -17,3 +17,41 @@ export async function createFetchComponent() {
 
   return fetch
 }
+
+// TEST COMPONENT
+export type ITestFetchComponent = IFetchComponent & {
+  push(request: nodeFetch.RequestInit, response: nodeFetch.Response): void
+}
+
+export async function createTestFetchComponent(options: {
+  localhost: string
+}): Promise<ITestFetchComponent> {
+  const mocks: {
+    req: nodeFetch.RequestInit
+    res: nodeFetch.Response
+  }[] = []
+
+  return {
+    async fetch(
+      url: nodeFetch.RequestInfo,
+      initRequest?: nodeFetch.RequestInit
+    ): Promise<nodeFetch.Response> {
+      if (typeof url == 'string' && url.startsWith('/')) {
+        return nodeFetch.default(options.localhost + url, { ...initRequest })
+      } else {
+        if (!mocks.length) {
+          throw new Error(`No mock was set for this fetch call ${JSON.stringify({url, initRequest})}`)
+        }
+
+        const mock = mocks.shift()!
+
+        // TODO: assert that the request matches mock.req
+
+        return mock.res
+      }
+    },
+    push(req, res) {
+      mocks.push({ req, res })
+    },
+  }
+}

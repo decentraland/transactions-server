@@ -8,15 +8,7 @@ import type {
 } from '@well-known-components/interfaces'
 import { metricDeclarations } from './metrics'
 import { IDatabaseComponent } from './ports/database/types'
-
-export type AppConfig = {
-  HTTP_SERVER_PORT: string
-  HTTP_SERVER_HOST: string
-  API_VERSION: string
-  BICONOMY_API_URL: string
-  BICONOMY_API_KEY: string
-  BICONOMY_API_ID: string
-}
+import { ITestFetchComponent } from './ports/fetcher'
 
 export type GlobalContext = {
   components: AppComponents
@@ -30,15 +22,16 @@ export type BaseComponents = {
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
   database: IDatabaseComponent
   server: IHttpServerComponent<GlobalContext>
+  statusChecks: IBaseComponent
 }
 
 // Test components
-export type TestComponents = BaseComponents & {}
+export type TestComponents = Omit<BaseComponents, 'fetcher'> & {
+  fetcher: ITestFetchComponent
+}
 
 // Production components
-export type AppComponents = BaseComponents & {
-  statusChecks: IBaseComponent
-}
+export type AppComponents = BaseComponents
 
 export type HandlerContextWithPath<
   ComponentNames extends keyof AppComponents,

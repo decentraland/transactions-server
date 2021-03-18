@@ -58,10 +58,7 @@ export async function sendTransaction(
       body: { txHash },
     }
   } catch (error) {
-    globalLogger.info(
-      `Error sending a transaction for ${transactionData.from}`,
-      error.message
-    )
+    globalLogger.error(error)
     return {
       status: 500,
       body: {

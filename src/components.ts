@@ -8,18 +8,15 @@ import { createMetricsComponent } from '@well-known-components/metrics'
 import { metricDeclarations } from './metrics'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
-import { AppComponents, AppConfig, GlobalContext } from './types'
+import { AppComponents, GlobalContext } from './types'
+import { config as loadDotEnv } from 'dotenv'
 
 export async function initComponents(): Promise<AppComponents> {
-  // default config
-  const defaultValues: Partial<AppConfig> = {
-    HTTP_SERVER_PORT: '5000',
-    HTTP_SERVER_HOST: '0.0.0.0',
-    API_VERSION: 'v1',
-    BICONOMY_API_URL: 'https://api.biconomy.io/api/v2/meta-tx/native',
-  }
+  // load default config
+  loadDotEnv({ path: '.env.defaults' })
 
-  const config = await createDotEnvConfigComponent({}, defaultValues)
+  // default config from process.env + .env file
+  const config = await createDotEnvConfigComponent({}, process.env)
 
   const cors = {
     origin: await config.getString('CORS_ORIGIN'),
