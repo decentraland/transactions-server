@@ -5,7 +5,8 @@ import { AppComponents } from '../../types'
 import { IDatabaseComponent } from './types'
 
 export async function createDatabaseComponent(
-  components: Pick<AppComponents, 'logs'>
+  components: Pick<AppComponents, 'logs'>,
+  options: { filename: string }
 ): Promise<IDatabaseComponent> {
   const { logs } = components
   const logger = logs.getLogger('database-component')
@@ -18,7 +19,7 @@ export async function createDatabaseComponent(
     logger.log('Starting database')
     try {
       db = await open({
-        filename: `${process.cwd()}/database.db`,
+        filename: options.filename,
         driver: sqlite3.Database,
       })
     } catch (error) {

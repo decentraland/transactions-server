@@ -48,6 +48,7 @@ export const transactionSchema: Schema<TransactionData> = {
       items: [{ type: 'string' }, { type: 'string' }],
       additionalItems: false,
       minItems: 2,
+      maxItems: 2,
     },
   },
   additionalProperties: false,
