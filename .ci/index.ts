@@ -1,18 +1,18 @@
 import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
+import { createImageFromContext } from "dcl-ops-lib/createImageFromContext"
 import { env, envTLD } from 'dcl-ops-lib/domain'
 
 export = async function main() {
   const config = new pulumi.Config()
-  const revision = process.env['CI_COMMIT_SHA']
-  const image = `${process.env['CI_REGISTRY_REPOSITORY_AWS']}/transactions-server:${revision}`
+  const ecrRegistryImage = createImageFromContext("transactions-server", "..", {})
 
   const hostname = 'transactions-api.decentraland.' + envTLD
 
   const transactionsAPI = await createFargateTask(
     `transactions-api`,
-    image,
+    ecrRegistryImage.image.imageName,
     5000,
     [
       { name: 'hostname', value: `transactions-server-${env}` },
