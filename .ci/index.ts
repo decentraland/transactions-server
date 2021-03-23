@@ -41,7 +41,7 @@ export = async function main() {
       // @ts-ignore
       healthCheck: {
         path: '/health/ready',
-        interval: 10,
+        interval: 20,
         timeout: 10,
         unhealthyThreshold: 10,
         healthyThreshold: 3,
