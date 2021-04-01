@@ -23,7 +23,6 @@ export type ITestFetchComponent = IFetchComponent & {
   push(request: nodeFetch.RequestInit, response: nodeFetch.Response): void
 }
 
-
 // NOTICE: this test component will be later moved to well-known-components
 export async function createTestFetchComponent(options: {
   localhost: string
@@ -38,11 +37,16 @@ export async function createTestFetchComponent(options: {
       url: nodeFetch.RequestInfo,
       initRequest?: nodeFetch.RequestInit
     ): Promise<nodeFetch.Response> {
-      if (typeof url == 'string' && url.startsWith('/')) {
+      if (typeof url === 'string' && url.startsWith('/')) {
         return nodeFetch.default(options.localhost + url, { ...initRequest })
       } else {
         if (!mocks.length) {
-          throw new Error(`No mock was set for this fetch call ${JSON.stringify({url, initRequest})}`)
+          throw new Error(
+            `No mock was set for this fetch call ${JSON.stringify({
+              url,
+              initRequest,
+            })}`
+          )
         }
 
         const mock = mocks.shift()!
