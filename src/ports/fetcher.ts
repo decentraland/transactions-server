@@ -23,6 +23,8 @@ export type ITestFetchComponent = IFetchComponent & {
   push(request: nodeFetch.RequestInit, response: nodeFetch.Response): void
 }
 
+
+// NOTICE: this test component will be later moved to well-known-components
 export async function createTestFetchComponent(options: {
   localhost: string
 }): Promise<ITestFetchComponent> {
