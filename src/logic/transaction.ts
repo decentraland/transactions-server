@@ -34,7 +34,6 @@ export async function sendMetaTransaction(
     contract: transactionData.params[0],
   })
 
-  // metrics.increment('dcl_sent_amount_biconomy', { contract: transactionData.params[0] }, getAmount(transactionData.params[1]))
   const result = await fetch(biconomyAPIURL, {
     headers: {
       'x-api-key': biconomyAPIKey,
