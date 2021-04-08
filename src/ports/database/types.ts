@@ -7,8 +7,5 @@ export interface IDatabaseComponent extends IDatabase {
   query<T>(sql: string): Promise<IDatabase.IQueryResult<T>>
   run(sql: string, ...values: any[]): Promise<number | undefined>
 
-  start: () => Promise<void>
-  stop: () => Promise<void>
-
   migrate: Database['migrate']
 }

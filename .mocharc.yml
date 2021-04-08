@@ -1,0 +1,8 @@
+require:
+  - 'test/setup.js'
+reporter:
+  - 'spec'
+watch-files:
+  - 'dist/**/*.js'
+  - 'test/**/*.ts'
+spec: 'test/**/*.spec.ts'

@@ -3,10 +3,12 @@ import { SQLStatement } from 'sql-template-strings'
 import { open, Database, IMigrate, ISqlite } from 'sqlite'
 import { AppComponents } from '../../types'
 import { IDatabaseComponent } from './types'
+import { IBaseComponent } from '@well-known-components/interfaces'
 
 export async function createDatabaseComponent(
-  components: Pick<AppComponents, 'logs'>
-): Promise<IDatabaseComponent> {
+  components: Pick<AppComponents, 'logs'>,
+  options: { filename: string }
+): Promise<IDatabaseComponent & IBaseComponent> {
   const { logs } = components
   const logger = logs.getLogger('database-component')
 
@@ -15,10 +17,11 @@ export async function createDatabaseComponent(
 
   // Methods
   async function start() {
+    if (db) return
     logger.log('Starting database')
     try {
       db = await open({
-        filename: `${process.cwd()}/database.db`,
+        filename: options.filename,
         driver: sqlite3.Database,
       })
     } catch (error) {

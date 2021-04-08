@@ -1,22 +1,26 @@
+import { Lifecycle } from '@well-known-components/interfaces'
 import { createLogComponent } from '@well-known-components/logger'
 import { createDatabaseComponent } from '../src/ports/database/component'
 
-async function migrate() {
-  const logs = createLogComponent()
-  const db = await createDatabaseComponent({ logs })
+Lifecycle.run({
+  async main({ components: { db }, startComponents, stop }) {
+    // Start DB
+    await startComponents()
 
-  try {
-    await db.start()
+    // run migrations
     await db.migrate()
-  } catch (error) {
-    // Nothing
-  } finally {
-    await db.stop()
-  }
-}
 
-migrate()
-  .then(() => console.log('All done'))
-  .catch((error) =>
-    console.log('An error occurred trying to run migrations', error)
-  )
+    // exit program
+    await stop()
+  },
+
+  async initComponents() {
+    const logs = createLogComponent()
+    const db = await createDatabaseComponent(
+      { logs },
+      { filename: 'database.db' }
+    )
+
+    return { logs, db }
+  },
+})

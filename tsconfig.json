@@ -5,7 +5,6 @@
     "lib": ["es2017", "dom"],
     "plugins": [{ "name": "tslint-language-service" }],
     "moduleResolution": "node",
-    "rootDir": "src",
     "outDir": "dist",
     "strict": true,
     "noImplicitAny": true,
@@ -16,9 +15,12 @@
     "noImplicitReturns": true,
     "resolveJsonModule": true,
     "noUnusedParameters": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "pretty": true,
+    "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["node_modules", "dist", "migrations"],
-  "include": ["./**/*"]
+  "include": ["src"]
 }

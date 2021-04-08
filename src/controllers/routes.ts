@@ -3,9 +3,10 @@ import { createTransactionMiddleware } from '../logic/transaction-middleware'
 import { GlobalContext } from '../types'
 import { getUserTransactions, sendTransaction } from './handlers'
 
+// We return the entire router because it will be easier to test than a whole server
 export async function setupRoutes(globalContext: GlobalContext) {
   const { components } = globalContext
-  const { config, server } = components
+  const { config } = components
 
   const router = new Router<GlobalContext>()
 
@@ -13,10 +14,9 @@ export async function setupRoutes(globalContext: GlobalContext) {
 
   router.prefix(`/${apiVersion}`)
 
-  router.get('/transactions/:userAddress', getUserTransactions(components))
-
+  router.get('/transactions/:userAddress', getUserTransactions)
   router.use('/transactions', createTransactionMiddleware(components))
-  router.post('/transactions', sendTransaction(components))
+  router.post('/transactions', sendTransaction)
 
-  server.use(router.middleware())
+  return router
 }

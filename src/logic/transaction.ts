@@ -1,6 +1,5 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
-import fetch from 'node-fetch'
 import {
   MetaTransactionErrorCode,
   MetaTransactionRequest,
@@ -13,10 +12,14 @@ import { AppComponents } from '../types'
 import { generateValidator } from './validation'
 
 export async function sendMetaTransaction(
-  components: Pick<AppComponents, 'config'>,
+  components: Pick<AppComponents, 'config' | 'fetcher' | 'metrics'>,
   transactionData: TransactionData
 ): Promise<string> {
-  const { config } = components
+  const {
+    config,
+    fetcher: { fetch },
+    metrics,
+  } = components
 
   const biconomiAPIId = await config.requireString('BICONOMY_API_ID')
   const biconomyAPIKey = await config.requireString('BICONOMY_API_KEY')
@@ -27,6 +30,10 @@ export async function sendMetaTransaction(
     ...transactionData,
   }
 
+  metrics.increment('dcl_sent_transactions_biconomy', {
+    contract: transactionData.params[0],
+  })
+
   const result = await fetch(biconomyAPIURL, {
     headers: {
       'x-api-key': biconomyAPIKey,
@@ -35,6 +42,7 @@ export async function sendMetaTransaction(
     body: JSON.stringify(body),
     method: 'POST',
   })
+
   const data: MetaTransactionResponse = await result.json()
 
   if (data.code !== 200) {
@@ -52,11 +60,12 @@ export async function insertTransaction(
 ) {
   const { database } = components
   await database.run(
-    `INSERT INTO transactions(
+    ` INSERT INTO transactions(
         txHash, userAddress
       ) VALUES (
         $txHash, $userAddress
-    )`,
+      )
+    `,
     {
       $txHash: row.txHash,
       $userAddress: row.userAddress,
