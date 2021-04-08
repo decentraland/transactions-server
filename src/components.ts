@@ -12,7 +12,10 @@ import { AppComponents, GlobalContext } from './types'
 
 export async function initComponents(): Promise<AppComponents> {
   // default config from process.env + .env file
-  const config = await createDotEnvConfigComponent({ path: ['.env.defaults', '.env'] }, process.env)
+  const config = await createDotEnvConfigComponent(
+    { path: ['.env.defaults', '.env'] },
+    process.env
+  )
 
   const cors = {
     origin: await config.getString('CORS_ORIGIN'),
