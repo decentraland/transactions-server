@@ -9,14 +9,10 @@ import { metricDeclarations } from './metrics'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
 import { AppComponents, GlobalContext } from './types'
-import { config as loadDotEnv } from 'dotenv'
 
 export async function initComponents(): Promise<AppComponents> {
-  // load default config
-  loadDotEnv({ path: '.env.defaults' })
-
   // default config from process.env + .env file
-  const config = await createDotEnvConfigComponent({}, process.env)
+  const config = await createDotEnvConfigComponent({ path: ['.env.defaults', '.env'] }, process.env)
 
   const cors = {
     origin: await config.getString('CORS_ORIGIN'),
