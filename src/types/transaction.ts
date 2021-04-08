@@ -53,8 +53,4 @@ export const transactionSchema: Schema<TransactionData> = {
   },
   additionalProperties: false,
   required: ['from', 'params'],
-// For some reason, typescript is not accepting the type assignment 
-// with the current version of ajv, since the variable has type and the
-// schema has a valid and legal structure, we use "as any" to make
-// it pass until typescript gets fixed
-} as any
+}
