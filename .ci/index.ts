@@ -46,6 +46,9 @@ export = async function main() {
         unhealthyThreshold: 10,
         healthyThreshold: 3,
       },
+      metrics: {
+        path: '/metrics',
+      },
       version: '2',
       memoryReservation: 1024,
       extraExposedServiceOptions: {
