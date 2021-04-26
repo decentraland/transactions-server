@@ -4,6 +4,8 @@ import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { createImageFromContext } from "dcl-ops-lib/createImageFromContext"
 import { env, envTLD } from 'dcl-ops-lib/domain'
 
+const prometheusStack = new pulumi.StackReference(`prometheus-${env}`)
+
 export = async function main() {
   const config = new pulumi.Config()
   const ecrRegistryImage = createImageFromContext("transactions-server", "..", {})
@@ -35,6 +37,7 @@ export = async function main() {
         name: 'BICONOMY_API_ID',
         value: config.requireSecret('BICONOMY_API_ID'),
       },
+      { name: 'WKC_METRICS_BEARER_TOKEN', value: prometheusStack.getOutput('serviceMetricsBearerToken') },
     ],
     hostname,
     {
