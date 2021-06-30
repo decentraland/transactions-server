@@ -43,14 +43,15 @@ export async function sendMetaTransaction(
     method: 'POST',
   })
 
-  const data: MetaTransactionResponse = await result.json()
-
-  if (data.code !== 200) {
+  if (!result.ok) {
     throw new MetaTransactionError(
-      `An error occurred trying to send the meta transaction ${data.message}`,
-      data.code
+      `An error occurred trying to send the meta transaction. Response: ${await result.text()}.
+        ${result.statusText}`
     )
   }
+
+  const data: MetaTransactionResponse = await result.json()
+
   return data.txHash!
 }
 
