@@ -45,7 +45,8 @@ export async function sendMetaTransaction(
 
   if (!result.ok) {
     throw new MetaTransactionError(
-      `An error occurred trying to send the meta transaction. Response: ${result.statusText}`
+      `An error occurred trying to send the meta transaction. Response: ${await result.text()}.
+        ${result.statusText}`
     )
   }
 
