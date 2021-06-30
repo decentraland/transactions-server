@@ -43,6 +43,5 @@ export type HandlerContextWithPath<
   Path
 >
 
-export type Context<
-  Path extends string = any
-> = IHttpServerComponent.PathAwareContext<GlobalContext, Path>
+export type Context<Path extends string = any> =
+  IHttpServerComponent.PathAwareContext<GlobalContext, Path>
