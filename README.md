@@ -32,3 +32,4 @@ You can also check this [`Playground`](https://web3playground.io/Qmd2WcPpBwM3NqB
 ### GET /transactions/:userAddress
 
 Returns the transactions an address relayed
+
