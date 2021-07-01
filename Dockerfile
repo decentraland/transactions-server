@@ -42,4 +42,6 @@ COPY --from=builderenv /tini /tini
 #            and: https://www.ctl.io/developers/blog/post/gracefully-stopping-docker-containers/
 ENTRYPOINT ["/tini", "--"]
 # Run the program under Tini
+
+RUN npm run migrate up || exit 1
 CMD [ "/usr/local/bin/node", "--abort-on-uncaught-exception", "--unhandled-rejections=strict", "dist/index.js" ]
