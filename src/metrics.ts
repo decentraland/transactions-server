@@ -17,7 +17,7 @@ export const metricDeclarations = {
     help:
       'Count errors of BICONOMY Api when trying to relay a transaction to BICONOMY',
     type: IMetricsComponent.CounterType,
-    labelNames: ['transactionData'],
+    labelNames: ['contract', 'data', 'from'],
   },
 }
 
