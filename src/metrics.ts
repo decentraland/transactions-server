@@ -7,10 +7,17 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: ['contract'],
   },
-  dcl_sent_amount_biconomy: {
-    help: 'Count transactions sent to BICONOMY',
+  dcl_error_cannot_estimate_gas_transactions_biconomy: {
+    help:
+      'Count errors of cannot estimate gas when trying to relay a transaction to BICONOMY',
     type: IMetricsComponent.CounterType,
-    labelNames: ['contract', 'amount'],
+    labelNames: ['contract', 'data', 'from'],
+  },
+  dcl_error_relay_transactions_biconomy: {
+    help:
+      'Count errors of BICONOMY Api when trying to relay a transaction to BICONOMY',
+    type: IMetricsComponent.CounterType,
+    labelNames: ['transactionData'],
   },
 }
 

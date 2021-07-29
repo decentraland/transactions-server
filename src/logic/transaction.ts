@@ -30,10 +30,6 @@ export async function sendMetaTransaction(
     ...transactionData,
   }
 
-  metrics.increment('dcl_sent_transactions_biconomy', {
-    contract: transactionData.params[0],
-  })
-
   const result = await fetch(biconomyAPIURL, {
     headers: {
       'x-api-key': biconomyAPIKey,
@@ -44,13 +40,34 @@ export async function sendMetaTransaction(
   })
 
   if (!result.ok) {
+    const errorMessage = await result.text()
+    const errorPayload = {
+      contract: transactionData.params[0],
+      data: transactionData.params[1],
+      from: transactionData.from,
+    }
+    if (errorMessage.includes('UNPREDICTABLE_GAS_LIMIT')) {
+      // This error happens when the contract execution will fail
+      metrics.increment(
+        'dcl_error_cannot_estimate_gas_transactions_biconomy',
+        errorPayload
+      )
+    } else {
+      // Any other error is related to the Biconomy API
+      metrics.increment('dcl_error_relay_transactions_biconomy', errorPayload)
+    }
+
     throw new MetaTransactionError(
-      `An error occurred trying to send the meta transaction. Response: ${await result.text()}.
+      `An error occurred trying to send the meta transaction. Response: ${errorMessage}.
         ${result.statusText}`
     )
   }
 
   const data: MetaTransactionResponse = await result.json()
+
+  metrics.increment('dcl_sent_transactions_biconomy', {
+    contract: transactionData.params[0],
+  })
 
   return data.txHash!
 }
