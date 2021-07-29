@@ -47,7 +47,7 @@ export async function sendMetaTransaction(
       from: transactionData.from,
     }
     if (errorMessage.includes('UNPREDICTABLE_GAS_LIMIT')) {
-      // This error happens when the contract execution will fail
+      // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/4bf7f6841b3a9d5933d325157acb0f190f9b574c/ERRORS.md
       metrics.increment(
         'dcl_error_cannot_estimate_gas_transactions_biconomy',
         errorPayload
