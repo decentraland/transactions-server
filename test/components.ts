@@ -2,20 +2,17 @@ import { createDotEnvConfigComponent } from '@well-known-components/env-config-p
 import {
   createServerComponent,
   createStatusCheckComponent,
-  IFetchComponent,
 } from '@well-known-components/http-server'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
 import { metricDeclarations } from '../src/metrics'
 import { createDatabaseComponent } from '../src/ports/database/component'
 import {
-  createFetchComponent,
   createTestFetchComponent,
 } from '../src/ports/fetcher'
-import { AppComponents, GlobalContext, TestComponents } from '../src/types'
+import { GlobalContext, TestComponents } from '../src/types'
 import { main } from '../src/service'
 import { createRunner } from '@well-known-components/test-helpers'
-import { RequestInfo, RequestInit } from 'node-fetch'
 
 // start TCP port for listeners
 let lastUsedPort = 19000 + parseInt(process.env.JEST_WORKER_ID || '1') * 1000

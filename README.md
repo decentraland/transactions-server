@@ -2,6 +2,10 @@
 
 Server to relay meta-transactions.
 
+## Set up
+
+You'll need to check the `.env.example` file and create your own `.env` file. Some properties have defaults. Once you're done, you can run the project!
+
 # Run the project
 
 The server's only dependency is sqlite3 which needs to be initialized first.
@@ -9,13 +13,8 @@ The server's only dependency is sqlite3 which needs to be initialized first.
 ```bash
 npm install
 npm run migrate
-```
-
-After that you'll need to up check the `.env.example` file and create your own `.env` file. Some properties have defaults. Once you're done, you can run the project!
-
-```bash
 npm start # runs npm run build behind the scenes
-
+# or
 npm run start:watch # will watch for changes
 ```
 
@@ -32,3 +31,9 @@ You can also check this [`Playground`](https://web3playground.io/Qmd2WcPpBwM3NqB
 ### GET /transactions/:userAddress
 
 Returns the transactions an address relayed
+
+# Test
+
+```bash
+npm run test
+```
