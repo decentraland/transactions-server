@@ -39,22 +39,21 @@ export async function sendMetaTransaction(
     method: 'POST',
   })
 
+  const metricPayload = {
+    contract: transactionData.params[0],
+  }
+
   if (!result.ok) {
     const errorMessage = await result.text()
-    const errorPayload = {
-      contract: transactionData.params[0],
-      data: transactionData.params[1],
-      from: transactionData.from,
-    }
     if (errorMessage.includes('UNPREDICTABLE_GAS_LIMIT')) {
       // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/2e5d833f672a87a7acf0ff761f986421676c4ec9/ERRORS.md
       metrics.increment(
         'dcl_error_cannot_estimate_gas_transactions_biconomy',
-        errorPayload
+        metricPayload
       )
     } else {
       // Any other error is related to the Biconomy API
-      metrics.increment('dcl_error_relay_transactions_biconomy', errorPayload)
+      metrics.increment('dcl_error_relay_transactions_biconomy', metricPayload)
     }
 
     throw new MetaTransactionError(
@@ -65,9 +64,7 @@ export async function sendMetaTransaction(
 
   const data: MetaTransactionResponse = await result.json()
 
-  metrics.increment('dcl_sent_transactions_biconomy', {
-    contract: transactionData.params[0],
-  })
+  metrics.increment('dcl_sent_transactions_biconomy', metricPayload)
 
   return data.txHash!
 }

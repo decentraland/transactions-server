@@ -67,9 +67,7 @@ test('biconomy flow test 1', function ({ components, stubComponents }) {
 
     expect(
       metrics.increment.calledOnceWith('dcl_error_relay_transactions_biconomy', {
-        contract: tx.params[0],
-        data: tx.params[1],
-        from: tx.from
+        contract: tx.params[0]
       })
     ).toEqual(true)
   })
@@ -92,9 +90,7 @@ test('biconomy flow test 1', function ({ components, stubComponents }) {
 
     expect(
       metrics.increment.calledOnceWith('dcl_error_cannot_estimate_gas_transactions_biconomy', {
-        contract: tx.params[0],
-        data: tx.params[1],
-        from: tx.from
+        contract: tx.params[0]
       })
     ).toEqual(true)
   })
