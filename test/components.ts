@@ -7,9 +7,8 @@ import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
 import { metricDeclarations } from '../src/metrics'
 import { createDatabaseComponent } from '../src/ports/database/component'
-import {
-  createTestFetchComponent,
-} from '../src/ports/fetcher'
+import { createSubgraphComponent } from '../src/ports/subgraph/component'
+import { createTestFetchComponent } from '../src/ports/fetcher'
 import { GlobalContext, TestComponents } from '../src/types'
 import { main } from '../src/service'
 import { createRunner } from '@well-known-components/test-helpers'
@@ -60,6 +59,10 @@ export async function initComponents(): Promise<TestComponents> {
     { logs },
     { filename: 'database.db' }
   )
+
+  const collectionsSubgraph = createSubgraphComponent(
+    await config.requireString('COLLECTIONS_SUBGRAPH_URL')
+  )
   const statusChecks = await createStatusCheckComponent({ server })
   const fetcher = await createTestFetchComponent({
     localhost: protocolHostAndProtocol,
@@ -79,6 +82,7 @@ export async function initComponents(): Promise<TestComponents> {
     metrics,
     server,
     database,
+    collectionsSubgraph,
     statusChecks,
   }
 }

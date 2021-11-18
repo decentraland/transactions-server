@@ -3,9 +3,12 @@ import { AppComponents, Context } from '../types'
 import { checkTransactionData, validateTrasactionSchema } from './transaction'
 
 export function createTransactionMiddleware(
-  components: Pick<AppComponents, 'logs' | 'config' | 'database'>
+  components: Pick<
+    AppComponents,
+    'logs' | 'config' | 'fetcher' | 'collectionsSubgraph' | 'database'
+  >
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
-  const { logs, config, database } = components
+  const { logs } = components
   const logger = logs.getLogger('transaction-wrapper')
 
   return async (context, next) => {
@@ -29,7 +32,7 @@ export function createTransactionMiddleware(
             )}`
           )
         }
-        await checkTransactionData({ config, database }, transactionData)
+        await checkTransactionData(components, transactionData)
       } catch (error) {
         throw new Error(
           `The transaction data is invalid. Check the body of the request.\nError: ${error.message}`

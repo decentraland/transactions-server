@@ -8,6 +8,7 @@ import type {
 } from '@well-known-components/interfaces'
 import { metricDeclarations } from './metrics'
 import { IDatabaseComponent } from './ports/database/types'
+import { ISubgraphComponent } from './ports/subgraph/types'
 import { ITestFetchComponent } from './ports/fetcher'
 
 export type GlobalContext = {
@@ -22,6 +23,7 @@ export type BaseComponents = {
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
   database: IDatabaseComponent
   server: IHttpServerComponent<GlobalContext>
+  collectionsSubgraph: ISubgraphComponent
   statusChecks: IBaseComponent
 }
 

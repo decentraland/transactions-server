@@ -9,6 +9,7 @@ import {
   transactionSchema,
 } from '../types/transaction'
 import { AppComponents } from '../types'
+import { isValidContractAddress } from './contracts'
 import { generateValidator } from './validation'
 
 export async function sendMetaTransaction(
@@ -101,15 +102,22 @@ export async function getByUserAddress(
 }
 
 export async function checkTransactionData(
-  components: Pick<AppComponents, 'config' | 'database'>,
+  components: Pick<
+    AppComponents,
+    'config' | 'fetcher' | 'collectionsSubgraph' | 'database'
+  >,
   transactionData: TransactionData
 ) {
-  const { config, database } = components
+  const {
+    config,
+    fetcher: { fetch },
+    database,
+  } = components
 
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
   )
-  const { from } = transactionData
+  const { params, from } = transactionData
 
   const todayAddressTransactions = await database.query<{ count: number }>(
     SQL`SELECT COUNT (*) as count
@@ -118,9 +126,28 @@ export async function checkTransactionData(
           AND createdAt >= date('now', 'start of day')`
   )
 
-  const result = todayAddressTransactions.rows[0]
-  if (result.count >= maxTransactionsPerDay) {
+  const dbResult = todayAddressTransactions.rows[0]
+  if (dbResult.count >= maxTransactionsPerDay) {
     throw new Error(`Max amount of transactions reached for address ${from}`)
+  }
+
+  const contractAddressesURL = await config.requireString(
+    'CONTRACT_ADDRESSES_URL'
+  )
+  const remoteResult = await fetch(contractAddressesURL, {
+    headers: { 'content-type': 'application/json' },
+    method: 'GET',
+  })
+
+  if (!remoteResult.ok) {
+    throw new Error(
+      `Could not get the whitelisted addresses from ${contractAddressesURL}`
+    )
+  }
+
+  const contractAddress = params[0]
+  if (!(await isValidContractAddress(components, contractAddress))) {
+    throw new Error(`Invalid contract address "${contractAddress}"`)
   }
 }
 

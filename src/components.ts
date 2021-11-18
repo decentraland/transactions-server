@@ -8,6 +8,7 @@ import { createMetricsComponent } from '@well-known-components/metrics'
 import { metricDeclarations } from './metrics'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
+import { createSubgraphComponent } from './ports/subgraph/component'
 import { AppComponents, GlobalContext } from './types'
 
 export async function initComponents(): Promise<AppComponents> {
@@ -31,6 +32,10 @@ export async function initComponents(): Promise<AppComponents> {
     { logs },
     { filename: 'database.db' }
   )
+
+  const collectionsSubgraph = createSubgraphComponent(
+    await config.requireString('COLLECTIONS_SUBGRAPH_URL')
+  )
   const statusChecks = await createStatusCheckComponent({ server })
   const fetcher = await createFetchComponent()
   const metrics = await createMetricsComponent(metricDeclarations, {
@@ -48,6 +53,7 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     database,
+    collectionsSubgraph,
     statusChecks,
   }
 }
