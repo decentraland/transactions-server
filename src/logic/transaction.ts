@@ -108,11 +108,7 @@ export async function checkTransactionData(
   >,
   transactionData: TransactionData
 ) {
-  const {
-    config,
-    fetcher: { fetch },
-    database,
-  } = components
+  const { config, database } = components
 
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'

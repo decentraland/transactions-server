@@ -1,3 +1,3 @@
-import { Network } from '@dcl/schemas'
+import { ChainName } from '@dcl/schemas'
 
-export type ContractsResponse = Record<Network, string>
+export type ContractsResponse = Record<ChainName, string>

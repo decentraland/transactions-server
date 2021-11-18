@@ -28,6 +28,23 @@ export = async function main() {
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
       { name: 'MAX_TRANSACTIONS_PER_DAY', value: '1000' },
+
+      {
+        name: 'CONTRACT_ADDRESSES_URL',
+        value: 'https://contracts.decentraland.org/addresses.json',
+      },
+      {
+        name: 'COLLECTIONS_SUBGRAPH_URL',
+        value:
+          env === 'prd' || env === 'stg'
+            ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mainnet'
+            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mumbai',
+      },
+      {
+        name: 'COLLECTIONS_CHAIN_ID',
+        value: env === 'prd' || env === 'stg' ? '137' : '80001',
+      },
+
       {
         name: 'BICONOMY_API_URL',
         value: 'https://api.biconomy.io/api/v2/meta-tx/native',

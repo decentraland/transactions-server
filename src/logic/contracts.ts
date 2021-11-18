@@ -1,4 +1,4 @@
-import { Network } from '@dcl/schemas'
+import { ChainId, ChainName, getChainName } from '@dcl/schemas'
 import { AppComponents } from '../types'
 import { ContractsResponse } from '../types/contracts'
 
@@ -32,7 +32,7 @@ async function isWhitelisted(
   const contractAddressesURL = await config.requireString(
     'CONTRACT_ADDRESSES_URL'
   )
-  const network = await getNetwork(components)
+  const chainName = await getCollectionChainName(components)
 
   const remoteResult = await fetch(contractAddressesURL, {
     headers: { 'content-type': 'application/json' },
@@ -47,7 +47,7 @@ async function isWhitelisted(
 
   const contractAddresses: ContractsResponse = await remoteResult.json()
 
-  const whitelistedAddresses = Object.values(contractAddresses[network]).map(
+  const whitelistedAddresses = Object.values(contractAddresses[chainName]).map(
     (contractAddress) => contractAddress.toLowerCase()
   )
 
@@ -69,16 +69,16 @@ async function isCollectionAddress(
   )
 }
 
-async function getNetwork(
+async function getCollectionChainName(
   components: Pick<AppComponents, 'config'>
-): Promise<Network> {
+): Promise<ChainName> {
   const { config } = components
 
-  const network = await config.requireString('NETWORK')
+  const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
 
-  if (!Network.validate(network)) {
-    throw new Error(`Invalid network ${network}`)
+  if (!ChainId.validate(chainId)) {
+    throw new Error(`Invalid chainId ${chainId}`)
   }
 
-  return network
+  return getChainName(chainId)!
 }
