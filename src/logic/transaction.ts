@@ -131,20 +131,6 @@ export async function checkTransactionData(
     throw new Error(`Max amount of transactions reached for address ${from}`)
   }
 
-  const contractAddressesURL = await config.requireString(
-    'CONTRACT_ADDRESSES_URL'
-  )
-  const remoteResult = await fetch(contractAddressesURL, {
-    headers: { 'content-type': 'application/json' },
-    method: 'GET',
-  })
-
-  if (!remoteResult.ok) {
-    throw new Error(
-      `Could not get the whitelisted addresses from ${contractAddressesURL}`
-    )
-  }
-
   const contractAddress = params[0]
   if (!(await isValidContractAddress(components, contractAddress))) {
     throw new Error(`Invalid contract address "${contractAddress}"`)
