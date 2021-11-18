@@ -28,7 +28,6 @@ export = async function main() {
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
       { name: 'MAX_TRANSACTIONS_PER_DAY', value: '1000' },
-
       {
         name: 'CONTRACT_ADDRESSES_URL',
         value: 'https://contracts.decentraland.org/addresses.json',
@@ -44,7 +43,6 @@ export = async function main() {
         name: 'COLLECTIONS_CHAIN_ID',
         value: env === 'prd' || env === 'stg' ? '137' : '80001',
       },
-
       {
         name: 'BICONOMY_API_URL',
         value: 'https://api.biconomy.io/api/v2/meta-tx/native',
