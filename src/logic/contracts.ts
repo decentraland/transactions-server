@@ -2,9 +2,9 @@ import { ChainId, ChainName, getChainName } from '@dcl/schemas'
 import { AppComponents } from '../types'
 import { ContractsResponse } from '../types/contracts'
 
-const getCollectionsQuery = `
-  query getCollections {
-    collections(first: 1000) {
+const getCollectionQuery = `
+  query getCollection($id: String!) {
+    collections(where: { id: $id }) {
       id
     }
   }
@@ -15,9 +15,22 @@ export async function isValidContractAddress(
   address: string
 ): Promise<boolean> {
   return (
-    (await isWhitelisted(components, address)) ||
-    (await isCollectionAddress(components, address))
+    (await isCollectionAddress(components, address)) ||
+    (await isWhitelisted(components, address))
   )
+}
+
+async function isCollectionAddress(
+  components: Pick<AppComponents, 'config' | 'collectionsSubgraph'>,
+  address: string
+): Promise<boolean> {
+  const { collectionsSubgraph } = components
+
+  const { collections } = await collectionsSubgraph.query<{
+    collections: { id: string }[]
+  }>(getCollectionQuery, { id: address })
+
+  return collections.length >= 1
 }
 
 async function isWhitelisted(
@@ -52,21 +65,6 @@ async function isWhitelisted(
   )
 
   return whitelistedAddresses.includes(address.toLowerCase())
-}
-
-async function isCollectionAddress(
-  components: Pick<AppComponents, 'config' | 'collectionsSubgraph'>,
-  address: string
-): Promise<boolean> {
-  const { collectionsSubgraph } = components
-
-  const { collections } = await collectionsSubgraph.query<{
-    collections: { id: string; name: string }[]
-  }>(getCollectionsQuery)
-
-  return collections.some(
-    ({ id: collectionAddress }) => collectionAddress === address.toLowerCase()
-  )
 }
 
 async function getCollectionChainName(
