@@ -104,7 +104,7 @@ export async function getByUserAddress(
 export async function checkTransactionData(
   components: Pick<
     AppComponents,
-    'config' | 'fetcher' | 'collectionsSubgraph' | 'database'
+    'config' | 'contracts' | 'collectionsSubgraph' | 'database'
   >,
   transactionData: TransactionData
 ) {

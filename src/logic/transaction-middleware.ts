@@ -5,7 +5,7 @@ import { checkTransactionData, validateTrasactionSchema } from './transaction'
 export function createTransactionMiddleware(
   components: Pick<
     AppComponents,
-    'logs' | 'config' | 'fetcher' | 'collectionsSubgraph' | 'database'
+    'logs' | 'config' | 'contracts' | 'collectionsSubgraph' | 'database'
   >
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
   const { logs } = components

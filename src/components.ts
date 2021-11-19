@@ -5,10 +5,11 @@ import {
 } from '@well-known-components/http-server'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
-import { metricDeclarations } from './metrics'
+import { createContractComponent } from './ports/contracts/component'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
 import { createSubgraphComponent } from './ports/subgraph/component'
+import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
 
 export async function initComponents(): Promise<AppComponents> {
@@ -32,7 +33,6 @@ export async function initComponents(): Promise<AppComponents> {
     { logs },
     { filename: 'database.db' }
   )
-
   const collectionsSubgraph = createSubgraphComponent(
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')
   )
@@ -42,6 +42,7 @@ export async function initComponents(): Promise<AppComponents> {
     server,
     config,
   })
+  const contracts = createContractComponent({ config, logs, fetcher })
 
   const globalLogger = logs.getLogger('transactions-server')
 
@@ -53,6 +54,7 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     database,
+    contracts,
     collectionsSubgraph,
     statusChecks,
   }
