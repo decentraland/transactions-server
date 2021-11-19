@@ -4,7 +4,7 @@ import { ContractsResponse } from '../types/contracts'
 
 const getCollectionQuery = `
   query getCollection($id: String!) {
-    collections(where: { id: $id }) {
+    collections(where: { id: $id }, first: 1) {
       id
     }
   }
