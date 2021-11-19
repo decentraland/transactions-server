@@ -80,5 +80,6 @@ async function getCollectionChainName(
     throw new Error(`Invalid chainId ${chainId}`)
   }
 
-  return getChainName(chainId)!
+  const chainName = getChainName(chainId)!
+  return chainName.toLowerCase() as ChainName
 }
