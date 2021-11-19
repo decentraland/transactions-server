@@ -14,10 +14,11 @@ export async function isValidContractAddress(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'collectionsSubgraph'>,
   address: string
 ): Promise<boolean> {
-  return (
-    (await isCollectionAddress(components, address)) ||
-    (await isWhitelisted(components, address))
-  )
+  const validations = await Promise.all([
+    isCollectionAddress(components, address),
+    isWhitelisted(components, address),
+  ])
+  return validations.every((isValid) => isValid)
 }
 
 async function isCollectionAddress(
