@@ -5,7 +5,7 @@ import { IContractsComponent, ContractsResponse } from './types'
 let whitelistedAddresses: string[] = []
 let lastFetch: number = Date.now()
 
-export function createContractComponent(
+export function createContractsComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'logs'>
 ): IContractsComponent {
   const {

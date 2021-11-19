@@ -5,7 +5,7 @@ import {
 } from '@well-known-components/http-server'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
-import { createContractComponent } from './ports/contracts/component'
+import { createContractsComponent } from './ports/contracts/component'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
 import { createSubgraphComponent } from './ports/subgraph/component'
@@ -42,7 +42,7 @@ export async function initComponents(): Promise<AppComponents> {
     server,
     config,
   })
-  const contracts = createContractComponent({ config, logs, fetcher })
+  const contracts = createContractsComponent({ config, logs, fetcher })
 
   const globalLogger = logs.getLogger('transactions-server')
 
