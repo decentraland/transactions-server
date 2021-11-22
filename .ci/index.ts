@@ -44,6 +44,10 @@ export = async function main() {
         value: env === 'prd' || env === 'stg' ? '137' : '80001',
       },
       {
+        name: 'COLLECTIONS_FETCH_INTERVAL_MS',
+        value: '3600000',
+      },
+      {
         name: 'BICONOMY_API_URL',
         value: 'https://api.biconomy.io/api/v2/meta-tx/native',
       },

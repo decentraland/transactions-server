@@ -18,7 +18,14 @@ export function createContractsComponent(
 
   // Methods
   async function isWhitelisted(address: string): Promise<boolean> {
-    if (whitelistedAddresses.length === 0 || isOlderThanAnHour(lastFetch)) {
+    const collectionsFetchInterval = await config.requireNumber(
+      'COLLECTIONS_FETCH_INTERVAL_MS'
+    )
+
+    if (
+      whitelistedAddresses.length === 0 ||
+      isOlderThan(lastFetch, collectionsFetchInterval)
+    ) {
       const contractAddressesURL = await config.requireString(
         'CONTRACT_ADDRESSES_URL'
       )
@@ -65,6 +72,6 @@ async function getCollectionChainName(chainId: ChainId): Promise<ChainName> {
   return chainName.toLowerCase() as ChainName
 }
 
-function isOlderThanAnHour(timestamp: number) {
-  return Date.now() - timestamp > 3600000 // an hour in ms
+function isOlderThan(timestamp: number, intervalInMs: number) {
+  return Date.now() - timestamp > intervalInMs
 }
