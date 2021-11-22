@@ -55,7 +55,7 @@ export function createContractsComponent(
       lastFetch = Date.now()
     }
 
-    return whitelistedAddresses.includes(address.toLowerCase())
+    return whitelistedAddresses.includes(address)
   }
 
   return {

@@ -8,6 +8,8 @@ const getCollectionQuery = `
   }
 `
 
+const collectionAddresses: string[] = []
+
 export async function isValidContractAddress(
   components: Pick<
     AppComponents,
@@ -17,8 +19,8 @@ export async function isValidContractAddress(
 ): Promise<boolean> {
   const { contracts } = components
   const validations = await Promise.all([
-    isCollectionAddress(components, address),
-    contracts.isWhitelisted(address),
+    isCollectionAddress(components, address.toLowerCase()),
+    contracts.isWhitelisted(address.toLowerCase()),
   ])
   return validations.some((isValid) => isValid)
 }
@@ -27,11 +29,20 @@ async function isCollectionAddress(
   components: Pick<AppComponents, 'config' | 'collectionsSubgraph'>,
   address: string
 ): Promise<boolean> {
+  if (collectionAddresses.includes(address)) {
+    return true
+  }
+
   const { collectionsSubgraph } = components
 
   const { collections } = await collectionsSubgraph.query<{
     collections: { id: string }[]
   }>(getCollectionQuery, { id: address })
 
-  return collections.length >= 1
+  if (collections.length >= 1) {
+    collectionAddresses.push(collections[0].id)
+    return true
+  }
+
+  return false
 }
