@@ -1,10 +1,10 @@
-import { test } from '../components'
 import { Response } from 'node-fetch'
-import { sendMetaTransaction } from '../../src/logic/transaction'
+import { test } from '../../components'
+import { sendMetaTransaction } from '../../../src/logic/transaction'
 import {
   MetaTransactionResponse,
   TransactionData,
-} from '../../src/types/transaction'
+} from '../../../src/types/transaction'
 
 test('biconomy flow test 1', function ({ components, stubComponents }) {
   it('sanity test', async () => {
@@ -66,9 +66,12 @@ test('biconomy flow test 1', function ({ components, stubComponents }) {
     ).rejects.toThrow(/An error occurred trying to send the meta transaction/)
 
     expect(
-      metrics.increment.calledOnceWith('dcl_error_relay_transactions_biconomy', {
-        contract: tx.params[0]
-      })
+      metrics.increment.calledOnceWith(
+        'dcl_error_relay_transactions_biconomy',
+        {
+          contract: tx.params[0],
+        }
+      )
     ).toEqual(true)
   })
 
@@ -82,16 +85,23 @@ test('biconomy flow test 1', function ({ components, stubComponents }) {
 
     fetcher.fetch
       .withArgs(url)
-      .returns(Promise.resolve(new Response('code=UNPREDICTABLE_GAS_LIMIT', { status: 503 })))
+      .returns(
+        Promise.resolve(
+          new Response('code=UNPREDICTABLE_GAS_LIMIT', { status: 503 })
+        )
+      )
 
     await expect(() =>
       sendMetaTransaction({ metrics, fetcher, config }, tx)
     ).rejects.toThrow(/An error occurred trying to send the meta transaction/)
 
     expect(
-      metrics.increment.calledOnceWith('dcl_error_cannot_estimate_gas_transactions_biconomy', {
-        contract: tx.params[0]
-      })
+      metrics.increment.calledOnceWith(
+        'dcl_error_cannot_estimate_gas_transactions_biconomy',
+        {
+          contract: tx.params[0],
+        }
+      )
     ).toEqual(true)
   })
 })

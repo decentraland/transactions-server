@@ -38,7 +38,7 @@ export async function initComponents(): Promise<TestComponents> {
 
   // default config from process.env + .env file
   const config = await createDotEnvConfigComponent(
-    { path: ['.env.defaults', '.env'] },
+    { path: ['.env.spec'] },
     process.env
   )
 
@@ -68,7 +68,12 @@ export async function initComponents(): Promise<TestComponents> {
   const fetcher = await createTestFetchComponent({
     localhost: protocolHostAndProtocol,
   })
-  const contracts = createContractsComponent({ fetcher, config, logs })
+  const contracts = createContractsComponent({
+    config,
+    logs,
+    fetcher,
+    collectionsSubgraph,
+  })
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
     config,

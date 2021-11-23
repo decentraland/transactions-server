@@ -9,7 +9,6 @@ import {
   transactionSchema,
 } from '../types/transaction'
 import { AppComponents } from '../types'
-import { isValidContractAddress } from './contracts'
 import { generateValidator } from './validation'
 
 export async function sendMetaTransaction(
@@ -102,13 +101,10 @@ export async function getByUserAddress(
 }
 
 export async function checkTransactionData(
-  components: Pick<
-    AppComponents,
-    'config' | 'contracts' | 'collectionsSubgraph' | 'database'
-  >,
+  components: Pick<AppComponents, 'config' | 'contracts' | 'database'>,
   transactionData: TransactionData
 ) {
-  const { config, database } = components
+  const { config, contracts, database } = components
 
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
@@ -128,7 +124,7 @@ export async function checkTransactionData(
   }
 
   const contractAddress = params[0]
-  if (!(await isValidContractAddress(components, contractAddress))) {
+  if (!(await contracts.isValidContractAddress(contractAddress))) {
     throw new Error(`Invalid contract address "${contractAddress}"`)
   }
 }

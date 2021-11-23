@@ -42,7 +42,12 @@ export async function initComponents(): Promise<AppComponents> {
     server,
     config,
   })
-  const contracts = createContractsComponent({ config, logs, fetcher })
+  const contracts = createContractsComponent({
+    config,
+    logs,
+    fetcher,
+    collectionsSubgraph,
+  })
 
   const globalLogger = logs.getLogger('transactions-server')
 
