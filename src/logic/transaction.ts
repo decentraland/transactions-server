@@ -101,15 +101,15 @@ export async function getByUserAddress(
 }
 
 export async function checkTransactionData(
-  components: Pick<AppComponents, 'config' | 'database'>,
+  components: Pick<AppComponents, 'config' | 'contracts' | 'database'>,
   transactionData: TransactionData
 ) {
-  const { config, database } = components
+  const { config, contracts, database } = components
 
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
   )
-  const { from } = transactionData
+  const { params, from } = transactionData
 
   const todayAddressTransactions = await database.query<{ count: number }>(
     SQL`SELECT COUNT (*) as count
@@ -118,9 +118,14 @@ export async function checkTransactionData(
           AND createdAt >= date('now', 'start of day')`
   )
 
-  const result = todayAddressTransactions.rows[0]
-  if (result.count >= maxTransactionsPerDay) {
+  const dbResult = todayAddressTransactions.rows[0]
+  if (dbResult.count >= maxTransactionsPerDay) {
     throw new Error(`Max amount of transactions reached for address ${from}`)
+  }
+
+  const contractAddress = params[0]
+  if (!(await contracts.isValidContractAddress(contractAddress))) {
+    throw new Error(`Invalid contract address "${contractAddress}"`)
   }
 }
 

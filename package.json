@@ -12,7 +12,8 @@
     "debug": "npm run build && node --inspect --abort-on-uncaught-exception --unhandled-rejections=strict dist/index.js",
     "start:watch": "nodemon src/index.ts",
     "migrate": "ts-node migrations/index.ts",
-    "test": "jest --forceExit --detectOpenHandles --coverage --verbose"
+    "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
+    "test:watch": "jest --watch --verbose"
   },
   "keywords": [
     "decentraland"
@@ -25,6 +26,7 @@
     "printWidth": 80
   },
   "dependencies": {
+    "@dcl/schemas": "^2.2.1",
     "@types/sqlite3": "^3.1.7",
     "@well-known-components/env-config-provider": "^1.1.1",
     "@well-known-components/http-server": "^1.0.0",
@@ -40,10 +42,12 @@
     "typescript": "^4.3.4"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.3",
     "@well-known-components/test-helpers": "^1.2.0",
     "dcl-tslint-config-standard": "^2.0.0",
     "expect": "^26.6.2",
     "fetch-mock": "^9.11.0",
+    "jest": "^26.6.3",
     "nodemon": "^2.0.9",
     "prettier": "^2.3.2",
     "tslint": "^6.1.3",

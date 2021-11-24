@@ -5,14 +5,14 @@ import {
 } from '@well-known-components/http-server'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
+import { createRunner } from '@well-known-components/test-helpers'
 import { metricDeclarations } from '../src/metrics'
 import { createDatabaseComponent } from '../src/ports/database/component'
-import {
-  createTestFetchComponent,
-} from '../src/ports/fetcher'
+import { createContractsComponent } from '../src/ports/contracts/component'
+import { createSubgraphComponent } from '../src/ports/subgraph/component'
+import { createTestFetchComponent } from '../src/ports/fetcher'
 import { GlobalContext, TestComponents } from '../src/types'
 import { main } from '../src/service'
-import { createRunner } from '@well-known-components/test-helpers'
 
 // start TCP port for listeners
 let lastUsedPort = 19000 + parseInt(process.env.JEST_WORKER_ID || '1') * 1000
@@ -38,7 +38,7 @@ export async function initComponents(): Promise<TestComponents> {
 
   // default config from process.env + .env file
   const config = await createDotEnvConfigComponent(
-    { path: ['.env.defaults', '.env'] },
+    { path: ['.env.spec'] },
     process.env
   )
 
@@ -60,9 +60,19 @@ export async function initComponents(): Promise<TestComponents> {
     { logs },
     { filename: 'database.db' }
   )
+
+  const collectionsSubgraph = createSubgraphComponent(
+    await config.requireString('COLLECTIONS_SUBGRAPH_URL')
+  )
   const statusChecks = await createStatusCheckComponent({ server })
   const fetcher = await createTestFetchComponent({
     localhost: protocolHostAndProtocol,
+  })
+  const contracts = createContractsComponent({
+    config,
+    logs,
+    fetcher,
+    collectionsSubgraph,
   })
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
@@ -79,6 +89,8 @@ export async function initComponents(): Promise<TestComponents> {
     metrics,
     server,
     database,
+    contracts,
+    collectionsSubgraph,
     statusChecks,
   }
 }
