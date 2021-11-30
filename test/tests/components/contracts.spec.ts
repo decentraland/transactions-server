@@ -185,7 +185,7 @@ test('contracts component', function ({ components, stubComponents }) {
 
         const url = 'https://contracts.decentraland.org/addresses.json'
         const body = JSON.stringify({
-          [ChainName.MATIC_MAINNET.toLowerCase()]: {
+          matic: {
             SomeContract: address,
           },
         })

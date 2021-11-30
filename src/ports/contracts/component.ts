@@ -23,8 +23,6 @@ export function createContractsComponent(
     logs,
   } = components
 
-  const logger = logs.getLogger('contract-component')
-
   // Methods
   async function isValidContractAddress(address: string): Promise<boolean> {
     const validations = await Promise.all([
@@ -47,11 +45,7 @@ export function createContractsComponent(
         'CONTRACT_ADDRESSES_URL'
       )
       const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
-      const chainName = await getCollectionChainName(chainId)
-
-      logger.log(
-        `Fetching whitelisted contract addresses from ${contractAddressesURL} for chain ${chainName}`
-      )
+      const chainName = await getRemoteContractURLChainName(chainId)
 
       const remoteResult = await fetch(contractAddressesURL, {
         headers: { 'content-type': 'application/json' },
@@ -66,9 +60,9 @@ export function createContractsComponent(
 
       const contractAddresses: ContractsResponse = await remoteResult.json()
 
-      whitelistedAddresses = Object.values(contractAddresses[chainName]).map(
-        (contractAddress) => contractAddress.toLowerCase()
-      )
+      whitelistedAddresses = Object.values(
+        contractAddresses[chainName.toLowerCase()]
+      ).map((contractAddress) => contractAddress.toLowerCase())
       lastFetch = Date.now()
     }
 
@@ -117,13 +111,25 @@ export function createContractsComponent(
   return component
 }
 
+async function getRemoteContractURLChainName(
+  chainId: ChainId
+): Promise<string> {
+  let chainName = await getCollectionChainName(chainId)
+
+  // The collections json we're dealing with, has `polygon` as a name for matic mainnet and names as lowercase,
+  // so we need to account for those here
+  if (chainName === ChainName.MATIC_MAINNET) {
+    chainName = 'matic' as ChainName
+  }
+  return chainName.toLowerCase()
+}
+
 async function getCollectionChainName(chainId: ChainId): Promise<ChainName> {
   if (!ChainId.validate(chainId)) {
     throw new Error(`Invalid chainId ${chainId}`)
   }
 
-  const chainName = getChainName(chainId)!
-  return chainName.toLowerCase() as ChainName
+  return getChainName(chainId)!
 }
 
 function isOlderThan(timestamp: number, intervalInMs: number): boolean {
