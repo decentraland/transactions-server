@@ -11,16 +11,12 @@ let whitelistedAddresses: string[] = []
 let lastFetch: number = Date.now()
 
 export function createContractsComponent(
-  components: Pick<
-    AppComponents,
-    'config' | 'fetcher' | 'collectionsSubgraph' | 'logs'
-  >
+  components: Pick<AppComponents, 'config' | 'fetcher' | 'collectionsSubgraph'>
 ): IContractsComponent {
   const {
     config,
     collectionsSubgraph,
     fetcher: { fetch },
-    logs,
   } = components
 
   // Methods

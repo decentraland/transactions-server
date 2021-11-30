@@ -70,7 +70,6 @@ export async function initComponents(): Promise<TestComponents> {
   })
   const contracts = createContractsComponent({
     config,
-    logs,
     fetcher,
     collectionsSubgraph,
   })
