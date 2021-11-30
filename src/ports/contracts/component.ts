@@ -116,7 +116,7 @@ async function getRemoteContractURLChainName(
 ): Promise<string> {
   let chainName = await getCollectionChainName(chainId)
 
-  // The collections json we're dealing with, has `polygon` as a name for matic mainnet and names as lowercase,
+  // The collections json we're dealing with, has `matic` as a name for matic mainnet instead of `polygon` and names as lowercase,
   // so we need to account for those here
   if (chainName === ChainName.MATIC_MAINNET) {
     chainName = 'matic' as ChainName
