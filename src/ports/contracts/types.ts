@@ -1,5 +1,3 @@
-import { ChainName } from '@dcl/schemas'
-
 export interface IContractsComponent {
   isValidContractAddress(address: string): Promise<boolean>
   isCollectionAddress(address: string): Promise<boolean>
@@ -8,5 +6,5 @@ export interface IContractsComponent {
   clearCache(): void
 }
 
-export type ContractsResponse = Record<ChainName, string>
+export type ContractsResponse = Record<string, string> // Record<ChainName, string>
 export type RemoteCollection = { id: string }

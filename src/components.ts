@@ -44,7 +44,6 @@ export async function initComponents(): Promise<AppComponents> {
   })
   const contracts = createContractsComponent({
     config,
-    logs,
     fetcher,
     collectionsSubgraph,
   })

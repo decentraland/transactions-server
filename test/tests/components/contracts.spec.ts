@@ -19,7 +19,6 @@ test('contracts component', function ({ components, stubComponents }) {
       address = '0xabc123123'
       contracts = createContractsComponent({
         config,
-        logs,
         fetcher,
         collectionsSubgraph,
       })
@@ -100,7 +99,6 @@ test('contracts component', function ({ components, stubComponents }) {
       address = '0xabc123123'
       contracts = createContractsComponent({
         config,
-        logs,
         fetcher,
         collectionsSubgraph,
       })
@@ -155,7 +153,6 @@ test('contracts component', function ({ components, stubComponents }) {
 
         contracts = createContractsComponent({
           config,
-          logs,
           fetcher,
           collectionsSubgraph,
         })
@@ -185,7 +182,7 @@ test('contracts component', function ({ components, stubComponents }) {
 
         const url = 'https://contracts.decentraland.org/addresses.json'
         const body = JSON.stringify({
-          [ChainName.MATIC_MAINNET.toLowerCase()]: {
+          matic: {
             SomeContract: address,
           },
         })
@@ -199,7 +196,6 @@ test('contracts component', function ({ components, stubComponents }) {
 
         contracts = createContractsComponent({
           config,
-          logs,
           fetcher,
           collectionsSubgraph,
         })
