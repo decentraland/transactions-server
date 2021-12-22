@@ -35,10 +35,13 @@ export async function sendTransaction(
   >
 ) {
   const { globalLogger, database } = context.components
+  const id = Date.now()
 
+  globalLogger.info(`Cloning the request for transaction ${id}`)
   const sendTransactionRequest: SendTransactionRequest = await context.request
     .clone()
     .json()
+  globalLogger.info(`Finish cloning the request for transaction ${id}`)
   const { transactionData } = sendTransactionRequest
 
   try {
