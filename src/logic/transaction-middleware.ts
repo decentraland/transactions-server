@@ -16,7 +16,11 @@ export function createTransactionMiddleware(
       logger.debug(
         'Checking the validity of the request before sending the transaction'
       )
+      const id = Date.now()
+
+      logger.info(`Cloning the request when validating the tx ${id}`)
       const { transactionData } = await context.request.clone().json()
+      logger.info(`Finish cloning the request when validating the tx ${id}`)
 
       if (!transactionData) {
         throw new Error(
