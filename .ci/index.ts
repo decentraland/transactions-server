@@ -82,6 +82,7 @@ export = async function main() {
       extraExposedServiceOptions: {
         createCloudflareProxiedSubdomain: true,
       },
+      desiredCount: env === 'prd' ? 3 : 1
     }
   )
 

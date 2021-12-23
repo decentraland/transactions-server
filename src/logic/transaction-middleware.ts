@@ -10,7 +10,6 @@ export function createTransactionMiddleware(
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
   const { logs } = components
   const logger = logs.getLogger('transaction-wrapper')
-
   return async (context, next) => {
     try {
       logger.debug(
@@ -20,7 +19,9 @@ export function createTransactionMiddleware(
 
       logger.info(`Cloning the request when validating the tx ${id}`)
       const { transactionData } = await context.request.clone().json()
-      logger.info(`Finish cloning the request when validating the tx ${id}`)
+      logger.info(
+        `Finish cloning the request when validating the tx ${id} and data: ${transactionData}`
+      )
 
       if (!transactionData) {
         throw new Error(
