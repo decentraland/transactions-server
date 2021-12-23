@@ -41,8 +41,10 @@ export async function sendTransaction(
   const sendTransactionRequest: SendTransactionRequest = await context.request
     .clone()
     .json()
-  globalLogger.info(`Finish cloning the request for transaction ${id}`)
   const { transactionData } = sendTransactionRequest
+  globalLogger.info(
+    `Finish cloning the request for transaction ${id} and data ${transactionData}`
+  )
 
   try {
     globalLogger.info(`Sending transaction ${JSON.stringify(transactionData)}`)
