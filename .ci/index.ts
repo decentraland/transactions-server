@@ -27,6 +27,7 @@ export = async function main() {
       { name: 'SERVER_PORT', value: '5000' },
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
+      { name: 'CHAIN_NAME', value: 'Ethereum Mainnet' },
       { name: 'MAX_TRANSACTIONS_PER_DAY', value: '1000' },
       {
         name: 'CONTRACT_ADDRESSES_URL',
@@ -46,6 +47,10 @@ export = async function main() {
       {
         name: 'COLLECTIONS_FETCH_INTERVAL_MS',
         value: '3600000',
+      },
+      {
+        name: 'MIN_SALE_VALUE',
+        value: '1',
       },
       {
         name: 'BICONOMY_API_URL',
@@ -82,7 +87,7 @@ export = async function main() {
       extraExposedServiceOptions: {
         createCloudflareProxiedSubdomain: true,
       },
-      desiredCount: env === 'prd' ? 3 : 1
+      desiredCount: env === 'prd' ? 3 : 1,
     }
   )
 
