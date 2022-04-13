@@ -1,5 +1,7 @@
-import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
+import { ChainName, ChainId } from '@dcl/schemas'
+import { IDatabase } from '@well-known-components/interfaces'
+import { getContract, ContractName } from 'decentraland-transactions'
 import {
   MetaTransactionErrorCode,
   MetaTransactionRequest,
@@ -10,6 +12,11 @@ import {
 } from '../types/transaction'
 import { AppComponents } from '../types'
 import { generateValidator } from './validation'
+import {
+  decodeFunctionData,
+  getMaticChainIdFromNetwork,
+  weiToFloat,
+} from './ethereum'
 
 export async function sendMetaTransaction(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'metrics'>,
@@ -21,12 +28,12 @@ export async function sendMetaTransaction(
     metrics,
   } = components
 
-  const biconomiAPIId = await config.requireString('BICONOMY_API_ID')
+  const biconomyAPIId = await config.requireString('BICONOMY_API_ID')
   const biconomyAPIKey = await config.requireString('BICONOMY_API_KEY')
   const biconomyAPIURL = await config.requireString('BICONOMY_API_URL')
 
   const body: MetaTransactionRequest = {
-    apiId: biconomiAPIId,
+    apiId: biconomyAPIId,
     ...transactionData,
   }
 
@@ -109,7 +116,7 @@ export async function checkTransactionData(
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
   )
-  const { params, from } = transactionData
+  const { from, params } = transactionData
 
   const todayAddressTransactions = await database.query<{ count: number }>(
     SQL`SELECT COUNT (*) as count
@@ -126,6 +133,67 @@ export async function checkTransactionData(
   const contractAddress = params[0]
   if (!(await contracts.isValidContractAddress(contractAddress))) {
     throw new Error(`Invalid contract address "${contractAddress}"`)
+  }
+
+  const minPrice = await config.requireNumber('MIN_SALE_VALUE')
+  const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
+  const salePrice = getSalePrice(params, getMaticChainIdFromNetwork(chainName))
+  if (salePrice !== null && salePrice <= minPrice) {
+    throw new Error(
+      `The transacation data contains a sale price that's lower that the allowed minimum. Sale: ${salePrice}, Min: ${minPrice}`
+    )
+  }
+}
+
+/**
+ * Tries to get the corresponding sale price for the transaction data sent.
+ * It'll return a number (converted from wei) if the data corresponds to any of the sales we're watching and null otherwise
+ * @param params - Transaction data params
+ */
+function getSalePrice(
+  params: TransactionData['params'],
+  chainId: ChainId
+): number | null {
+  const [contractAddress, fullData] = params
+
+  const store = getContract(ContractName.CollectionStore, chainId)
+  const marketplace = getContract(ContractName.MarketplaceV2, chainId)
+  const bid = getContract(ContractName.BidV2, chainId)
+
+  try {
+    const { functionSignature: data } = decodeFunctionData(
+      store.abi, // Either abi works, we just need one that has the executeMetaTransaction method for the first decode
+      'executeMetaTransaction',
+      fullData
+    )
+
+    switch (contractAddress) {
+      case store.address: {
+        const [[{ prices }]] = decodeFunctionData(store.abi, 'buy', data)
+        const weiPrice = prices[0]
+        return weiToFloat(weiPrice)
+      }
+      case marketplace.address: {
+        const [[{ price: weiPrice }]] = decodeFunctionData(
+          marketplace.abi,
+          'executeOrder',
+          data
+        )
+        return weiToFloat(weiPrice)
+      }
+      case bid.address: {
+        const { _price: weiPrice } = decodeFunctionData(
+          bid.abi,
+          'placeBid(address,uint256,uint256,uint256)',
+          data
+        )
+        return weiToFloat(weiPrice)
+      }
+      default:
+        return null
+    }
+  } catch (error) {
+    return null
   }
 }
 
