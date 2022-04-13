@@ -150,7 +150,7 @@ export async function checkTransactionData(
  * It'll return a number (converted from wei) if the data corresponds to any of the sales we're watching and null otherwise
  * @param params - Transaction data params
  */
-function getSalePrice(
+export function getSalePrice(
   params: TransactionData['params'],
   chainId: ChainId
 ): number | null {
@@ -174,7 +174,7 @@ function getSalePrice(
         return weiToFloat(weiPrice)
       }
       case marketplace.address: {
-        const [[{ price: weiPrice }]] = decodeFunctionData(
+        const { price: weiPrice } = decodeFunctionData(
           marketplace.abi,
           'executeOrder',
           data

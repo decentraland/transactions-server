@@ -6,7 +6,7 @@ import {
   TransactionData,
 } from '../../../src/types/transaction'
 
-test('biconomy flow test 1', function ({ components, stubComponents }) {
+test('biconomy flow test', function ({ components, stubComponents }) {
   it('sanity test', async () => {
     const { config } = components
     const { metrics, fetcher } = stubComponents
