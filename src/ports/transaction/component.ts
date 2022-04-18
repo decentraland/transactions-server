@@ -106,12 +106,10 @@ export function createTransactionComponent(
   }
 
   async function checkData(transactionData: TransactionData): Promise<void> {
-    await Promise.all([
-      checkSchema(components, transactionData),
-      checkSalePrice(components, transactionData),
-      checkContractAddress(components, transactionData),
-      checkQuota(components, transactionData),
-    ])
+    await checkSchema(components, transactionData)
+    await checkSalePrice(components, transactionData)
+    await checkContractAddress(components, transactionData)
+    await checkQuota(components, transactionData)
   }
 
   return {
