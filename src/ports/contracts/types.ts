@@ -1,5 +1,5 @@
 export interface IContractsComponent {
-  isValidContractAddress(address: string): Promise<boolean>
+  isValidAddress(address: string): Promise<boolean>
   isCollectionAddress(address: string): Promise<boolean>
   isWhitelisted(address: string): Promise<boolean>
   getCollectionQuery(): string

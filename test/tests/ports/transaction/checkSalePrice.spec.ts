@@ -1,6 +1,6 @@
 import { ChainId } from '@dcl/schemas'
-import { getSalePrice } from '../../../src/logic/transaction'
-import { TransactionData } from '../../../src/types/transaction'
+import { TransactionData } from '../../../../src/ports/transaction/types'
+import { getSalePrice } from '../../../../src/ports/transaction/validation/checkSalePrice'
 
 describe('getSalePrice', () => {
   describe('when getting the sale price for a store buy', () => {

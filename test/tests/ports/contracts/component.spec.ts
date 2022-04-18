@@ -1,11 +1,10 @@
 import { Response } from 'node-fetch'
-import { ChainName } from '@dcl/schemas'
-import { test } from '../../components'
-import { createContractsComponent } from '../../../src/ports/contracts/component'
+import { test } from '../../../components'
+import { createContractsComponent } from '../../../../src/ports/contracts/component'
 import {
   IContractsComponent,
   RemoteCollection,
-} from '../../../src/ports/contracts/types'
+} from '../../../../src/ports/contracts/types'
 
 test('contracts component', function ({ components, stubComponents }) {
   describe('when checking for a valid contract address', () => {
@@ -36,7 +35,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(true)
+        expect(await contracts.isValidAddress(address)).toBe(true)
       })
     })
 
@@ -47,7 +46,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(true)
+        expect(await contracts.isValidAddress(address)).toBe(true)
       })
     })
 
@@ -60,7 +59,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(true)
+        expect(await contracts.isValidAddress(address)).toBe(true)
       })
     })
 
@@ -73,7 +72,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(false)
+        expect(await contracts.isValidAddress(address)).toBe(false)
       })
     })
   })

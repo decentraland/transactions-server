@@ -1,14 +1,13 @@
 import { Response } from 'node-fetch'
-import { test } from '../../components'
-import { sendMetaTransaction } from '../../../src/logic/transaction'
 import {
   MetaTransactionResponse,
   TransactionData,
-} from '../../../src/types/transaction'
+} from '../../../../src/ports/transaction/types'
+import { test } from '../../../components'
 
 test('biconomy flow test', function ({ components, stubComponents }) {
   it('sanity test', async () => {
-    const { config } = components
+    const { config, transaction } = components
     const { metrics, fetcher } = stubComponents
 
     const tx: TransactionData = { from: '0x1', params: ['1', '2'] }
@@ -25,7 +24,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
       .withArgs(url)
       .returns(Promise.resolve(new Response(JSON.stringify(response))))
 
-    const result = await sendMetaTransaction({ metrics, fetcher, config }, tx)
+    const result = await transaction.sendMetaTransaction(tx)
 
     expect(fetcher.fetch.calledOnce).toEqual(true)
     expect(fetcher.fetch.getCalls()[0].args).toEqual([
@@ -50,7 +49,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
   })
 
   it('bad gateway', async () => {
-    const { config } = components
+    const { config, transaction } = components
     const { metrics, fetcher } = stubComponents
 
     const tx: TransactionData = { from: '0x1', params: ['1', '2'] }
@@ -61,9 +60,9 @@ test('biconomy flow test', function ({ components, stubComponents }) {
       .withArgs(url)
       .returns(Promise.resolve(new Response('<html>', { status: 503 })))
 
-    await expect(() =>
-      sendMetaTransaction({ metrics, fetcher, config }, tx)
-    ).rejects.toThrow(/An error occurred trying to send the meta transaction/)
+    await expect(() => transaction.sendMetaTransaction(tx)).rejects.toThrow(
+      /An error occurred trying to send the meta transaction/
+    )
 
     expect(
       metrics.increment.calledOnceWith(
@@ -76,7 +75,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
   })
 
   it('UNPREDICTABLE_GAS_LIMIT', async () => {
-    const { config } = components
+    const { config, transaction } = components
     const { metrics, fetcher } = stubComponents
 
     const tx: TransactionData = { from: '0x1', params: ['1', '2'] }
@@ -91,9 +90,9 @@ test('biconomy flow test', function ({ components, stubComponents }) {
         )
       )
 
-    await expect(() =>
-      sendMetaTransaction({ metrics, fetcher, config }, tx)
-    ).rejects.toThrow(/An error occurred trying to send the meta transaction/)
+    await expect(() => transaction.sendMetaTransaction(tx)).rejects.toThrow(
+      /An error occurred trying to send the meta transaction/
+    )
 
     expect(
       metrics.increment.calledOnceWith(

@@ -9,6 +9,7 @@ import { createRunner } from '@well-known-components/test-helpers'
 import { metricDeclarations } from '../src/metrics'
 import { createDatabaseComponent } from '../src/ports/database/component'
 import { createContractsComponent } from '../src/ports/contracts/component'
+import { createTransactionComponent } from '../src/ports/transaction/component'
 import { createSubgraphComponent } from '../src/ports/subgraph/component'
 import { createTestFetchComponent } from '../src/ports/fetcher'
 import { GlobalContext, TestComponents } from '../src/types'
@@ -77,6 +78,13 @@ export async function initComponents(): Promise<TestComponents> {
     server,
     config,
   })
+  const transaction = createTransactionComponent({
+    fetcher,
+    config,
+    database,
+    metrics,
+    contracts,
+  })
 
   const globalLogger = logs.getLogger('transactions-server')
 
@@ -87,6 +95,7 @@ export async function initComponents(): Promise<TestComponents> {
     fetcher,
     metrics,
     server,
+    transaction,
     database,
     contracts,
     collectionsSubgraph,

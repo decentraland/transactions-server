@@ -11,6 +11,7 @@ import { IDatabaseComponent } from './ports/database/types'
 import { ISubgraphComponent } from './ports/subgraph/types'
 import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
+import { ITransactionComponent } from './ports/transaction/types'
 
 export type GlobalContext = {
   components: AppComponents
@@ -24,6 +25,7 @@ export type BaseComponents = {
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
   database: IDatabaseComponent
   server: IHttpServerComponent<GlobalContext>
+  transaction: ITransactionComponent
   contracts: IContractsComponent
   collectionsSubgraph: ISubgraphComponent
   statusChecks: IBaseComponent

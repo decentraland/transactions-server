@@ -9,6 +9,7 @@ import { createContractsComponent } from './ports/contracts/component'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
 import { createSubgraphComponent } from './ports/subgraph/component'
+import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
 
@@ -47,6 +48,13 @@ export async function initComponents(): Promise<AppComponents> {
     fetcher,
     collectionsSubgraph,
   })
+  const transaction = createTransactionComponent({
+    config,
+    fetcher,
+    database,
+    contracts,
+    metrics,
+  })
 
   const globalLogger = logs.getLogger('transactions-server')
 
@@ -58,6 +66,7 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     database,
+    transaction,
     contracts,
     collectionsSubgraph,
     statusChecks,
