@@ -51,7 +51,7 @@ export async function sendTransaction(
 
     return {
       status: 200,
-      body: { txHash },
+      body: { ok: true, txHash },
     }
   } catch (error) {
     globalLogger.error(error as Error)
