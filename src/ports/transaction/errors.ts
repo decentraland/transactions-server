@@ -12,7 +12,7 @@ export class MetaTransactionError extends Error {
 export class InvalidSalePriceError extends Error {
   constructor(public minPrice: number, public salePrice: number) {
     super(
-      "The transaction data contains a sale price that's lower that the allowed minimum"
+      "The transaction data contains a sale price that's lower than the allowed minimum"
     )
   }
 }
