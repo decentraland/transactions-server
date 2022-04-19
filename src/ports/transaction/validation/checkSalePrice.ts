@@ -1,9 +1,9 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
+import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
   getMaticChainIdFromNetwork,
-  weiToFloat,
 } from '../../../logic/ethereum'
 import { InvalidSalePriceError } from '../errors'
 import { TransactionData } from '../types'
@@ -16,24 +16,24 @@ export const checkSalePrice: ITransactionValidator = async (
   const { config } = components
   const { params } = transactionData
 
-  const minPrice = await config.requireNumber('MIN_SALE_VALUE')
+  const minPriceInWei = await config.requireString('MIN_SALE_VALUE_IN_WEI')
   const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
   const salePrice = getSalePrice(params, getMaticChainIdFromNetwork(chainName))
 
-  if (salePrice !== null && salePrice <= minPrice) {
-    throw new InvalidSalePriceError(minPrice, salePrice)
+  if (salePrice !== null && BigNumber.from(salePrice).lte(minPriceInWei)) {
+    throw new InvalidSalePriceError(minPriceInWei, salePrice)
   }
 }
 
 /**
  * Tries to get the corresponding sale price for the transaction data sent.
- * It'll return a number (converted from wei) if the data corresponds to any of the sales we're watching and null otherwise
+ * It'll return a string representing the value in wei,if the data corresponds to any of the sales we're watching, and null otherwise
  * @param params - Transaction data params
  */
 export function getSalePrice(
   params: TransactionData['params'],
   chainId: ChainId
-): number | null {
+): string | null {
   const [contractAddress, fullData] = params
 
   const store = getContract(ContractName.CollectionStore, chainId)
@@ -50,24 +50,23 @@ export function getSalePrice(
     switch (contractAddress) {
       case store.address: {
         const [[{ prices }]] = decodeFunctionData(store.abi, 'buy', data)
-        const weiPrice = prices[0]
-        return weiToFloat(weiPrice)
+        return prices[0].toString()
       }
       case marketplace.address: {
-        const { price: weiPrice } = decodeFunctionData(
+        const { price } = decodeFunctionData(
           marketplace.abi,
           'executeOrder',
           data
         )
-        return weiToFloat(weiPrice)
+        return price.toString()
       }
       case bid.address: {
-        const { _price: weiPrice } = decodeFunctionData(
+        const { _price } = decodeFunctionData(
           bid.abi,
           'placeBid(address,uint256,uint256,uint256)',
           data
         )
-        return weiToFloat(weiPrice)
+        return _price.toString()
       }
       default:
         return null

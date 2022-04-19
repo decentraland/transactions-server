@@ -4,16 +4,7 @@ import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
   getMaticChainIdFromNetwork,
-  weiToFloat,
 } from '../../../src/logic/ethereum'
-
-describe('weiToFloat', () => {
-  describe('when parsing a valid big number', () => {
-    it('should return a number for a valid BigNumber wei value', () => {
-      expect(weiToFloat(BigNumber.from('10000000000000000000'))).toBe(10)
-    })
-  })
-})
 
 describe('getMaticChainIdFromNetwork', () => {
   describe('when using a valid chain name', () => {

@@ -15,10 +15,6 @@ export function getMaticChainIdFromNetwork(network: ChainName): ChainId {
   }
 }
 
-export function weiToFloat(weiValue: BigNumber): number {
-  return parseFloat(utils.formatEther(weiValue))
-}
-
 /**
  * Decode the data for a function call, splitting it into the different arguments
  * It thorws if the data, method or abi are incorrect
