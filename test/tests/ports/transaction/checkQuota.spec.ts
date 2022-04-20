@@ -9,9 +9,6 @@ test('checkQuota component', function ({ components }) {
   let transactionData: TransactionData
 
   beforeEach(async () => {
-    const { database } = components
-    await database.query('DELETE FROM transactions')
-
     transactionData = {
       from,
       params: ['', ''],
@@ -19,6 +16,18 @@ test('checkQuota component', function ({ components }) {
   })
 
   describe('when checking the quota for a new address', () => {
+    beforeEach(() => {
+      const { config, database } = components
+      const databaseResult = {
+        rows: [{ count: 1 }],
+      } as IDatabase.IQueryResult<{
+        count: number
+      }>
+
+      jest.spyOn(config, 'requireNumber').mockResolvedValueOnce(100)
+      jest.spyOn(database, 'query').mockResolvedValueOnce(databaseResult)
+    })
+
     it('should not throw an error', async () => {
       await expect(
         checkQuota(components, transactionData)

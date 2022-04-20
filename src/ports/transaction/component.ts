@@ -78,11 +78,11 @@ export function createTransactionComponent(
     return data.txHash!
   }
 
-  async function insertTransaction(
+  async function insert(
     row: Omit<TransactionRow, 'id' | 'createdAt'>
   ): Promise<void> {
     await database.run(
-      ` INSERT INTO transactions(
+      `INSERT INTO transactions(
           txHash, userAddress
         ) VALUES (
           $txHash, $userAddress
@@ -114,7 +114,7 @@ export function createTransactionComponent(
 
   return {
     sendMetaTransaction,
-    insertTransaction,
+    insert,
     getByUserAddress,
     checkData,
   }

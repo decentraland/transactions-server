@@ -3,9 +3,7 @@ import { Schema } from '../../types/validation'
 
 export interface ITransactionComponent {
   sendMetaTransaction(transactionData: TransactionData): Promise<string>
-  insertTransaction(
-    row: Omit<TransactionRow, 'id' | 'createdAt'>
-  ): Promise<void>
+  insert(row: Omit<TransactionRow, 'id' | 'createdAt'>): Promise<void>
   getByUserAddress(
     userAddress: string
   ): Promise<IDatabase.IQueryResult<TransactionRow>>

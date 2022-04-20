@@ -44,7 +44,7 @@ export async function sendTransaction(
     globalLogger.info(`Sending transaction ${JSON.stringify(transactionData)}`)
     const txHash = await transaction.sendMetaTransaction(transactionData)
 
-    await transaction.insertTransaction({
+    await transaction.insert({
       txHash,
       userAddress: transactionData.from,
     })
