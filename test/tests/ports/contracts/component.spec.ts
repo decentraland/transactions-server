@@ -12,7 +12,7 @@ test('contracts component', function ({ components, stubComponents }) {
     let address: string
 
     beforeEach(() => {
-      const { config, logs, collectionsSubgraph } = components
+      const { config, collectionsSubgraph } = components
       const { fetcher } = stubComponents
 
       address = '0xabc123123'
@@ -84,7 +84,7 @@ test('contracts component', function ({ components, stubComponents }) {
     let subgraphMock: jest.SpyInstance
 
     beforeEach(() => {
-      const { config, logs, collectionsSubgraph } = components
+      const { config, collectionsSubgraph } = components
       const { fetcher } = stubComponents
 
       collections = [{ id: address }]
@@ -140,7 +140,7 @@ test('contracts component', function ({ components, stubComponents }) {
       let contracts: IContractsComponent
 
       beforeEach(() => {
-        const { config, logs, collectionsSubgraph } = components
+        const { config, collectionsSubgraph } = components
         const { fetcher } = stubComponents
 
         fetcher.fetch
@@ -174,7 +174,7 @@ test('contracts component', function ({ components, stubComponents }) {
       let fetcher: any
 
       beforeEach(() => {
-        const { config, logs, collectionsSubgraph } = components
+        const { config, collectionsSubgraph } = components
 
         fetcher = stubComponents.fetcher
         address = '0xabc123'

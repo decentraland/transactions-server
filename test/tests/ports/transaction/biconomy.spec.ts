@@ -60,7 +60,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
       .withArgs(url)
       .returns(Promise.resolve(new Response('<html>', { status: 503 })))
 
-    await expect(() => transaction.sendMetaTransaction(tx)).rejects.toThrow(
+    await expect(transaction.sendMetaTransaction(tx)).rejects.toThrow(
       /An error occurred trying to send the meta transaction/
     )
 
@@ -90,7 +90,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
         )
       )
 
-    await expect(() => transaction.sendMetaTransaction(tx)).rejects.toThrow(
+    await expect(transaction.sendMetaTransaction(tx)).rejects.toThrow(
       /An error occurred trying to send the meta transaction/
     )
 
