@@ -20,7 +20,7 @@ export function createContractsComponent(
   } = components
 
   // Methods
-  async function isValidContractAddress(address: string): Promise<boolean> {
+  async function isValidAddress(address: string): Promise<boolean> {
     const validations = await Promise.all([
       component.isCollectionAddress(address.toLowerCase()),
       component.isWhitelisted(address.toLowerCase()),
@@ -97,7 +97,7 @@ export function createContractsComponent(
   }
 
   const component = {
-    isValidContractAddress,
+    isValidAddress,
     isCollectionAddress,
     isWhitelisted,
     getCollectionQuery,

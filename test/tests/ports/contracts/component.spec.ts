@@ -1,11 +1,10 @@
 import { Response } from 'node-fetch'
-import { ChainName } from '@dcl/schemas'
-import { test } from '../../components'
-import { createContractsComponent } from '../../../src/ports/contracts/component'
+import { test } from '../../../components'
+import { createContractsComponent } from '../../../../src/ports/contracts/component'
 import {
   IContractsComponent,
   RemoteCollection,
-} from '../../../src/ports/contracts/types'
+} from '../../../../src/ports/contracts/types'
 
 test('contracts component', function ({ components, stubComponents }) {
   describe('when checking for a valid contract address', () => {
@@ -13,7 +12,7 @@ test('contracts component', function ({ components, stubComponents }) {
     let address: string
 
     beforeEach(() => {
-      const { config, logs, collectionsSubgraph } = components
+      const { config, collectionsSubgraph } = components
       const { fetcher } = stubComponents
 
       address = '0xabc123123'
@@ -36,7 +35,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(true)
+        expect(await contracts.isValidAddress(address)).toBe(true)
       })
     })
 
@@ -47,7 +46,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(true)
+        expect(await contracts.isValidAddress(address)).toBe(true)
       })
     })
 
@@ -60,7 +59,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(true)
+        expect(await contracts.isValidAddress(address)).toBe(true)
       })
     })
 
@@ -73,7 +72,7 @@ test('contracts component', function ({ components, stubComponents }) {
       })
 
       it('should return true', async () => {
-        expect(await contracts.isValidContractAddress(address)).toBe(false)
+        expect(await contracts.isValidAddress(address)).toBe(false)
       })
     })
   })
@@ -85,7 +84,7 @@ test('contracts component', function ({ components, stubComponents }) {
     let subgraphMock: jest.SpyInstance
 
     beforeEach(() => {
-      const { config, logs, collectionsSubgraph } = components
+      const { config, collectionsSubgraph } = components
       const { fetcher } = stubComponents
 
       collections = [{ id: address }]
@@ -141,7 +140,7 @@ test('contracts component', function ({ components, stubComponents }) {
       let contracts: IContractsComponent
 
       beforeEach(() => {
-        const { config, logs, collectionsSubgraph } = components
+        const { config, collectionsSubgraph } = components
         const { fetcher } = stubComponents
 
         fetcher.fetch
@@ -175,7 +174,7 @@ test('contracts component', function ({ components, stubComponents }) {
       let fetcher: any
 
       beforeEach(() => {
-        const { config, logs, collectionsSubgraph } = components
+        const { config, collectionsSubgraph } = components
 
         fetcher = stubComponents.fetcher
         address = '0xabc123'

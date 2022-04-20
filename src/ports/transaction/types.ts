@@ -1,4 +1,14 @@
-import { Schema } from './validation'
+import { IDatabase } from '@well-known-components/interfaces'
+import { Schema } from '../../types/validation'
+
+export interface ITransactionComponent {
+  sendMetaTransaction(transactionData: TransactionData): Promise<string>
+  insert(row: Omit<TransactionRow, 'id' | 'createdAt'>): Promise<void>
+  getByUserAddress(
+    userAddress: string
+  ): Promise<IDatabase.IQueryResult<TransactionRow>>
+  checkData(transactionData: TransactionData): Promise<void>
+}
 
 export type TransactionData = {
   from: string

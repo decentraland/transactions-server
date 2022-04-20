@@ -1,24 +1,18 @@
-import {
-  getByUserAddress,
-  insertTransaction,
-  MetaTransactionError,
-  sendMetaTransaction,
-} from '../logic/transaction'
-import { SendTransactionRequest } from '../types/transaction'
+import { MetaTransactionError } from '../ports/transaction/errors'
+import { SendTransactionRequest } from '../ports/transaction/types'
 import { HandlerContextWithPath } from '../types'
 
 export async function getUserTransactions(
   context: HandlerContextWithPath<
-    'globalLogger' | 'database',
+    'globalLogger' | 'transaction',
     '/transactions/:userAddress'
   >
 ) {
-  const { globalLogger, database } = context.components
+  const { globalLogger, transaction } = context.components
 
   globalLogger.info(`Returning transactions for ${context.params.userAddress}`)
 
-  const { rows: transactions } = await getByUserAddress(
-    { database },
+  const { rows: transactions } = await transaction.getByUserAddress(
     context.params.userAddress
   )
 
@@ -30,11 +24,11 @@ export async function getUserTransactions(
 
 export async function sendTransaction(
   context: HandlerContextWithPath<
-    'globalLogger' | 'config' | 'database' | 'fetcher' | 'metrics',
+    'globalLogger' | 'transaction',
     '/transactions'
   >
 ) {
-  const { globalLogger, database } = context.components
+  const { globalLogger, transaction } = context.components
   const id = Date.now()
 
   globalLogger.info(`Cloning the request for transaction ${id}`)
@@ -48,27 +42,24 @@ export async function sendTransaction(
 
   try {
     globalLogger.info(`Sending transaction ${JSON.stringify(transactionData)}`)
-    const txHash = await sendMetaTransaction(
-      context.components,
-      transactionData
-    )
+    const txHash = await transaction.sendMetaTransaction(transactionData)
 
-    await insertTransaction(
-      { database },
-      { txHash, userAddress: transactionData.from }
-    )
+    await transaction.insert({
+      txHash,
+      userAddress: transactionData.from,
+    })
 
     return {
       status: 200,
-      body: { txHash },
+      body: { ok: true, txHash },
     }
   } catch (error) {
-    globalLogger.error(error)
+    globalLogger.error(error as Error)
     return {
       status: 500,
       body: {
         ok: false,
-        message: error.message,
+        message: (error as Error).message,
         code: (error as MetaTransactionError).code,
       },
     }
