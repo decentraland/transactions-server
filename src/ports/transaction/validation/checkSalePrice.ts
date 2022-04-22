@@ -3,7 +3,7 @@ import { ContractName, getContract } from 'decentraland-transactions'
 import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
-  getMaticChainIdFromNetwork,
+  getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
 import { InvalidSalePriceError } from '../errors'
 import { TransactionData } from '../types'
@@ -18,7 +18,10 @@ export const checkSalePrice: ITransactionValidator = async (
 
   const minPriceInWei = await config.requireString('MIN_SALE_VALUE_IN_WEI')
   const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
-  const salePrice = getSalePrice(params, getMaticChainIdFromNetwork(chainName))
+  const salePrice = getSalePrice(
+    params,
+    getMaticChainIdFromChainName(chainName)
+  )
 
   if (salePrice !== null && BigNumber.from(salePrice).lte(minPriceInWei)) {
     throw new InvalidSalePriceError(minPriceInWei, salePrice)

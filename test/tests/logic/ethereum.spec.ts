@@ -3,19 +3,19 @@ import { ContractName, getContract } from 'decentraland-transactions'
 import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
-  getMaticChainIdFromNetwork,
+  getMaticChainIdFromChainName,
 } from '../../../src/logic/ethereum'
 
 describe('getMaticChainIdFromNetwork', () => {
   describe('when using a valid chain name', () => {
     it('should return the mapped MAINNET Matic Chain Id for ETHEREUM MAINNET', () => {
-      expect(getMaticChainIdFromNetwork(ChainName.ETHEREUM_MAINNET)).toBe(
+      expect(getMaticChainIdFromChainName(ChainName.ETHEREUM_MAINNET)).toBe(
         ChainId.MATIC_MAINNET
       )
     })
 
     it('should return the mapped MUMBAI Matic Chain Id for ETHEREUM ROPSTEN', () => {
-      expect(getMaticChainIdFromNetwork(ChainName.ETHEREUM_ROPSTEN)).toBe(
+      expect(getMaticChainIdFromChainName(ChainName.ETHEREUM_ROPSTEN)).toBe(
         ChainId.MATIC_MUMBAI
       )
     })
@@ -24,7 +24,7 @@ describe('getMaticChainIdFromNetwork', () => {
   describe('when using an unsupported chain name', () => {
     it('should throw with an error explaining the lack of a mapping', () => {
       expect(() =>
-        getMaticChainIdFromNetwork('Something' as ChainName)
+        getMaticChainIdFromChainName('Something' as ChainName)
       ).toThrow(
         "The chain name Something doesn't have a matic chain id to map to"
       )
