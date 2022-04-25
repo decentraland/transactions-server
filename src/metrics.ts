@@ -7,6 +7,11 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: ['contract'],
   },
+  dcl_error_limit_reached_transactions_biconomy: {
+    help: 'Count limit errors when trying to relay a transaction to BICONOMY',
+    type: IMetricsComponent.CounterType,
+    labelNames: ['contract', 'code'],
+  },
   dcl_error_cannot_estimate_gas_transactions_biconomy: {
     help: 'Count errors of cannot estimate gas when trying to relay a transaction to BICONOMY',
     type: IMetricsComponent.CounterType,

@@ -1,9 +1,9 @@
 import { ValidateFunction } from 'ajv'
-import { MetaTransactionErrorCode, TransactionData } from './types'
+import { MetaTransactionCode, TransactionData } from './types'
 
 export class MetaTransactionError extends Error {
   // For more info on error codes, see https://docs.biconomy.io/api/native-meta-tx
-  constructor(message: string, public code?: MetaTransactionErrorCode) {
+  constructor(message: string, public code?: MetaTransactionCode) {
     super(message)
     this.code = code
   }
