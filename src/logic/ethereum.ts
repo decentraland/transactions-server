@@ -1,18 +1,16 @@
 import { utils } from 'ethers'
-import { ChainName, ChainId } from '@dcl/schemas'
+import { ChainName, ChainId, getChainId } from '@dcl/schemas'
 import { ContractData } from 'decentraland-transactions'
+import { getNetworkMapping } from '@dcl/schemas/dist/dapps/chain-id'
 
-export function getMaticChainIdFromNetwork(network: ChainName): ChainId {
-  switch (network) {
-    case ChainName.ETHEREUM_MAINNET:
-      return ChainId.MATIC_MAINNET
-    case ChainName.ETHEREUM_ROPSTEN:
-      return ChainId.MATIC_MUMBAI
-    default:
-      throw new Error(
-        `The chain name ${network} doesn't have a matic chain id to map to`
-      )
+export function getMaticChainIdFromChainName(chainName: ChainName): ChainId {
+  const chainId = getChainId(chainName)
+  if (!chainId) {
+    throw new Error(
+      `The chain name ${chainName} doesn't have a matic chain id to map to`
+    )
   }
+  return getNetworkMapping(chainId).MATIC
 }
 
 /**
