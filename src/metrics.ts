@@ -2,6 +2,11 @@ import { IMetricsComponent } from '@well-known-components/interfaces'
 import { validateMetricsDeclaration } from '@well-known-components/metrics'
 
 export const metricDeclarations = {
+  dcl_error_sale_price_too_low: {
+    help: 'The transaction sale price trying to be executed is too low',
+    type: IMetricsComponent.CounterType,
+    labelNames: ['contract', 'minPrice', 'salePrice'],
+  },
   dcl_sent_transactions_biconomy: {
     help: 'Count transactions sent to BICONOMY',
     type: IMetricsComponent.CounterType,
