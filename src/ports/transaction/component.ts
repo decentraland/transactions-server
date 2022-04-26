@@ -7,7 +7,7 @@ import {
   checkContractAddress,
   checkQuota,
 } from './validation'
-import { MetaTransactionError } from './errors'
+import { InvalidTransactionError } from './errors'
 import {
   ITransactionComponent,
   MetaTransactionCode,
@@ -92,7 +92,7 @@ export function createTransactionComponent(
 
       message = message || (await result.text())
 
-      throw new MetaTransactionError(
+      throw new InvalidTransactionError(
         `An error occurred trying to send the meta transaction. Response: ${message}.
           ${result.statusText}`,
         code

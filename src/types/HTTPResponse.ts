@@ -11,18 +11,19 @@ export enum StatusCode {
   ERROR = 500,
 }
 
+type ErrorResponse = {
+  ok: false
+  message: string
+  code: ErrorCode
+  transactionErrorCode?: MetaTransactionCode
+}
+type TxHashResponse = {
+  ok: true
+  txHash: string
+}
+type TransactionsResponse = TransactionRow[]
+
 export type HTTPResponse = {
   status: StatusCode
-  body:
-    | {
-        ok: false
-        message: string
-        code: ErrorCode
-        transactionErrorCode?: MetaTransactionCode
-      }
-    | {
-        ok: true
-        txHash: string
-      }
-    | TransactionRow[]
+  body: TxHashResponse | TransactionsResponse | ErrorResponse
 }

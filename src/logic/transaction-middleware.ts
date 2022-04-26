@@ -1,5 +1,5 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { MetaTransactionError } from '../ports/transaction/errors'
+import { InvalidTransactionError } from '../ports/transaction/errors'
 import { AppComponents, Context } from '../types'
 import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
 
@@ -52,7 +52,7 @@ export function createTransactionMiddleware(
         body: {
           ok: false,
           message: (error as Error).message,
-          code: (error as MetaTransactionError).code,
+          code: (error as InvalidTransactionError).code,
         },
       }
     }

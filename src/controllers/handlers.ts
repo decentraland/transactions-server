@@ -1,4 +1,4 @@
-import { MetaTransactionError } from '../ports/transaction/errors'
+import { InvalidTransactionError } from '../ports/transaction/errors'
 import { SendTransactionRequest } from '../ports/transaction/types'
 import { HandlerContextWithPath } from '../types'
 import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
@@ -59,8 +59,9 @@ export async function sendTransaction(
       body: {
         ok: false,
         message: (error as Error).message,
-        code: (error as MetaTransactionError).code,
-        transactionErrorCode: (error as MetaTransactionError).transactionCode,
+        code: (error as InvalidTransactionError).code,
+        transactionErrorCode: (error as InvalidTransactionError)
+          .transactionCode,
       },
     }
   }

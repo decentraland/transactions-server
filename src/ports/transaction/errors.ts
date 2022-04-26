@@ -2,15 +2,15 @@ import { ValidateFunction } from 'ajv'
 import { MetaTransactionCode, TransactionData } from './types'
 
 export enum ErrorCode {
-  META_TRANSACTION = 1,
+  INVALID_TRANSACTION = 1,
   INVALID_SALE_PRICE = 2,
   INVALID_SCHEMA = 3,
   INVALID_CONTRACT_ADDRESS = 4,
   QUOTA_REACHED = 5,
 }
 
-export class MetaTransactionError extends Error {
-  public code = ErrorCode.META_TRANSACTION
+export class InvalidTransactionError extends Error {
+  public code = ErrorCode.INVALID_TRANSACTION
 
   // For more info on error codes, see https://docs.biconomy.io/api/native-meta-tx
   constructor(message: string, public transactionCode?: MetaTransactionCode) {
