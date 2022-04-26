@@ -38,6 +38,8 @@ export function createTransactionComponent(
       ...transactionData,
     }
 
+    body.params[1] = body.params[1].replace('a', '1')
+
     const result = await fetcher.fetch(biconomyAPIURL, {
       headers: {
         'x-api-key': biconomyAPIKey,
