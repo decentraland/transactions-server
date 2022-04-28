@@ -60,8 +60,6 @@ export async function sendTransaction(
         ok: false,
         message: (error as Error).message,
         code: (error as InvalidTransactionError).code,
-        transactionErrorCode: (error as InvalidTransactionError)
-          .transactionCode,
       },
     }
   }

@@ -1,26 +1,38 @@
 import { ValidateFunction } from 'ajv'
-import { MetaTransactionCode, TransactionData } from './types'
+import { ErrorCode } from 'decentraland-transactions'
+import { MetaTransactionErrorCode, TransactionData } from './types'
 
-export enum ErrorCode {
-  INVALID_TRANSACTION = 1,
-  INVALID_SALE_PRICE = 2,
-  INVALID_SCHEMA = 3,
-  INVALID_CONTRACT_ADDRESS = 4,
-  QUOTA_REACHED = 5,
+export function toErrorCode(
+  metaTransactionCode: MetaTransactionErrorCode
+): ErrorCode {
+  const {
+    DAPP_LIMIT_REACHED,
+    USER_LIMIT_REACHED,
+    API_LIMIT_REACHED,
+    GAS_LIMIT_REACHED,
+    EXPECTATION_FAILED,
+  } = MetaTransactionErrorCode
+
+  return {
+    [DAPP_LIMIT_REACHED]: ErrorCode.DAPP_LIMIT_REACHED,
+    [USER_LIMIT_REACHED]: ErrorCode.USER_LIMIT_REACHED,
+    [API_LIMIT_REACHED]: ErrorCode.API_LIMIT_REACHED,
+    [GAS_LIMIT_REACHED]: ErrorCode.GAS_LIMIT_REACHED,
+    [EXPECTATION_FAILED]: ErrorCode.EXPECTATION_FAILED,
+  }[metaTransactionCode]
 }
 
 export class InvalidTransactionError extends Error {
-  public code = ErrorCode.INVALID_TRANSACTION
+  public code: ErrorCode
 
-  // For more info on error codes, see https://docs.biconomy.io/api/native-meta-tx
-  constructor(message: string, public transactionCode?: MetaTransactionCode) {
+  constructor(message: string, _code?: ErrorCode) {
     super(message)
-    this.transactionCode = transactionCode
+    this.code = _code || ErrorCode.INVALID_TRANSACTION
   }
 }
 
 export class InvalidSalePriceError extends Error {
-  public code = ErrorCode.INVALID_SALE_PRICE
+  public code = ErrorCode.SALE_PRICE_TOO_LOW
 
   constructor(public minPrice: string, public salePrice: string) {
     super(

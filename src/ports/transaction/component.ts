@@ -1,5 +1,6 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
+import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
 import {
   checkSchema,
@@ -7,10 +8,9 @@ import {
   checkContractAddress,
   checkQuota,
 } from './validation'
-import { InvalidTransactionError } from './errors'
+import { InvalidTransactionError, toErrorCode } from './errors'
 import {
   ITransactionComponent,
-  MetaTransactionCode,
   MetaTransactionRequest,
   MetaTransactionResponse,
   MetaTransactionStatus,
@@ -55,23 +55,23 @@ export function createTransactionComponent(
 
     if (result.status !== MetaTransactionStatus.OK) {
       let message: string | undefined
-      let code: MetaTransactionCode | undefined
+      let code: ErrorCode | undefined
 
       switch (result.status) {
         case MetaTransactionStatus.CONFLICT:
           const response: MetaTransactionResponse = await result.json()
           // Conflict errors always have message and code values
           message = response.message!
-          code = response.code!
+          code = toErrorCode(response.code!)
 
-          // A limit was reached, check MetaTransactionCode for possible values
+          // A limit was reached, check ErrorCode for possible values
           metrics.increment('dcl_error_limit_reached_transactions_biconomy', {
             ...metricPayload,
             code,
           })
           break
         case MetaTransactionStatus.EXPECTATION_FAILED:
-          code = MetaTransactionCode.EXPECTATION_FAILED
+          code = ErrorCode.EXPECTATION_FAILED
 
           // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/2e5d833f672a87a7acf0ff761f986421676c4ec9/ERRORS.md
           metrics.increment(

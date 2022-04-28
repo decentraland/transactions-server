@@ -1,6 +1,7 @@
+import { ErrorCode } from 'decentraland-transactions'
 import { Response } from 'node-fetch'
 import {
-  MetaTransactionCode,
+  MetaTransactionErrorCode,
   MetaTransactionResponse,
   MetaTransactionStatus,
   TransactionData,
@@ -114,19 +115,17 @@ test('biconomy flow test', function ({ components, stubComponents }) {
 
     const url = await config.requireString('BICONOMY_API_URL')
 
-    fetcher.fetch
-      .withArgs(url)
-      .returns(
-        Promise.resolve(
-          new Response(
-            JSON.stringify({
-              message: 'code=CONFLICT',
-              code: MetaTransactionCode.DAPP_LIMIT,
-            }),
-            { status: MetaTransactionStatus.CONFLICT }
-          )
+    fetcher.fetch.withArgs(url).returns(
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            message: 'code=CONFLICT',
+            code: MetaTransactionErrorCode.DAPP_LIMIT_REACHED,
+          }),
+          { status: MetaTransactionStatus.CONFLICT }
         )
       )
+    )
 
     await expect(transaction.sendMetaTransaction(tx)).rejects.toThrow(
       /An error occurred trying to send the meta transaction/
@@ -137,7 +136,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
         'dcl_error_limit_reached_transactions_biconomy',
         {
           contract: tx.params[0],
-          code: MetaTransactionCode.DAPP_LIMIT,
+          code: ErrorCode.DAPP_LIMIT_REACHED,
         }
       )
     ).toEqual(true)

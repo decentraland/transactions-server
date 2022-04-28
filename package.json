@@ -34,7 +34,7 @@
     "@well-known-components/logger": "^1.1.0",
     "@well-known-components/metrics": "^1.1.1",
     "ajv": "^8.6.0",
-    "decentraland-transactions": "^1.32.0",
+    "decentraland-transactions": "^1.36.0",
     "ethers": "^5.6.3",
     "node-fetch": "^2.6.1",
     "sql-template-strings": "^2.2.2",
