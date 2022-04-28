@@ -1,13 +1,14 @@
-import { MetaTransactionError } from '../ports/transaction/errors'
+import { InvalidTransactionError } from '../ports/transaction/errors'
 import { SendTransactionRequest } from '../ports/transaction/types'
 import { HandlerContextWithPath } from '../types'
+import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
 
 export async function getUserTransactions(
   context: HandlerContextWithPath<
     'globalLogger' | 'transaction',
     '/transactions/:userAddress'
   >
-) {
+): Promise<HTTPResponse> {
   const { globalLogger, transaction } = context.components
 
   globalLogger.info(`Returning transactions for ${context.params.userAddress}`)
@@ -17,7 +18,7 @@ export async function getUserTransactions(
   )
 
   return {
-    status: 200,
+    status: StatusCode.OK,
     body: transactions,
   }
 }
@@ -27,7 +28,7 @@ export async function sendTransaction(
     'globalLogger' | 'transaction',
     '/transactions'
   >
-) {
+): Promise<HTTPResponse> {
   const { globalLogger, transaction } = context.components
   const id = Date.now()
 
@@ -36,9 +37,7 @@ export async function sendTransaction(
     .clone()
     .json()
   const { transactionData } = sendTransactionRequest
-  globalLogger.info(
-    `Finish cloning the request for transaction ${id} and data ${transactionData}`
-  )
+  globalLogger.info(`Finish cloning the request for transaction ${id}}`)
 
   try {
     globalLogger.info(`Sending transaction ${JSON.stringify(transactionData)}`)
@@ -50,17 +49,17 @@ export async function sendTransaction(
     })
 
     return {
-      status: 200,
+      status: StatusCode.OK,
       body: { ok: true, txHash },
     }
   } catch (error) {
     globalLogger.error(error as Error)
     return {
-      status: 500,
+      status: StatusCode.ERROR,
       body: {
         ok: false,
         message: (error as Error).message,
-        code: (error as MetaTransactionError).code,
+        code: (error as InvalidTransactionError).code,
       },
     }
   }

@@ -1,5 +1,6 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
+import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
 import {
   checkSchema,
@@ -7,11 +8,12 @@ import {
   checkContractAddress,
   checkQuota,
 } from './validation'
-import { MetaTransactionError } from './errors'
+import { InvalidTransactionError, toErrorCode } from './errors'
 import {
   ITransactionComponent,
   MetaTransactionRequest,
   MetaTransactionResponse,
+  MetaTransactionStatus,
   TransactionData,
   TransactionRow,
 } from './types'
@@ -36,6 +38,8 @@ export function createTransactionComponent(
       ...transactionData,
     }
 
+    body.params[1] = body.params[1].replace('a', '1')
+
     const result = await fetcher.fetch(biconomyAPIURL, {
       headers: {
         'x-api-key': biconomyAPIKey,
@@ -49,25 +53,49 @@ export function createTransactionComponent(
       contract: transactionData.params[0],
     }
 
-    if (!result.ok) {
-      const errorMessage = await result.text()
-      if (errorMessage.includes('UNPREDICTABLE_GAS_LIMIT')) {
-        // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/2e5d833f672a87a7acf0ff761f986421676c4ec9/ERRORS.md
-        metrics.increment(
-          'dcl_error_cannot_estimate_gas_transactions_biconomy',
-          metricPayload
-        )
-      } else {
-        // Any other error is related to the Biconomy API
-        metrics.increment(
-          'dcl_error_relay_transactions_biconomy',
-          metricPayload
-        )
+    if (result.status !== MetaTransactionStatus.OK) {
+      let message: string | undefined
+      let code: ErrorCode | undefined
+
+      switch (result.status) {
+        case MetaTransactionStatus.CONFLICT:
+          const response: MetaTransactionResponse = await result.json()
+          // Conflict errors always have message and code values
+          message = response.message!
+          code = toErrorCode(response.code!)
+
+          // A limit was reached, check ErrorCode for possible values
+          metrics.increment('dcl_error_limit_reached_transactions_biconomy', {
+            ...metricPayload,
+            code,
+          })
+          break
+        case MetaTransactionStatus.EXPECTATION_FAILED:
+          code = ErrorCode.EXPECTATION_FAILED
+
+          // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/2e5d833f672a87a7acf0ff761f986421676c4ec9/ERRORS.md
+          metrics.increment(
+            'dcl_error_cannot_estimate_gas_transactions_biconomy',
+            metricPayload
+          )
+          break
+        case MetaTransactionStatus.NOT_FOUND:
+        case MetaTransactionStatus.INTERNAL_SERVER_ERROR:
+        default:
+          // Any other error is related to the Biconomy API
+          metrics.increment(
+            'dcl_error_relay_transactions_biconomy',
+            metricPayload
+          )
+          break
       }
 
-      throw new MetaTransactionError(
-        `An error occurred trying to send the meta transaction. Response: ${errorMessage}.
-          ${result.statusText}`
+      message = message || (await result.text())
+
+      throw new InvalidTransactionError(
+        `An error occurred trying to send the meta transaction. Response: ${message}.
+          ${result.statusText}`,
+        code
       )
     }
 

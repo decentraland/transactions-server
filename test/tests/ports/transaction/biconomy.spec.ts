@@ -1,6 +1,9 @@
+import { ErrorCode } from 'decentraland-transactions'
 import { Response } from 'node-fetch'
 import {
+  MetaTransactionErrorCode,
   MetaTransactionResponse,
+  MetaTransactionStatus,
   TransactionData,
 } from '../../../../src/ports/transaction/types'
 import { test } from '../../../components'
@@ -15,7 +18,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
     const url = await config.requireString('BICONOMY_API_URL')
 
     const response: MetaTransactionResponse = {
-      flag: 0,
+      flag: MetaTransactionStatus.OK,
       log: 'log',
       txHash: 'METATX',
     }
@@ -82,13 +85,13 @@ test('biconomy flow test', function ({ components, stubComponents }) {
 
     const url = await config.requireString('BICONOMY_API_URL')
 
-    fetcher.fetch
-      .withArgs(url)
-      .returns(
-        Promise.resolve(
-          new Response('code=UNPREDICTABLE_GAS_LIMIT', { status: 503 })
-        )
+    fetcher.fetch.withArgs(url).returns(
+      Promise.resolve(
+        new Response('code=UNPREDICTABLE_GAS_LIMIT', {
+          status: MetaTransactionStatus.EXPECTATION_FAILED,
+        })
       )
+    )
 
     await expect(transaction.sendMetaTransaction(tx)).rejects.toThrow(
       /An error occurred trying to send the meta transaction/
@@ -99,6 +102,41 @@ test('biconomy flow test', function ({ components, stubComponents }) {
         'dcl_error_cannot_estimate_gas_transactions_biconomy',
         {
           contract: tx.params[0],
+        }
+      )
+    ).toEqual(true)
+  })
+
+  it('CONFLICT', async () => {
+    const { config, transaction } = components
+    const { metrics, fetcher } = stubComponents
+
+    const tx: TransactionData = { from: '0x1', params: ['1', '2'] }
+
+    const url = await config.requireString('BICONOMY_API_URL')
+
+    fetcher.fetch.withArgs(url).returns(
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            message: 'code=CONFLICT',
+            code: MetaTransactionErrorCode.DAPP_LIMIT_REACHED,
+          }),
+          { status: MetaTransactionStatus.CONFLICT }
+        )
+      )
+    )
+
+    await expect(transaction.sendMetaTransaction(tx)).rejects.toThrow(
+      /An error occurred trying to send the meta transaction/
+    )
+
+    expect(
+      metrics.increment.calledOnceWith(
+        'dcl_error_limit_reached_transactions_biconomy',
+        {
+          contract: tx.params[0],
+          code: ErrorCode.DAPP_LIMIT_REACHED,
         }
       )
     ).toEqual(true)

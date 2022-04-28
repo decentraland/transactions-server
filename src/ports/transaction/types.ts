@@ -22,20 +22,26 @@ export type MetaTransactionRequest = TransactionData & {
 export type MetaTransactionResponse = {
   txHash?: string
   log: string
-  flag: number
+  flag: MetaTransactionStatus
   code?: MetaTransactionErrorCode
   message?: string
 }
 
-export enum MetaTransactionErrorCode {
-  DAPP_LIMIT = 150,
-  USER_LIMIT = 151,
-  API_LIMIT = 152,
-  GAS_LIMIT = 153,
+export enum MetaTransactionStatus {
+  OK = 200,
   NOT_FOUND = 404,
   CONFLICT = 409,
   EXPECTATION_FAILED = 417,
   INTERNAL_SERVER_ERROR = 500,
+}
+
+// For more info on error codes, see https://docs.biconomy.io/api/native-meta-tx
+export enum MetaTransactionErrorCode {
+  DAPP_LIMIT_REACHED = 150,
+  USER_LIMIT_REACHED = 151,
+  API_LIMIT_REACHED = 152,
+  GAS_LIMIT_REACHED = 153,
+  EXPECTATION_FAILED = 417,
 }
 
 export type SendTransactionRequest = {

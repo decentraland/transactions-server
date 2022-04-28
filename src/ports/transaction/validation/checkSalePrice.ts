@@ -13,7 +13,7 @@ export const checkSalePrice: ITransactionValidator = async (
   components,
   transactionData
 ) => {
-  const { config } = components
+  const { config, metrics } = components
   const { params } = transactionData
 
   const minPriceInWei = await config.requireString('MIN_SALE_VALUE_IN_WEI')
@@ -24,6 +24,11 @@ export const checkSalePrice: ITransactionValidator = async (
   )
 
   if (salePrice !== null && BigNumber.from(salePrice).lte(minPriceInWei)) {
+    metrics.increment('dcl_error_sale_price_too_low', {
+      contract: params[0],
+      minPrice: minPriceInWei,
+      salePrice,
+    })
     throw new InvalidSalePriceError(minPriceInWei, salePrice)
   }
 }
