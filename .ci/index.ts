@@ -27,7 +27,10 @@ export = async function main() {
       { name: 'SERVER_PORT', value: '5000' },
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
-      { name: 'CHAIN_NAME', value: 'Ethereum Mainnet' },
+      {
+        name: 'CHAIN_NAME',
+        value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Ropsten',
+      },
       { name: 'MAX_TRANSACTIONS_PER_DAY', value: '1000' },
       {
         name: 'CONTRACT_ADDRESSES_URL',
