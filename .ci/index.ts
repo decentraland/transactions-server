@@ -53,7 +53,7 @@ export = async function main() {
       },
       {
         name: 'MIN_SALE_VALUE_IN_WEI',
-        value: '1000000000000000000',
+        value: '0000000000000000000',
       },
       {
         name: 'BICONOMY_API_URL',
