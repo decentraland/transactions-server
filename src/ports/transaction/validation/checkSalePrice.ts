@@ -23,7 +23,7 @@ export const checkSalePrice: ITransactionValidator = async (
     getMaticChainIdFromChainName(chainName)
   )
 
-  if (salePrice !== null && BigNumber.from(salePrice).lte(minPriceInWei)) {
+  if (salePrice !== null && BigNumber.from(salePrice).lt(minPriceInWei)) {
     metrics.increment('dcl_error_sale_price_too_low', {
       contract: params[0],
       minPrice: minPriceInWei,
@@ -44,6 +44,7 @@ export function getSalePrice(
 ): string | null {
   const [contractAddress, fullData] = params
 
+  const store = getContract(ContractName.CollectionStore, chainId)
   const marketplace = getContract(ContractName.MarketplaceV2, chainId)
   const bid = getContract(ContractName.BidV2, chainId)
 
@@ -55,6 +56,10 @@ export function getSalePrice(
     )
 
     switch (contractAddress) {
+      case store.address: {
+        const [[{ prices }]] = decodeFunctionData(store.abi, 'buy', data)
+        return prices[0].toString()
+      }
       case marketplace.address: {
         const { price } = decodeFunctionData(
           marketplace.abi,
