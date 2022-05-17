@@ -3,6 +3,7 @@ import {
   createServerComponent,
   createStatusCheckComponent,
 } from '@well-known-components/http-server'
+import { createSubgraphComponent } from '@well-known-components/thegraph-component'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
 import { createRunner } from '@well-known-components/test-helpers'
@@ -10,7 +11,6 @@ import { metricDeclarations } from '../src/metrics'
 import { createDatabaseComponent } from '../src/ports/database/component'
 import { createContractsComponent } from '../src/ports/contracts/component'
 import { createTransactionComponent } from '../src/ports/transaction/component'
-import { createSubgraphComponent } from '../src/ports/subgraph/component'
 import { createTestFetchComponent } from '../src/ports/fetcher'
 import { GlobalContext, TestComponents } from '../src/types'
 import { main } from '../src/service'
@@ -62,21 +62,22 @@ export async function initComponents(): Promise<TestComponents> {
     { filename: 'database.db' }
   )
 
-  const collectionsSubgraph = createSubgraphComponent(
-    await config.requireString('COLLECTIONS_SUBGRAPH_URL')
-  )
-  const statusChecks = await createStatusCheckComponent({ server })
   const fetcher = await createTestFetchComponent({
     localhost: protocolHostAndProtocol,
-  })
-  const contracts = createContractsComponent({
-    config,
-    fetcher,
-    collectionsSubgraph,
   })
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
     config,
+  })
+  const collectionsSubgraph = await createSubgraphComponent(
+    await config.requireString('COLLECTIONS_SUBGRAPH_URL'),
+    { config, logs, fetch: fetcher, metrics }
+  )
+  const statusChecks = await createStatusCheckComponent({ server })
+  const contracts = createContractsComponent({
+    config,
+    fetcher,
+    collectionsSubgraph,
   })
   const transaction = createTransactionComponent({
     fetcher,
