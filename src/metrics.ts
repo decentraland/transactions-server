@@ -1,5 +1,6 @@
 import { IMetricsComponent } from '@well-known-components/interfaces'
 import { validateMetricsDeclaration } from '@well-known-components/metrics'
+import { metricDeclarations as thegraphMetrics } from '@well-known-components/thegraph-component'
 
 export const metricDeclarations = {
   dcl_error_sale_price_too_low: {
@@ -27,6 +28,7 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: ['contract'],
   },
+  ...thegraphMetrics,
 }
 
 // type assertions

@@ -1,4 +1,5 @@
 import { IFetchComponent } from '@well-known-components/http-server'
+import { ISubgraphComponent } from '@well-known-components/thegraph-component'
 import type {
   IConfigComponent,
   ILoggerComponent,
@@ -8,7 +9,6 @@ import type {
 } from '@well-known-components/interfaces'
 import { metricDeclarations } from './metrics'
 import { IDatabaseComponent } from './ports/database/types'
-import { ISubgraphComponent } from './ports/subgraph/types'
 import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
 import { ITransactionComponent } from './ports/transaction/types'
