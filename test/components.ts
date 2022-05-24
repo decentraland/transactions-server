@@ -73,7 +73,7 @@ export async function initComponents(): Promise<TestComponents> {
     { config, logs, fetch: fetcher, metrics },
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')
   )
-  const statusChecks = await createStatusCheckComponent({ server })
+  const statusChecks = await createStatusCheckComponent({ config, server })
   const contracts = createContractsComponent({
     config,
     fetcher,

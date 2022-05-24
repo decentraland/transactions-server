@@ -34,7 +34,7 @@ export async function initComponents(): Promise<AppComponents> {
     { logs },
     { filename: 'database.db' }
   )
-  const statusChecks = await createStatusCheckComponent({ server })
+  const statusChecks = await createStatusCheckComponent({ config, server })
   const fetcher = await createFetchComponent()
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
