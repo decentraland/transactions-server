@@ -5,13 +5,13 @@ import {
 } from '@well-known-components/http-server'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
+import { createSubgraphComponent } from '@well-known-components/thegraph-component'
 import { createContractsComponent } from './ports/contracts/component'
 import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
 import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
-import { createSubgraphComponent } from '@well-known-components/thegraph-component'
 
 export async function initComponents(): Promise<AppComponents> {
   // default config from process.env + .env file
@@ -41,8 +41,8 @@ export async function initComponents(): Promise<AppComponents> {
     config,
   })
   const collectionsSubgraph = await createSubgraphComponent(
-    await config.requireString('COLLECTIONS_SUBGRAPH_URL'),
-    { config, logs, fetch: fetcher, metrics }
+    { config, logs, fetch: fetcher, metrics },
+    await config.requireString('COLLECTIONS_SUBGRAPH_URL')
   )
   const contracts = createContractsComponent({
     config,
