@@ -23,11 +23,6 @@ jobs:
       - name: test
         run: npm run test
         if: ${{ always() }}
-      - name: test migrations work
-        if: ${{ always() }}
-        run: |
-          npm ci --only=production
-          npm run migrate up
       - name: report coverage
         uses: coverallsapp/github-action@master
         with:
