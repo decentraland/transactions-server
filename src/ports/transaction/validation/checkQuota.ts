@@ -17,7 +17,7 @@ export const checkQuota: ITransactionValidator = async (
     SQL`SELECT COUNT (*) as count
         FROM transactions
         WHERE user_address = ${from}
-          AND created_at >= date('now', 'start of day')`
+          AND created_at >= NOW()`
   )
 
   const dbResult = todayAddressTransactions.rows[0]
