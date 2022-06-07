@@ -6,9 +6,9 @@ import {
 import { createSubgraphComponent } from '@well-known-components/thegraph-component'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
+import { createPgComponent } from '@well-known-components/pg-component'
 import { createRunner } from '@well-known-components/test-helpers'
 import { metricDeclarations } from '../src/metrics'
-import { createDatabaseComponent } from '../src/ports/database/component'
 import { createContractsComponent } from '../src/ports/contracts/component'
 import { createTransactionComponent } from '../src/ports/transaction/component'
 import { createTestFetchComponent } from '../src/ports/fetcher'
@@ -57,10 +57,6 @@ export async function initComponents(): Promise<TestComponents> {
     { config, logs },
     { cors, compression: {} }
   )
-  const database = await createDatabaseComponent(
-    { logs },
-    { filename: 'database.db' }
-  )
 
   const fetcher = await createTestFetchComponent({
     localhost: protocolHostAndProtocol,
@@ -69,6 +65,7 @@ export async function initComponents(): Promise<TestComponents> {
     server,
     config,
   })
+  const pg = await createPgComponent({ logs, config, metrics })
   const collectionsSubgraph = await createSubgraphComponent(
     { config, logs, fetch: fetcher, metrics },
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')
@@ -82,7 +79,7 @@ export async function initComponents(): Promise<TestComponents> {
   const transaction = createTransactionComponent({
     fetcher,
     config,
-    database,
+    pg,
     metrics,
     contracts,
   })
@@ -97,7 +94,7 @@ export async function initComponents(): Promise<TestComponents> {
     metrics,
     server,
     transaction,
-    database,
+    pg,
     contracts,
     collectionsSubgraph,
     statusChecks,

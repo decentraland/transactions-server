@@ -1,5 +1,5 @@
 import { IDatabase } from '@well-known-components/interfaces'
-import SQL from 'sql-template-strings'
+import SQL, { SQLStatement } from 'sql-template-strings'
 import {
   TransactionData,
   TransactionRow,
@@ -67,7 +67,7 @@ test('transactions component', function ({ components }) {
     const userAddress = '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311'
 
     beforeEach(() => {
-      const { database } = components
+      const { pg } = components
 
       transactionRow = {
         id: 1,
@@ -81,13 +81,13 @@ test('transactions component', function ({ components }) {
         rowCount: 1,
       }
 
-      jest.spyOn(database, 'query').mockResolvedValueOnce(queryResult)
+      jest.spyOn(pg, 'query').mockResolvedValueOnce(queryResult)
     })
 
     it('should query the database with the supplied data', async () => {
-      const { transaction, database } = components
+      const { transaction, pg } = components
       await transaction.getByUserAddress(userAddress)
-      expect(database.query).toHaveBeenCalledWith(SQL`SELECT *
+      expect(pg.query).toHaveBeenCalledWith(SQL`SELECT *
           FROM transactions
           WHERE userAddress = ${userAddress}`)
     })
@@ -104,30 +104,25 @@ test('transactions component', function ({ components }) {
     let transactionRow: Omit<TransactionRow, 'id' | 'createdAt'>
 
     beforeEach(() => {
-      const { database } = components
+      const { pg } = components
 
       transactionRow = {
         txHash: 'some tx hash',
         userAddress: '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311',
       }
 
-      jest.spyOn(database, 'run').mockResolvedValueOnce(1)
+      jest.spyOn(pg, 'query')
     })
 
     it('should query the database with the supplied data', async () => {
-      const { transaction, database } = components
+      const { transaction, pg } = components
       await transaction.insert(transactionRow)
-      expect(database.run).toHaveBeenCalledWith(
-        `INSERT INTO transactions(
+      expect(pg.query).toHaveBeenCalledWith(
+        SQL`INSERT INTO transactions(
           txHash, userAddress
         ) VALUES (
-          $txHash, $userAddress
-        )
-      `,
-        {
-          $txHash: transactionRow.txHash,
-          $userAddress: transactionRow.userAddress,
-        }
+          ${transactionRow.txHash}, ${transactionRow.userAddress}
+        )`
       )
     })
   })

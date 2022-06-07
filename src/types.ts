@@ -8,7 +8,7 @@ import type {
   IMetricsComponent,
 } from '@well-known-components/interfaces'
 import { metricDeclarations } from './metrics'
-import { IDatabaseComponent } from './ports/database/types'
+import { IPgComponent } from '@well-known-components/pg-component'
 import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
 import { ITransactionComponent } from './ports/transaction/types'
@@ -23,7 +23,7 @@ export type BaseComponents = {
   globalLogger: ILoggerComponent.ILogger
   fetcher: IFetchComponent
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
-  database: IDatabaseComponent
+  pg: IPgComponent
   server: IHttpServerComponent<GlobalContext>
   transaction: ITransactionComponent
   contracts: IContractsComponent

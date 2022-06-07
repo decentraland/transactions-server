@@ -6,8 +6,8 @@ import {
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
 import { createSubgraphComponent } from '@well-known-components/thegraph-component'
+import { createPgComponent } from '@well-known-components/pg-component'
 import { createContractsComponent } from './ports/contracts/component'
-import { createDatabaseComponent } from './ports/database/component'
 import { createFetchComponent } from './ports/fetcher'
 import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
@@ -30,16 +30,13 @@ export async function initComponents(): Promise<AppComponents> {
     { config, logs },
     { cors, compression: {} }
   )
-  const database = await createDatabaseComponent(
-    { logs },
-    { filename: 'database.db' }
-  )
   const statusChecks = await createStatusCheckComponent({ config, server })
   const fetcher = await createFetchComponent()
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
     config,
   })
+  const pg = await createPgComponent({ logs, config, metrics })
   const collectionsSubgraph = await createSubgraphComponent(
     { config, logs, fetch: fetcher, metrics },
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')
@@ -52,7 +49,7 @@ export async function initComponents(): Promise<AppComponents> {
   const transaction = createTransactionComponent({
     config,
     fetcher,
-    database,
+    pg,
     contracts,
     metrics,
   })
@@ -66,7 +63,7 @@ export async function initComponents(): Promise<AppComponents> {
     fetcher,
     metrics,
     server,
-    database,
+    pg,
     transaction,
     contracts,
     collectionsSubgraph,

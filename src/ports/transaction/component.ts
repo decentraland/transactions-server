@@ -21,10 +21,10 @@ import {
 export function createTransactionComponent(
   components: Pick<
     AppComponents,
-    'config' | 'database' | 'contracts' | 'fetcher' | 'metrics'
+    'config' | 'pg' | 'contracts' | 'fetcher' | 'metrics'
   >
 ): ITransactionComponent {
-  const { config, database, fetcher, metrics } = components
+  const { config, pg, fetcher, metrics } = components
 
   async function sendMetaTransaction(
     transactionData: TransactionData
@@ -107,24 +107,19 @@ export function createTransactionComponent(
   async function insert(
     row: Omit<TransactionRow, 'id' | 'createdAt'>
   ): Promise<void> {
-    await database.run(
-      `INSERT INTO transactions(
+    await pg.query(
+      SQL`INSERT INTO transactions(
           txHash, userAddress
         ) VALUES (
-          $txHash, $userAddress
-        )
-      `,
-      {
-        $txHash: row.txHash,
-        $userAddress: row.userAddress,
-      }
+          ${row.txHash}, ${row.userAddress}
+        )`
     )
   }
 
   async function getByUserAddress(
     userAddress: string
   ): Promise<IDatabase.IQueryResult<TransactionRow>> {
-    return database.query<TransactionRow>(
+    return pg.query<TransactionRow>(
       SQL`SELECT *
           FROM transactions
           WHERE userAddress = ${userAddress}`

@@ -4,15 +4,7 @@ import { AppComponents, Context } from '../types'
 import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
 
 export function createTransactionMiddleware(
-  components: Pick<
-    AppComponents,
-    | 'logs'
-    | 'config'
-    | 'transaction'
-    | 'contracts'
-    | 'collectionsSubgraph'
-    | 'database'
-  >
+  components: Pick<AppComponents, 'logs' | 'transaction'>
 ): IHttpServerComponent.IRequestHandler<Context<string>> {
   const { logs, transaction } = components
   const logger = logs.getLogger('transaction-wrapper')
