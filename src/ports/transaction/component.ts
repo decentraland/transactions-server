@@ -105,7 +105,7 @@ export function createTransactionComponent(
   }
 
   async function insert(
-    row: Omit<TransactionRow, 'id' | 'createdAt'>
+    row: Omit<TransactionRow, 'id' | 'created_at'>
   ): Promise<void> {
     await pg.query(
       SQL`INSERT INTO transactions(
