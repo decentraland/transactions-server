@@ -86,6 +86,8 @@ export async function initComponents(): Promise<TestComponents> {
 
   const globalLogger = logs.getLogger('transactions-server')
 
+  jest.spyOn(pg, 'start').mockResolvedValue()
+
   return {
     config,
     logs,
