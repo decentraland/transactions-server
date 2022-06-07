@@ -16,7 +16,7 @@ export const checkQuota: ITransactionValidator = async (
   const todayAddressTransactions = await pg.query<{ count: number }>(
     SQL`SELECT COUNT (*) as count
         FROM transactions
-        WHERE userAddress = ${from}
+        WHERE user_address = ${from}
           AND createdAt >= date('now', 'start of day')`
   )
 

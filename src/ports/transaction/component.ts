@@ -109,9 +109,9 @@ export function createTransactionComponent(
   ): Promise<void> {
     await pg.query(
       SQL`INSERT INTO transactions(
-          txHash, userAddress
+          tx_hash, user_address
         ) VALUES (
-          ${row.txHash}, ${row.userAddress}
+          ${row.tx_hash}, ${row.user_address}
         )`
     )
   }
@@ -122,7 +122,7 @@ export function createTransactionComponent(
     return pg.query<TransactionRow>(
       SQL`SELECT *
           FROM transactions
-          WHERE userAddress = ${userAddress}`
+          WHERE user_address = ${userAddress}`
     )
   }
 

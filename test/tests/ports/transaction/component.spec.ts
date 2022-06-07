@@ -1,5 +1,5 @@
 import { IDatabase } from '@well-known-components/interfaces'
-import SQL, { SQLStatement } from 'sql-template-strings'
+import SQL from 'sql-template-strings'
 import {
   TransactionData,
   TransactionRow,
@@ -71,9 +71,9 @@ test('transactions component', function ({ components }) {
 
       transactionRow = {
         id: 1,
-        txHash: 'some tx hash',
-        userAddress,
-        createdAt: new Date(),
+        tx_hash: 'some tx hash',
+        user_address: userAddress,
+        created_at: new Date(),
       }
 
       queryResult = {
@@ -89,7 +89,7 @@ test('transactions component', function ({ components }) {
       await transaction.getByUserAddress(userAddress)
       expect(pg.query).toHaveBeenCalledWith(SQL`SELECT *
           FROM transactions
-          WHERE userAddress = ${userAddress}`)
+          WHERE user_address = ${userAddress}`)
     })
 
     it('should return the query result', async () => {
@@ -101,14 +101,14 @@ test('transactions component', function ({ components }) {
   })
 
   describe('when inserting a transactions', () => {
-    let transactionRow: Omit<TransactionRow, 'id' | 'createdAt'>
+    let transactionRow: Omit<TransactionRow, 'id' | 'created_at'>
 
     beforeEach(() => {
       const { pg } = components
 
       transactionRow = {
-        txHash: 'some tx hash',
-        userAddress: '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311',
+        tx_hash: 'some tx hash',
+        user_address: '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311',
       }
 
       jest.spyOn(pg, 'query')
@@ -119,9 +119,9 @@ test('transactions component', function ({ components }) {
       await transaction.insert(transactionRow)
       expect(pg.query).toHaveBeenCalledWith(
         SQL`INSERT INTO transactions(
-          txHash, userAddress
+          tx_hash, user_address
         ) VALUES (
-          ${transactionRow.txHash}, ${transactionRow.userAddress}
+          ${transactionRow.tx_hash}, ${transactionRow.user_address}
         )`
       )
     })

@@ -86,6 +86,7 @@ export async function initComponents(): Promise<TestComponents> {
 
   const globalLogger = logs.getLogger('transactions-server')
 
+  // Mock the start function to avoid connecting to a local database
   jest.spyOn(pg, 'start').mockResolvedValue()
 
   return {

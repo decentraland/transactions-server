@@ -44,8 +44,8 @@ export async function sendTransaction(
     const txHash = await transaction.sendMetaTransaction(transactionData)
 
     await transaction.insert({
-      txHash,
-      userAddress: transactionData.from,
+      tx_hash: txHash,
+      user_address: transactionData.from,
     })
 
     return {

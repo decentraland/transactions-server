@@ -3,7 +3,7 @@ import { Schema } from '../../types/validation'
 
 export interface ITransactionComponent {
   sendMetaTransaction(transactionData: TransactionData): Promise<string>
-  insert(row: Omit<TransactionRow, 'id' | 'createdAt'>): Promise<void>
+  insert(row: Omit<TransactionRow, 'id' | 'created_at'>): Promise<void>
   getByUserAddress(
     userAddress: string
   ): Promise<IDatabase.IQueryResult<TransactionRow>>
@@ -50,9 +50,9 @@ export type SendTransactionRequest = {
 
 export type TransactionRow = {
   id: number
-  txHash: string
-  userAddress: string
-  createdAt: Date
+  tx_hash: string
+  user_address: string
+  created_at: Date
 }
 
 export const transactionSchema: Schema<TransactionData> = {

@@ -27,7 +27,7 @@ jobs:
         if: ${{ always() }}
         run: |
           npm ci --only=production
-          npm run migrate
+          npm run migrate up
       - name: report coverage
         uses: coverallsapp/github-action@master
         with:
