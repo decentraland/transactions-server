@@ -13,7 +13,7 @@
     "start:watch": "nodemon src/index.ts",
     "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
     "test:watch": "jest --watch --verbose",
-    "migrate": "node-pg-migrate --database-url-var PG_COMPONENT_PSQL_CONNECTION_STRING --envPath .env -j ts --tsconfig tsconfig.json"
+    "migrate": "node-pg-migrate --database-url-var PG_COMPONENT_PSQL_CONNECTION_STRING --envPath .env -j ts --tsconfig tsconfig.json -m ./src/migrations"
   },
   "keywords": [
     "decentraland"

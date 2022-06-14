@@ -1,3 +1,4 @@
+import path from 'path'
 import { createDotEnvConfigComponent } from '@well-known-components/env-config-provider'
 import {
   createServerComponent,
@@ -43,7 +44,7 @@ export async function initComponents(): Promise<AppComponents> {
         databaseUrl: await config.requireString(
           'PG_COMPONENT_PSQL_CONNECTION_STRING'
         ),
-        dir: __dirname + '/migrations',
+        dir: path.resolve(__dirname, 'migrations'),
         migrationsTable: 'pgmigrations',
         ignorePattern: '.*\\.map',
         direction: 'up',
