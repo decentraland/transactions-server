@@ -1,7 +1,9 @@
 encryptionsalt: v1:Gr02lJiIu2A=:v1:F10IvuzMkOCgcTSx:45iZUGW1YVc+BLJPeMoTquSjfRC2CA==
 config:
-  supra:stack-id: blue
   services-transactions-server:BICONOMY_API_ID:
     secure: v1:8FborT0eOi4yOHy3:TztKYMfb8kTB4tkcrhSt6QGU4IEOM5FItDMfZFhp0OTF73cj0kmrwLWt/DGScjaxgqssgg==
   services-transactions-server:BICONOMY_API_KEY:
     secure: v1:V/B3cwAGAbmvDf6Z:0/WgHzAOt8TIaIzvCCiwNoSD79QYpPERsEDRZR1imaQ+mC8sLstazKYulFJVyo61uDVQ7CefpO9jSQ77as4=
+  services-transactions-server:DB_PASSWORD:
+    secure: v1:isFVqglLYOxpkLHL:aKGFhsXOBFlECZVt8ZPHho81GT0wwSgDliadqI398mTQIiw9tZzBrBaGMwEsM8Bz
+  supra:stack-id: blue
