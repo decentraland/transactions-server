@@ -13,7 +13,7 @@
     "start:watch": "nodemon src/index.ts",
     "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
     "test:watch": "jest --watch --verbose",
-    "migrate": "node-pg-migrate --database-url-var PG_COMPONENT_PSQL_CONNECTION_STRING --envPath .env -j ts --tsconfig tsconfig.json -m ./migrations"
+    "migrate": "node-pg-migrate --database-url-var PG_COMPONENT_PSQL_CONNECTION_STRING --envPath .env -j ts --tsconfig tsconfig.json"
   },
   "keywords": [
     "decentraland"
@@ -32,15 +32,13 @@
     "@well-known-components/interfaces": "^1.1.0",
     "@well-known-components/logger": "^1.1.0",
     "@well-known-components/metrics": "^1.1.1",
-    "@well-known-components/pg-component": "^0.1.0",
+    "@well-known-components/pg-component": "^0.2.1",
     "@well-known-components/thegraph-component": "^1.1.0",
     "ajv": "^8.6.0",
     "decentraland-transactions": "^1.36.0",
     "ethers": "^5.6.3",
     "node-fetch": "^2.6.1",
-    "node-pg-migrate": "^6.2.1",
     "sql-template-strings": "^2.2.2",
-    "ts-node": "^9.1.1",
     "typescript": "^4.3.4"
   },
   "devDependencies": {
@@ -52,6 +50,7 @@
     "jest": "^26.6.3",
     "nodemon": "^2.0.9",
     "prettier": "^2.3.2",
+    "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
     "tslint-plugin-prettier": "^2.3.0"
   }

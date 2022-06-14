@@ -36,7 +36,20 @@ export async function initComponents(): Promise<AppComponents> {
     server,
     config,
   })
-  const pg = await createPgComponent({ logs, config, metrics })
+  const pg = await createPgComponent(
+    { logs, config, metrics },
+    {
+      migration: {
+        databaseUrl: await config.requireString(
+          'PG_COMPONENT_PSQL_CONNECTION_STRING'
+        ),
+        dir: __dirname + '/migrations',
+        migrationsTable: 'pgmigrations',
+        ignorePattern: '.*\\.map',
+        direction: 'up',
+      },
+    }
+  )
   const collectionsSubgraph = await createSubgraphComponent(
     { config, logs, fetch: fetcher, metrics },
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')

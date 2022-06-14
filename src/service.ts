@@ -1,6 +1,6 @@
+import { Lifecycle as _ } from '@well-known-components/interfaces'
 import { setupRoutes } from './controllers/routes'
 import { AppComponents, GlobalContext } from './types'
-import { Lifecycle as _ } from '@well-known-components/interfaces'
 
 // this function wires the business logic (adapters & controllers) with the components (ports)
 export async function main(program: _.EntryPointParameters<AppComponents>) {
