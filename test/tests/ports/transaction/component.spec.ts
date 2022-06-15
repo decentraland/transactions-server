@@ -67,13 +67,13 @@ test('transactions component', function ({ components }) {
     const userAddress = '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311'
 
     beforeEach(() => {
-      const { database } = components
+      const { pg } = components
 
       transactionRow = {
         id: 1,
-        txHash: 'some tx hash',
-        userAddress,
-        createdAt: new Date(),
+        tx_hash: 'some tx hash',
+        user_address: userAddress,
+        created_at: new Date(),
       }
 
       queryResult = {
@@ -81,15 +81,15 @@ test('transactions component', function ({ components }) {
         rowCount: 1,
       }
 
-      jest.spyOn(database, 'query').mockResolvedValueOnce(queryResult)
+      jest.spyOn(pg, 'query').mockResolvedValueOnce(queryResult)
     })
 
     it('should query the database with the supplied data', async () => {
-      const { transaction, database } = components
+      const { transaction, pg } = components
       await transaction.getByUserAddress(userAddress)
-      expect(database.query).toHaveBeenCalledWith(SQL`SELECT *
+      expect(pg.query).toHaveBeenCalledWith(SQL`SELECT *
           FROM transactions
-          WHERE userAddress = ${userAddress}`)
+          WHERE user_address = ${userAddress}`)
     })
 
     it('should return the query result', async () => {
@@ -101,33 +101,28 @@ test('transactions component', function ({ components }) {
   })
 
   describe('when inserting a transactions', () => {
-    let transactionRow: Omit<TransactionRow, 'id' | 'createdAt'>
+    let transactionRow: Omit<TransactionRow, 'id' | 'created_at'>
 
     beforeEach(() => {
-      const { database } = components
+      const { pg } = components
 
       transactionRow = {
-        txHash: 'some tx hash',
-        userAddress: '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311',
+        tx_hash: 'some tx hash',
+        user_address: '0x8197f89588d7FB03E3063d9bb6556C9d8BE71311',
       }
 
-      jest.spyOn(database, 'run').mockResolvedValueOnce(1)
+      jest.spyOn(pg, 'query')
     })
 
     it('should query the database with the supplied data', async () => {
-      const { transaction, database } = components
+      const { transaction, pg } = components
       await transaction.insert(transactionRow)
-      expect(database.run).toHaveBeenCalledWith(
-        `INSERT INTO transactions(
-          txHash, userAddress
+      expect(pg.query).toHaveBeenCalledWith(
+        SQL`INSERT INTO transactions(
+          tx_hash, user_address
         ) VALUES (
-          $txHash, $userAddress
-        )
-      `,
-        {
-          $txHash: transactionRow.txHash,
-          $userAddress: transactionRow.userAddress,
-        }
+          ${transactionRow.tx_hash}, ${transactionRow.user_address}
+        )`
       )
     })
   })

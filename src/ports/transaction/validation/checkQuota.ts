@@ -6,18 +6,18 @@ export const checkQuota: ITransactionValidator = async (
   components,
   transactionData
 ) => {
-  const { config, database } = components
+  const { config, pg } = components
 
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
   )
   const { from } = transactionData
 
-  const todayAddressTransactions = await database.query<{ count: number }>(
+  const todayAddressTransactions = await pg.query<{ count: number }>(
     SQL`SELECT COUNT (*) as count
         FROM transactions
-        WHERE userAddress = ${from}
-          AND createdAt >= date('now', 'start of day')`
+        WHERE user_address = ${from}
+          AND created_at >= NOW()`
   )
 
   const dbResult = todayAddressTransactions.rows[0]

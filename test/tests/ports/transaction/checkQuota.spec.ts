@@ -17,7 +17,7 @@ test('checkQuota component', function ({ components }) {
 
   describe('when checking the quota for a new address', () => {
     beforeEach(() => {
-      const { config, database } = components
+      const { config, pg } = components
       const databaseResult = {
         rows: [{ count: 1 }],
       } as IDatabase.IQueryResult<{
@@ -25,7 +25,7 @@ test('checkQuota component', function ({ components }) {
       }>
 
       jest.spyOn(config, 'requireNumber').mockResolvedValueOnce(100)
-      jest.spyOn(database, 'query').mockResolvedValueOnce(databaseResult)
+      jest.spyOn(pg, 'query').mockResolvedValueOnce(databaseResult)
     })
 
     it('should not throw an error', async () => {
@@ -39,7 +39,7 @@ test('checkQuota component', function ({ components }) {
     const maxTransactionsPerDay = 2
 
     beforeEach(() => {
-      const { config, database } = components
+      const { config, pg } = components
       const databaseResult = {
         rows: [{ count: maxTransactionsPerDay }],
       } as IDatabase.IQueryResult<{
@@ -47,7 +47,7 @@ test('checkQuota component', function ({ components }) {
       }>
 
       jest.spyOn(config, 'requireNumber').mockResolvedValueOnce(2)
-      jest.spyOn(database, 'query').mockResolvedValueOnce(databaseResult)
+      jest.spyOn(pg, 'query').mockResolvedValueOnce(databaseResult)
     })
 
     afterEach(() => {

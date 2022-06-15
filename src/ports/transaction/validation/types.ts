@@ -8,7 +8,7 @@ import { TransactionData } from '../types'
 export type ITransactionValidator = (
   components: Pick<
     AppComponents,
-    'config' | 'database' | 'contracts' | 'fetcher' | 'metrics'
+    'config' | 'pg' | 'contracts' | 'fetcher' | 'metrics'
   >,
   transactionData: TransactionData
 ) => Promise<void>

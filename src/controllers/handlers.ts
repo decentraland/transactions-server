@@ -14,7 +14,7 @@ export async function getUserTransactions(
   globalLogger.info(`Returning transactions for ${context.params.userAddress}`)
 
   const { rows: transactions } = await transaction.getByUserAddress(
-    context.params.userAddress
+    context.params.userAddress.toLowerCase()
   )
 
   return {
@@ -44,8 +44,8 @@ export async function sendTransaction(
     const txHash = await transaction.sendMetaTransaction(transactionData)
 
     await transaction.insert({
-      txHash,
-      userAddress: transactionData.from,
+      tx_hash: txHash,
+      user_address: transactionData.from.toLowerCase(),
     })
 
     return {
