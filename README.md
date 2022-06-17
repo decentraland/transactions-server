@@ -14,7 +14,9 @@ The server's only dependency is sqlite3 which needs to be initialized first.
 npm install
 npm run migrate
 npm start # runs npm run build behind the scenes
+
 # or
+
 npm run start:watch # will watch for changes
 ```
 
