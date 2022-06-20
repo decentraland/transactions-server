@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { createImageFromContext } from 'dcl-ops-lib/createImageFromContext'
 import { env, envTLD } from 'dcl-ops-lib/domain'
+import { getDbHostAndPort } from 'dcl-ops-lib/supra'
 
 const prometheusStack = new pulumi.StackReference(`prometheus-${env}`)
 
@@ -12,6 +13,12 @@ export = async function main() {
     '..',
     {}
   )
+
+  const dbname = 'transactions'
+  const dbpassword = config.requireSecret('DB_PASSWORD')
+  const dbhost = getDbHostAndPort()
+
+  const connectionString = pulumi.interpolate`postgres://${dbname}:${dbpassword}@${dbhost}/${dbname}`
 
   const hostname = 'transactions-api.decentraland.' + envTLD
 
@@ -27,6 +34,7 @@ export = async function main() {
       { name: 'SERVER_PORT', value: '5000' },
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
+      { name: 'PG_COMPONENT_PSQL_CONNECTION_STRING', value: connectionString },
       {
         name: 'CHAIN_NAME',
         value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Ropsten',
