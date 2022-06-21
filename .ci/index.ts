@@ -3,6 +3,7 @@ import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { createImageFromContext } from 'dcl-ops-lib/createImageFromContext'
 import { env, envTLD } from 'dcl-ops-lib/domain'
 import { getDbHostAndPort } from 'dcl-ops-lib/supra'
+import { acceptDbSecurityGroupId } from 'dcl-ops-lib/acceptDb'
 
 const prometheusStack = new pulumi.StackReference(`prometheus-${env}`)
 
@@ -95,6 +96,7 @@ export = async function main() {
         path: '/metrics',
       },
       version: '2',
+      securityGroups: [await acceptDbSecurityGroupId()],
       memoryReservation: 1024,
       extraExposedServiceOptions: {
         createCloudflareProxiedSubdomain: true,
