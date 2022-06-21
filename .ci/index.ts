@@ -14,11 +14,12 @@ export = async function main() {
     {}
   )
 
-  const dbname = 'transactions'
+  const dbname = 'transactionsserver'
+  const dbuser = 'transactionsuser'
   const dbpassword = config.requireSecret('DB_PASSWORD')
   const dbhost = getDbHostAndPort()
 
-  const connectionString = pulumi.interpolate`postgres://${dbname}:${dbpassword}@${dbhost}/${dbname}`
+  const connectionString = pulumi.interpolate`postgres://${dbuser}:${dbpassword}@${dbhost}/${dbname}`
 
   const hostname = 'transactions-api.decentraland.' + envTLD
 
