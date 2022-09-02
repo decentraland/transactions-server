@@ -1,5 +1,7 @@
 # Transactions Server
 
+[![Coverage Status](https://coveralls.io/repos/github/decentraland/transactions-server/badge.svg?branch=main)](https://coveralls.io/github/decentraland/transactions-server?branch=main)
+
 Server to relay meta-transactions.
 
 ## Set up
