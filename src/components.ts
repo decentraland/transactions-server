@@ -75,6 +75,7 @@ export async function initComponents(): Promise<AppComponents> {
     fetcher,
     collectionsSubgraph,
   })
+
   const transaction = createTransactionComponent({
     config,
     fetcher,
