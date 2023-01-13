@@ -37,13 +37,27 @@ export async function initComponents(): Promise<AppComponents> {
     server,
     config,
   })
+
+  let databaseUrl: string | undefined = await config.getString(
+    'PG_COMPONENT_PSQL_CONNECTION_STRING'
+  )
+
+  if (!databaseUrl) {
+    const dbUser = await config.requireString('PG_COMPONENT_PSQL_USER')
+    const dbDatabaseName = await config.requireString(
+      'PG_COMPONENT_PSQL_DATABASE'
+    )
+    const dbPort = await config.requireString('PG_COMPONENT_PSQL_PORT')
+    const dbHost = await config.requireString('PG_COMPONENT_PSQL_HOST')
+    const dbPassword = await config.requireString('PG_COMPONENT_PSQL_PASSWORD')
+    databaseUrl = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbDatabaseName}`
+  }
+
   const pg = await createPgComponent(
     { logs, config, metrics },
     {
       migration: {
-        databaseUrl: await config.requireString(
-          'PG_COMPONENT_PSQL_CONNECTION_STRING'
-        ),
+        databaseUrl,
         dir: path.resolve(__dirname, 'migrations'),
         migrationsTable: 'pgmigrations',
         ignorePattern: '.*\\.map',
