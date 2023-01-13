@@ -1,8 +1,7 @@
-name: CI
+name: node
 
 on:
   push:
-  pull_request:
 
 jobs:
   install:
@@ -13,17 +12,17 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 16.x
-      - name: install
+          cache: npm
+      - name: Install
         run: npm ci
-      - name: build
+      - name: Build
         run: npm run build
       - name: linter
         run: npm run lint
         if: ${{ always() }}
-      - name: test
+      - name: Test
         run: npm run test
-        if: ${{ always() }}
-      - name: report coverage
+      - name: Report coverage
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
