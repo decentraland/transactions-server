@@ -69,6 +69,7 @@ export async function initComponents(): Promise<AppComponents> {
     { config, logs, fetch: fetcher, metrics },
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')
   )
+
   const contracts = createContractsComponent({
     config,
     fetcher,
