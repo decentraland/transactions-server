@@ -81,7 +81,6 @@ export async function initComponents(): Promise<AppComponents> {
     contracts,
     metrics,
   })
-
   const globalLogger = logs.getLogger('transactions-server')
 
   return {
