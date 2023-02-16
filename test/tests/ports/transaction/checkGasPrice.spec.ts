@@ -1,8 +1,6 @@
-import { ChainId } from '@dcl/schemas'
-import { utils } from 'ethers'
+import { Response } from 'node-fetch'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'
 import { test } from '../../../components'
-import { Response } from 'node-fetch'
 
 test('checkGasPrice component', function ({ components }) {
   describe('when checking the gas price for a txn', () => {
