@@ -10,7 +10,7 @@ import {
 // it can be implemented as follow to enable customizations:
 
 export async function createFeaturesComponent(
-  components: createFeaturesComponent.NeededComponents,
+  components: NeededComponents,
   referer: string
 ): Promise<IFeaturesComponent> {
   const { config, fetch, logs } = components
@@ -123,12 +123,10 @@ export type FeatureFlagVariant = {
   enabled: boolean
 }
 
-export namespace createFeaturesComponent {
-  export type NeededComponents = {
-    config: IConfigComponent
-    fetch: IFetchComponent
-    logs: ILoggerComponent
-  }
+export type NeededComponents = {
+  config: IConfigComponent
+  fetch: IFetchComponent
+  logs: ILoggerComponent
 }
 
 export enum ApplicationName {
