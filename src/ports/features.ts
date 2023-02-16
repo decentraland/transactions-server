@@ -135,6 +135,7 @@ export enum ApplicationName {
   MARKETPLACE = 'marketplace',
   ACCOUNT = 'account',
   DAO = 'dao',
+  DAPPS = 'dapps',
   EVENTS = 'events',
   LANDING = 'landing',
   TEST = 'test',

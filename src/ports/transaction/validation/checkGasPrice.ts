@@ -6,14 +6,14 @@ import { AppComponents } from '../../../types'
 import { ApplicationName } from '../../features'
 import { GasPriceResponse, IGasPriceValidator } from './types'
 
-const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'gas-price'
+const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'max-gas-price-allowed'
 
 export const checkGasPrice: IGasPriceValidator = async (components) => {
   const { config, features } = components
   const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
 
   const isGasPriceAllowedFFEnabled = await features.getIsFeatureEnabled(
-    ApplicationName.BUILDER,
+    ApplicationName.DAPPS,
     FF_MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
 
@@ -46,7 +46,7 @@ export const getMaxGasPriceAllowed = async (
 ) => {
   const { features } = components
   const gasPriceAllowedVariant = await features.getFeatureVariant(
-    ApplicationName.BUILDER,
+    ApplicationName.DAPPS,
     FF_MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
 
