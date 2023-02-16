@@ -7,6 +7,7 @@ import {
   checkSalePrice,
   checkContractAddress,
   checkQuota,
+  checkGasPrice,
 } from './validation'
 import { InvalidTransactionError, toErrorCode } from './errors'
 import {
@@ -21,7 +22,7 @@ import {
 export function createTransactionComponent(
   components: Pick<
     AppComponents,
-    'config' | 'pg' | 'contracts' | 'fetcher' | 'metrics'
+    'config' | 'pg' | 'contracts' | 'features' | 'fetcher' | 'logs' | 'metrics'
   >
 ): ITransactionComponent {
   const { config, pg, fetcher, metrics } = components
@@ -128,6 +129,7 @@ export function createTransactionComponent(
 
   async function checkData(transactionData: TransactionData): Promise<void> {
     await checkSchema(components, transactionData)
+    await checkGasPrice(components)
     await checkSalePrice(components, transactionData)
     await checkContractAddress(components, transactionData)
     await checkQuota(components, transactionData)
