@@ -12,6 +12,7 @@ import { metricDeclarations } from '../src/metrics'
 import { createContractsComponent } from '../src/ports/contracts/component'
 import { createTransactionComponent } from '../src/ports/transaction/component'
 import { createTestFetchComponent } from '../src/ports/fetcher'
+import { createFeaturesComponent } from '../src/ports/features'
 import { GlobalContext, TestComponents } from '../src/types'
 import { main } from '../src/service'
 
@@ -61,6 +62,14 @@ export async function initComponents(): Promise<TestComponents> {
   const fetcher = await createTestFetchComponent({
     localhost: protocolHostAndProtocol,
   })
+  const features = await createFeaturesComponent(
+    {
+      config,
+      logs,
+      fetch: fetcher,
+    },
+    await config.requireString('TRANSACTIONS_SERVER_URL')
+  )
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
     config,
@@ -78,6 +87,8 @@ export async function initComponents(): Promise<TestComponents> {
   })
   const transaction = createTransactionComponent({
     fetcher,
+    features,
+    logs,
     config,
     pg,
     metrics,
@@ -94,6 +105,7 @@ export async function initComponents(): Promise<TestComponents> {
     logs,
     globalLogger,
     fetcher,
+    features,
     metrics,
     server,
     transaction,
