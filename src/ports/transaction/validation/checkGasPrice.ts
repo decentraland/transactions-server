@@ -1,6 +1,7 @@
-import { ChainId, ChainName, getChainId } from '@dcl/schemas'
+import { ChainId, ChainName } from '@dcl/schemas'
 import { parseUnits } from '@ethersproject/units'
 import { BigNumber } from 'ethers'
+import { getMaticChainIdFromChainName } from '../../../logic/ethereum'
 import { AppComponents } from '../../../types'
 import { ApplicationName } from '../../features'
 import { GasPriceResponse, IGasPriceValidator } from './types'
@@ -18,11 +19,7 @@ export const checkGasPrice: IGasPriceValidator = async (components) => {
 
   if (isGasPriceAllowedFFEnabled) {
     const maxGasPriceAllowed = await getMaxGasPriceAllowed(components)
-    const chainId = getChainId(chainName)
-
-    if (!chainId) {
-      throw new Error(`The chain name ${chainName} is invalid.`)
-    }
+    const chainId = getMaticChainIdFromChainName(chainName)
 
     const currentGasPrice = await getNetworkGasPrice(components, chainId)
 
