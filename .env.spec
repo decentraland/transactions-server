@@ -9,9 +9,14 @@ CHAIN_NAME='Ropsten'
 
 MAX_TRANSACTIONS_PER_DAY=10
 
+TRANSACTIONS_SERVER_URL=https://transactions-api.decentraland.org
+
+FF_URL=https://feature-flags.decentraland.org
+
 BICONOMY_API_URL=https://api.biconomy.io/api/v2/meta-tx/native
 BICONOMY_API_KEY=1234abc
 BICONOMY_API_ID=1234
+BICONOMY_API_V1_URL=https://api.biconomy.io/api/v1
 
 CONTRACT_ADDRESSES_URL=https://contracts.decentraland.org/addresses.json
 COLLECTIONS_SUBGRAPH_URL=https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mainnet

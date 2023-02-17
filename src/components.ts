@@ -10,6 +10,7 @@ import { createSubgraphComponent } from '@well-known-components/thegraph-compone
 import { createPgComponent } from '@well-known-components/pg-component'
 import { createContractsComponent } from './ports/contracts/component'
 import { createFetchComponent } from './ports/fetcher'
+import { createFeaturesComponent } from './ports/features'
 import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
@@ -33,6 +34,14 @@ export async function initComponents(): Promise<AppComponents> {
   )
   const statusChecks = await createStatusCheckComponent({ config, server })
   const fetcher = await createFetchComponent()
+  const features = await createFeaturesComponent(
+    {
+      config,
+      logs,
+      fetch: fetcher,
+    },
+    await config.requireString('TRANSACTIONS_SERVER_URL')
+  )
   const metrics = await createMetricsComponent(metricDeclarations, {
     server,
     config,
@@ -78,7 +87,9 @@ export async function initComponents(): Promise<AppComponents> {
 
   const transaction = createTransactionComponent({
     config,
+    features,
     fetcher,
+    logs,
     pg,
     contracts,
     metrics,
@@ -90,6 +101,7 @@ export async function initComponents(): Promise<AppComponents> {
     logs,
     globalLogger,
     fetcher,
+    features,
     metrics,
     server,
     pg,

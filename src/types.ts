@@ -12,6 +12,7 @@ import { IPgComponent } from '@well-known-components/pg-component'
 import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
 import { ITransactionComponent } from './ports/transaction/types'
+import { IFeaturesComponent } from './ports/features'
 
 export type GlobalContext = {
   components: AppComponents
@@ -21,6 +22,7 @@ export type BaseComponents = {
   config: IConfigComponent
   logs: ILoggerComponent
   globalLogger: ILoggerComponent.ILogger
+  features: IFeaturesComponent
   fetcher: IFetchComponent
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
   pg: IPgComponent

@@ -12,3 +12,17 @@ export type ITransactionValidator = (
   >,
   transactionData: TransactionData
 ) => Promise<void>
+
+export type IGasPriceValidator = (
+  components: Pick<AppComponents, 'config' | 'features' | 'fetcher' | 'logs'>
+) => Promise<void>
+
+export type GasPriceResponse = {
+  code: number
+  message: string
+  gasPrice: {
+    value: number
+    unit: string
+  }
+  networkId: string
+}
