@@ -24,13 +24,7 @@ export async function createFeaturesComponent(
     app: string,
     feature: string
   ): Promise<string | undefined> {
-    try {
-      return await config.getString(`FF_${app}_${feature}`)
-    } catch (error) {
-      logger.error(error as Error)
-    }
-
-    return undefined
+    return await config.getString(`FF_${app}_${feature}`.toUpperCase())
   }
 
   async function fetchFeatureFlags(
