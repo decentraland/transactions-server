@@ -39,6 +39,8 @@ export async function createFeaturesComponent(
 
       if (response.ok) {
         return await response.json()
+      } else {
+        throw new Error(`Could not fetch features service from ${FF_URL}`)
       }
     } catch (error) {
       logger.error(error as Error)
@@ -66,11 +68,11 @@ export async function createFeaturesComponent(
     app: string,
     feature: string
   ): Promise<FeatureFlagVariant | null> {
+    const ffKey = `${app}-${feature}`
     const featureFlags = await fetchFeatureFlags(app)
-    if (featureFlags?.variants) {
-      return featureFlags.variants[
-        `${app}-${feature}`
-      ] as unknown as FeatureFlagVariant
+
+    if (featureFlags?.flags[ffKey] && featureFlags?.variants[ffKey]) {
+      return featureFlags.variants[ffKey] as unknown as FeatureFlagVariant
     }
 
     return null
