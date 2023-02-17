@@ -41,7 +41,7 @@ export const checkGasPrice: IGasPriceValidator = async (components) => {
  * @param components - Config | Features | Fetcher | Logs components
  */
 
-export const getMaxGasPriceAllowed = async (
+const getMaxGasPriceAllowed = async (
   components: Pick<AppComponents, 'config' | 'features' | 'fetcher' | 'logs'>
 ) => {
   const { features } = components
@@ -63,7 +63,7 @@ export const getMaxGasPriceAllowed = async (
  * @param components - Config | Features | Fetcher | Logs components
  * @param chainId - Network Chain ID
  */
-export const getNetworkGasPrice = async (
+const getNetworkGasPrice = async (
   components: Pick<AppComponents, 'config' | 'features' | 'fetcher' | 'logs'>,
   chainId: ChainId
 ): Promise<BigNumber | null> => {
@@ -75,19 +75,12 @@ export const getNetworkGasPrice = async (
     const response = await fetcher.fetch(
       `${biconomyAPIURL}/gas-price?networkId=${chainId}`
     )
+
     if (response.ok) {
       const result: GasPriceResponse = await response.json()
-      let gasPriceInWei: BigNumber
-      if (result.gasPrice.unit !== 'wei') {
-        gasPriceInWei = parseUnits(
-          result.gasPrice.value.toString(),
-          result.gasPrice.unit
-        )
-      } else {
-        gasPriceInWei = BigNumber.from(result.gasPrice.value.toString())
-      }
-
-      return gasPriceInWei
+      return parseUnits(result.gasPrice.value.toString(), result.gasPrice.unit)
+    } else {
+      throw new Error(`Could not fetch the gas price from ${biconomyAPIURL}`)
     }
   } catch (error) {
     logger.error(error as Error)
