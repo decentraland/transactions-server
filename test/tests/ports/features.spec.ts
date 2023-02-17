@@ -30,7 +30,6 @@ test('features component', function ({ components }) {
 
         it('should return false', () => {
           const { features } = components
-
           return expect(
             features.getIsFeatureEnabled(FF_APP, FF_TOGGLE)
           ).resolves.toBe(false)
@@ -58,7 +57,6 @@ test('features component', function ({ components }) {
 
           it('should return true', () => {
             const { features } = components
-
             return expect(
               features.getIsFeatureEnabled(FF_APP, FF_TOGGLE)
             ).resolves.toBe(true)
@@ -78,7 +76,6 @@ test('features component', function ({ components }) {
 
           it('should return false', () => {
             const { features } = components
-
             return expect(
               features.getIsFeatureEnabled(FF_APP, FF_TOGGLE)
             ).resolves.toBe(false)
@@ -96,7 +93,6 @@ test('features component', function ({ components }) {
 
         it('should return false', () => {
           const { features } = components
-
           return expect(
             features.getIsFeatureEnabled(FF_APP, FF_TOGGLE)
           ).resolves.toBe(false)
@@ -132,7 +128,6 @@ test('features component', function ({ components }) {
 
         it('should return the variant data', () => {
           const { features } = components
-
           return expect(
             features.getFeatureVariant(FF_APP, FF_TOGGLE)
           ).resolves.toBe(FF_VARIANT)
@@ -142,7 +137,6 @@ test('features component', function ({ components }) {
       describe('and the feature flag does not have a variant', () => {
         beforeAll(() => {
           const { fetcher } = components
-
           jest.spyOn(fetcher, 'fetch').mockResolvedValueOnce({
             ok: true,
             json: jest.fn().mockResolvedValueOnce({
@@ -156,7 +150,6 @@ test('features component', function ({ components }) {
 
         it('should return null', () => {
           const { features } = components
-
           return expect(
             features.getFeatureVariant(FF_APP, FF_TOGGLE)
           ).resolves.toBe(null)
@@ -177,7 +170,6 @@ test('features component', function ({ components }) {
 
       it('should return null', () => {
         const { features } = components
-
         return expect(
           features.getFeatureVariant(FF_APP, FF_TOGGLE)
         ).resolves.toBe(null)
