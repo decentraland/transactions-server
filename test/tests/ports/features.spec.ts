@@ -43,7 +43,7 @@ test('features component', function ({ components }) {
         jest.spyOn(features, 'getEnvFeature').mockResolvedValueOnce(undefined)
       })
 
-      describe('and the feature flag is fetched successfully from features service', () => {
+      describe('and the feature flag is fetched successfully from the features service', () => {
         describe('and the feature flag is enabled', () => {
           beforeAll(() => {
             const { fetcher } = components
