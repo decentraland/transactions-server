@@ -40,4 +40,8 @@ Returns the transactions an address relayed
 
 ```bash
 npm run test
+
+# or
+
+npm run test:watch # will watch for changes
 ```
