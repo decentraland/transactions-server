@@ -1,5 +1,8 @@
 import { IHttpServerComponent } from '@well-known-components/interfaces'
-import { InvalidTransactionError } from '../ports/transaction/errors'
+import {
+  HighCongestionError,
+  InvalidTransactionError,
+} from '../ports/transaction/errors'
 import { AppComponents, Context } from '../types'
 import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
 
@@ -38,6 +41,17 @@ export function createTransactionMiddleware(
         method: context.request.method,
         url: context.request.url,
       })
+
+      if (error instanceof HighCongestionError) {
+        return {
+          status: StatusCode.ERROR,
+          body: {
+            ok: false,
+            message: error.message,
+            code: error.code,
+          },
+        }
+      }
 
       return {
         status: StatusCode.UNAUTHORIZED,

@@ -4,6 +4,7 @@ import { BigNumber } from 'ethers'
 import { getMaticChainIdFromChainName } from '../../../logic/ethereum'
 import { AppComponents } from '../../../types'
 import { ApplicationName } from '../../features'
+import { HighCongestionError } from '../errors'
 import { GasPriceResponse, IGasPriceValidator } from './types'
 
 const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'max-gas-price-allowed'
@@ -30,7 +31,10 @@ export const checkGasPrice: IGasPriceValidator = async (components) => {
     }
 
     if (currentGasPrice.gt(maxGasPriceAllowed)) {
-      throw new Error('Current gas price exceeds max gas price allowed.')
+      throw new HighCongestionError(
+        currentGasPrice.toString(),
+        maxGasPriceAllowed.toString()
+      )
     }
   }
 }

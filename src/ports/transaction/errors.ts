@@ -68,3 +68,16 @@ export class QuotaReachedError extends Error {
     )
   }
 }
+
+export class HighCongestionError extends Error {
+  public code = ErrorCode.HIGH_CONGESTION
+
+  constructor(
+    public currentGasPrice: string,
+    public maxGasPriceAllowed: string
+  ) {
+    super(
+      `Current network gas price ${currentGasPrice} exceeds max gas price allowed ${maxGasPriceAllowed}`
+    )
+  }
+}
