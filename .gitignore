@@ -1,14 +1,10 @@
-.env
-.vscode
-
-node_modules
-dist
-
-*.js
-
-.DS_Store
-TODO.md
-
-*.db
-
-coverage
+# File konfigurasi IDE
+# ---------------------
+/nbproject/
+.idea/*
+# File cache Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
