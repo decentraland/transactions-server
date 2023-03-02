@@ -6,7 +6,7 @@ Server to relay meta-transactions.
 
 ## Set up
 
-You'll need to check the `.env.example` file and create your own `.env` file. Some properties have defaults. Once you're done, you can run the project!
+You'll need to check the `.env.defaults` file and create your own `.env` file. Some properties have defaults. Once you're done, you can run the project!
 
 # Run the project
 
