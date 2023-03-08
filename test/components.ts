@@ -53,7 +53,7 @@ export async function initComponents(): Promise<TestComponents> {
     method: await config.getString('CORS_METHOD'),
   }
 
-  const logs = createLogComponent()
+  const logs = await createLogComponent({})
   const server = await createServerComponent<GlobalContext>(
     { config, logs },
     { cors, compression: {} }

@@ -1,17 +1,34 @@
 import { IFetchComponent } from '@well-known-components/http-server'
+import { ITracerComponent } from '@well-known-components/interfaces'
 import * as nodeFetch from 'node-fetch'
 
 // Note:
 // fetcher component may be encapsulated in @well-known-components/fetcher
 // in a future. for the time being, given it's simplicity and ease of configuration
 // it can be implemented as follow to enable customizations:
-export async function createFetchComponent() {
+export async function createFetchComponent(components: {
+  tracer: ITracerComponent
+}) {
+  const { tracer } = components
   const fetch: IFetchComponent = {
     async fetch(
       url: nodeFetch.RequestInfo,
       init?: nodeFetch.RequestInit
     ): Promise<nodeFetch.Response> {
-      return nodeFetch.default(url, init)
+      const headers: nodeFetch.HeadersInit = { ...init?.headers } as {
+        [key: string]: string
+      }
+      const traceParent = tracer.isInsideOfTraceSpan()
+        ? tracer.getTraceChildString()
+        : null
+      if (traceParent) {
+        headers.traceparent = traceParent
+        const traceState = tracer.getTraceStateString()
+        if (traceState) {
+          headers.tracestate = traceState
+        }
+      }
+      return nodeFetch.default(url, { ...init, headers })
     },
   }
 

@@ -4,9 +4,15 @@ import {
   createServerComponent,
   createStatusCheckComponent,
 } from '@well-known-components/http-server'
+import { createTracerComponent } from '@well-known-components/tracer-component'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
 import { createSubgraphComponent } from '@well-known-components/thegraph-component'
+import { createHttpTracerComponent } from '@well-known-components/http-tracer-component'
+import {
+  instrumentHttpServerWithRequestLogger,
+  Verbosity,
+} from '@well-known-components/http-requests-logger-component'
 import { createPgComponent } from '@well-known-components/pg-component'
 import { createContractsComponent } from './ports/contracts/component'
 import { createFetchComponent } from './ports/fetcher'
@@ -27,13 +33,20 @@ export async function initComponents(): Promise<AppComponents> {
     method: await config.getString('CORS_METHOD'),
   }
 
-  const logs = createLogComponent()
+  const tracer = createTracerComponent()
+
+  const logs = await createLogComponent({ config })
   const server = await createServerComponent<GlobalContext>(
     { config, logs },
     { cors, compression: {} }
   )
+  createHttpTracerComponent({ server, tracer })
+  instrumentHttpServerWithRequestLogger(
+    { server, logger: logs },
+    { verbosity: Verbosity.INFO }
+  )
   const statusChecks = await createStatusCheckComponent({ config, server })
-  const fetcher = await createFetchComponent()
+  const fetcher = await createFetchComponent({ tracer })
   const features = await createFeaturesComponent(
     {
       config,
