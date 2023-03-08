@@ -15,15 +15,17 @@ export async function createFetchComponent(components: {
       url: nodeFetch.RequestInfo,
       init?: nodeFetch.RequestInit
     ): Promise<nodeFetch.Response> {
-      const headers: nodeFetch.HeadersInit = { ...init?.headers }
+      const headers: nodeFetch.HeadersInit = { ...init?.headers } as {
+        [key: string]: string
+      }
       const traceParent = tracer.isInsideOfTraceSpan()
         ? tracer.getTraceChildString()
         : null
       if (traceParent) {
-        ;(headers as { [key: string]: string }).traceparent = traceParent
+        headers.traceparent = traceParent
         const traceState = tracer.getTraceStateString()
         if (traceState) {
-          ;(headers as { [key: string]: string }).tracestate = traceState
+          headers.tracestate = traceState
         }
       }
       return nodeFetch.default(url, { ...init, headers })
