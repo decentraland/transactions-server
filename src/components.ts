@@ -10,7 +10,7 @@ import { createMetricsComponent } from '@well-known-components/metrics'
 import { createSubgraphComponent } from '@well-known-components/thegraph-component'
 import { createHttpTracerComponent } from '@well-known-components/http-tracer-component'
 import {
-  createHttRequestsLogger,
+  instrumentHttpServerWithRequestLogger,
   Verbosity,
 } from '@well-known-components/http-requests-logger-component'
 import { createPgComponent } from '@well-known-components/pg-component'
@@ -41,7 +41,7 @@ export async function initComponents(): Promise<AppComponents> {
     { cors, compression: {} }
   )
   createHttpTracerComponent({ server, tracer })
-  createHttRequestsLogger(
+  instrumentHttpServerWithRequestLogger(
     { server, logger: logs },
     { verbosity: Verbosity.INFO }
   )
