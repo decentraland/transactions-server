@@ -9,6 +9,7 @@ export enum StatusCode {
   LOCKED = 423,
   CONFLICT = 409,
   ERROR = 500,
+  SERVICE_UNAVAILABLE = 503,
 }
 
 type TransactionsResponseBody = TransactionRow[]
