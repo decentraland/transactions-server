@@ -35,7 +35,7 @@ export async function initComponents(): Promise<AppComponents> {
 
   const tracer = createTracerComponent()
 
-  const logs = await createLogComponent({ config })
+  const logs = await createLogComponent({ config, tracer })
   const server = await createServerComponent<GlobalContext>(
     { config, logs },
     { cors, compression: {} }
