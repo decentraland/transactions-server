@@ -44,7 +44,7 @@ export function createTransactionMiddleware(
 
       if (error instanceof HighCongestionError) {
         return {
-          status: StatusCode.ERROR,
+          status: StatusCode.SERVICE_UNAVAILABLE,
           body: {
             ok: false,
             message: error.message,
