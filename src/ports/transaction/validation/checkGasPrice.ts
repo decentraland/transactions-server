@@ -1,15 +1,23 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { parseUnits } from '@ethersproject/units'
 import { BigNumber } from 'ethers'
-import { getMaticChainIdFromChainName } from '../../../logic/ethereum'
+import {
+  decodeFunctionData,
+  getMaticChainIdFromChainName,
+} from '../../../logic/ethereum'
 import { AppComponents } from '../../../types'
 import { ApplicationName } from '../../features'
 import { HighCongestionError } from '../errors'
 import { GasPriceResponse, IGasPriceValidator } from './types'
+import { ContractName, getContract } from 'decentraland-transactions'
+import { TransactionData } from '../types'
 
 const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'max-gas-price-allowed'
 
-export const checkGasPrice: IGasPriceValidator = async (components) => {
+export const checkGasPrice: IGasPriceValidator = async (
+  components,
+  transactionData
+) => {
   const { config, features } = components
   const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
 
@@ -17,24 +25,32 @@ export const checkGasPrice: IGasPriceValidator = async (components) => {
     ApplicationName.DAPPS,
     FF_MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
+  const chainId = getMaticChainIdFromChainName(chainName)
 
   if (isGasPriceAllowedFFEnabled) {
-    const maxGasPriceAllowed = await getMaxGasPriceAllowed(components)
-    const chainId = getMaticChainIdFromChainName(chainName)
+    const isWhiteListed = await isWhiteListedMethod(
+      components,
+      transactionData,
+      chainId
+    )
 
-    const currentGasPrice = await getNetworkGasPrice(components, chainId)
+    if (!isWhiteListed) {
+      const maxGasPriceAllowed = await getMaxGasPriceAllowed(components)
 
-    if (!currentGasPrice) {
-      throw new Error(
-        `Could not get current gas price for the network: ${chainName}.`
-      )
-    }
+      const currentGasPrice = await getNetworkGasPrice(components, chainId)
 
-    if (currentGasPrice.gt(maxGasPriceAllowed)) {
-      throw new HighCongestionError(
-        currentGasPrice.toString(),
-        maxGasPriceAllowed.toString()
-      )
+      if (!currentGasPrice) {
+        throw new Error(
+          `Could not get current gas price for the network: ${chainName}.`
+        )
+      }
+
+      if (currentGasPrice.gt(maxGasPriceAllowed)) {
+        throw new HighCongestionError(
+          currentGasPrice.toString(),
+          maxGasPriceAllowed.toString()
+        )
+      }
     }
   }
 }
@@ -91,4 +107,70 @@ const getNetworkGasPrice = async (
   }
 
   return null
+}
+
+/**
+ * Tries to get if the transaction method is white listed.
+ * It'll return a boolean value
+ * @param components - Config | Contract | Features | Fetcher | Logs components
+ * @param chainId - Network Chain ID
+ * @param transactionData - Transaction data params
+ */
+const isWhiteListedMethod = async (
+  components: Pick<
+    AppComponents,
+    'config' | 'contracts' | 'features' | 'fetcher' | 'logs'
+  >,
+  transactionData: TransactionData,
+  chainId: ChainId
+) => {
+  const { contracts } = components
+  const manager = getContract(ContractName.CollectionManager, chainId)
+  const factory = getContract(ContractName.CollectionFactoryV3, chainId)
+  const store = getContract(ContractName.CollectionStore, chainId)
+  const collection = getContract(ContractName.ERC721CollectionV2, chainId)
+  const manaConfig = getContract(ContractName.MANAToken, chainId)
+
+  const [contractAddress, fullData] = transactionData['params']
+
+  const { functionSignature: data } = decodeFunctionData(
+    manager.abi, // Either abi works, we just need one that has the executeMetaTransaction method for the first decode
+    'executeMetaTransaction',
+    fullData
+  )
+
+  // Allow the collection manager to create collections using the CollectionFactoryV3
+  if (contractAddress === manager.address) {
+    const { _factory: collectionFactoryAddress } = decodeFunctionData(
+      manager.abi,
+      'createCollection',
+      data
+    )
+
+    return collectionFactoryAddress === factory.address
+  }
+
+  // Approve the collection manager to spend mana on behalf of the user
+  if (contractAddress === manaConfig.address) {
+    const { spender: contractToAuthorizeToSpend } = decodeFunctionData(
+      manaConfig.abi,
+      'approve',
+      data
+    )
+
+    return contractToAuthorizeToSpend === manager.address
+  }
+
+  // Allow/Disallow the collection store to mint items
+  if (await contracts.isCollectionAddress(contractAddress)) {
+    const { _minters: contractsAuthorizedToMint } = decodeFunctionData(
+      collection.abi,
+      'setMinters',
+      data
+    )
+
+    return contractsAuthorizedToMint.includes(store.address)
+  }
+
+  return false
 }

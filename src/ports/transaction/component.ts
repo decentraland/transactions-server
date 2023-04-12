@@ -129,7 +129,7 @@ export function createTransactionComponent(
 
   async function checkData(transactionData: TransactionData): Promise<void> {
     await checkSchema(components, transactionData)
-    await checkGasPrice(components)
+    await checkGasPrice(components, transactionData)
     await checkSalePrice(components, transactionData)
     await checkContractAddress(components, transactionData)
     await checkQuota(components, transactionData)

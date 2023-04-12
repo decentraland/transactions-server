@@ -14,7 +14,11 @@ export type ITransactionValidator = (
 ) => Promise<void>
 
 export type IGasPriceValidator = (
-  components: Pick<AppComponents, 'config' | 'features' | 'fetcher' | 'logs'>
+  components: Pick<
+    AppComponents,
+    'config' | 'contracts' | 'features' | 'fetcher' | 'logs'
+  >,
+  transactionData: TransactionData
 ) => Promise<void>
 
 export type GasPriceResponse = {
