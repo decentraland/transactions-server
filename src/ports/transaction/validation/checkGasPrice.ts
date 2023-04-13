@@ -25,16 +25,17 @@ export const checkGasPrice: IGasPriceValidator = async (
     ApplicationName.DAPPS,
     FF_MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
-  const chainId = getMaticChainIdFromChainName(chainName)
 
   if (isGasPriceAllowedFFEnabled) {
-    const isWhiteListed = await isWhiteListedMethod(
-      components,
-      transactionData,
-      chainId
-    )
+    const chainId = getMaticChainIdFromChainName(chainName)
 
-    if (!isWhiteListed) {
+    if (
+      !(await isMethodAllowedToSkipMaxGasPrice(
+        components,
+        transactionData,
+        chainId
+      ))
+    ) {
       const maxGasPriceAllowed = await getMaxGasPriceAllowed(components)
 
       const currentGasPrice = await getNetworkGasPrice(components, chainId)
@@ -110,13 +111,13 @@ const getNetworkGasPrice = async (
 }
 
 /**
- * Tries to get if the transaction method is white listed.
+ * Tries to get if the transaction contract method is allowed to skip the max gas price allowed.
  * It'll return a boolean value
  * @param components - Config | Contract | Features | Fetcher | Logs components
  * @param chainId - Network Chain ID
  * @param transactionData - Transaction data params
  */
-const isWhiteListedMethod = async (
+const isMethodAllowedToSkipMaxGasPrice = async (
   components: Pick<
     AppComponents,
     'config' | 'contracts' | 'features' | 'fetcher' | 'logs'

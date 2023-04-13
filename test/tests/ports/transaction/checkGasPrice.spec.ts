@@ -108,7 +108,7 @@ test('checkGasPrice component', function ({ components }) {
         })
       })
 
-      describe('and the txn is whitelisted', () => {
+      describe('and the txn contract method is allowed to skip max gas price', () => {
         describe('and the txn approve the collection manager to spend mana on behalf of the user', () => {
           it('should not throw an error', async () => {
             transactionData = {
