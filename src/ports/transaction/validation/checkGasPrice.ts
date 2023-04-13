@@ -1,6 +1,7 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { parseUnits } from '@ethersproject/units'
 import { BigNumber } from 'ethers'
+import { ContractName, getContract } from 'decentraland-transactions'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
@@ -8,9 +9,8 @@ import {
 import { AppComponents } from '../../../types'
 import { ApplicationName } from '../../features'
 import { HighCongestionError } from '../errors'
-import { GasPriceResponse, IGasPriceValidator } from './types'
-import { ContractName, getContract } from 'decentraland-transactions'
 import { TransactionData } from '../types'
+import { GasPriceResponse, IGasPriceValidator } from './types'
 
 const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'max-gas-price-allowed'
 
