@@ -30,7 +30,7 @@ export const checkGasPrice: IGasPriceValidator = async (
     const chainId = getMaticChainIdFromChainName(chainName)
 
     if (
-      !(await isMethodAllowedToSkipMaxGasPrice(
+      !(await isMethodAllowedToSkipMaxGasPriceCheck(
         components,
         transactionData,
         chainId
@@ -111,13 +111,13 @@ const getNetworkGasPrice = async (
 }
 
 /**
- * Tries to get if the transaction contract method is allowed to skip the max gas price allowed.
+ * Tries to get if the transaction contract method is allowed to skip the max gas price allowed check.
  * It'll return a boolean value
  * @param components - Config | Contract | Features | Fetcher | Logs components
  * @param chainId - Network Chain ID
  * @param transactionData - Transaction data params
  */
-const isMethodAllowedToSkipMaxGasPrice = async (
+const isMethodAllowedToSkipMaxGasPriceCheck = async (
   components: Pick<
     AppComponents,
     'config' | 'contracts' | 'features' | 'fetcher' | 'logs'
@@ -125,7 +125,8 @@ const isMethodAllowedToSkipMaxGasPrice = async (
   transactionData: TransactionData,
   chainId: ChainId
 ) => {
-  const { contracts } = components
+  const { contracts, logs } = components
+  const logger = logs.getLogger('transactions-server')
   const manager = getContract(ContractName.CollectionManager, chainId)
   const factory = getContract(ContractName.CollectionFactoryV3, chainId)
   const store = getContract(ContractName.CollectionStore, chainId)
@@ -134,43 +135,47 @@ const isMethodAllowedToSkipMaxGasPrice = async (
 
   const [contractAddress, fullData] = transactionData['params']
 
-  const { functionSignature: data } = decodeFunctionData(
-    manager.abi, // Either abi works, we just need one that has the executeMetaTransaction method for the first decode
-    'executeMetaTransaction',
-    fullData
-  )
-
-  // Allow the collection manager to create collections using the CollectionFactoryV3
-  if (contractAddress === manager.address) {
-    const { _factory: collectionFactoryAddress } = decodeFunctionData(
-      manager.abi,
-      'createCollection',
-      data
+  try {
+    const { functionSignature: data } = decodeFunctionData(
+      manager.abi, // Either abi works, we just need one that has the executeMetaTransaction method for the first decode
+      'executeMetaTransaction',
+      fullData
     )
 
-    return collectionFactoryAddress === factory.address
-  }
+    // Allow the collection manager to create collections using the CollectionFactoryV3
+    if (contractAddress === manager.address) {
+      const { _factory: collectionFactoryAddress } = decodeFunctionData(
+        manager.abi,
+        'createCollection',
+        data
+      )
 
-  // Approve the collection manager to spend mana on behalf of the user
-  if (contractAddress === manaConfig.address) {
-    const { spender: contractToAuthorizeToSpend } = decodeFunctionData(
-      manaConfig.abi,
-      'approve',
-      data
-    )
+      return collectionFactoryAddress === factory.address
+    }
 
-    return contractToAuthorizeToSpend === manager.address
-  }
+    // Approve the collection manager to spend mana on behalf of the user
+    if (contractAddress === manaConfig.address) {
+      const { spender: contractToAuthorizeToSpend } = decodeFunctionData(
+        manaConfig.abi,
+        'approve',
+        data
+      )
 
-  // Allow/Disallow the collection store to mint items
-  if (await contracts.isCollectionAddress(contractAddress)) {
-    const { _minters: contractsAuthorizedToMint } = decodeFunctionData(
-      collection.abi,
-      'setMinters',
-      data
-    )
+      return contractToAuthorizeToSpend === manager.address
+    }
 
-    return contractsAuthorizedToMint.includes(store.address)
+    // Allow/Disallow the collection store to mint items
+    if (await contracts.isCollectionAddress(contractAddress)) {
+      const { _minters: contractsAuthorizedToMint } = decodeFunctionData(
+        collection.abi,
+        'setMinters',
+        data
+      )
+
+      return contractsAuthorizedToMint.includes(store.address)
+    }
+  } catch (error) {
+    logger.error(error as Error)
   }
 
   return false
