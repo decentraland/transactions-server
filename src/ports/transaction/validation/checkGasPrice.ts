@@ -173,7 +173,9 @@ const isMethodAllowedToSkipMaxGasPriceCheck = async (
 
       return contractsAuthorizedToMint.includes(store.address)
     }
-  } catch (error) {}
+  } catch (error) {
+    // When the decode fails, we just return false
+  }
 
   return false
 }
