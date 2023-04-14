@@ -125,8 +125,7 @@ const isMethodAllowedToSkipMaxGasPriceCheck = async (
   transactionData: TransactionData,
   chainId: ChainId
 ) => {
-  const { contracts, logs } = components
-  const logger = logs.getLogger('transactions-server')
+  const { contracts } = components
   const manager = getContract(ContractName.CollectionManager, chainId)
   const factory = getContract(ContractName.CollectionFactoryV3, chainId)
   const store = getContract(ContractName.CollectionStore, chainId)
@@ -174,9 +173,7 @@ const isMethodAllowedToSkipMaxGasPriceCheck = async (
 
       return contractsAuthorizedToMint.includes(store.address)
     }
-  } catch (error) {
-    logger.error(error as Error)
-  }
+  } catch (error) {}
 
   return false
 }
