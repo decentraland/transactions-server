@@ -1,6 +1,5 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
