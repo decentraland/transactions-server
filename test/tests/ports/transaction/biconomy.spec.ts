@@ -45,9 +45,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
     expect({ result }).toEqual({ result: response.txHash })
 
     expect(
-      metrics.increment.calledOnceWith('dcl_sent_transactions_biconomy', {
-        contract: tx.params[0],
-      })
+      metrics.increment.calledOnceWith('dcl_sent_transactions_biconomy')
     ).toEqual(true)
   })
 
@@ -68,12 +66,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
     )
 
     expect(
-      metrics.increment.calledOnceWith(
-        'dcl_error_relay_transactions_biconomy',
-        {
-          contract: tx.params[0],
-        }
-      )
+      metrics.increment.calledOnceWith('dcl_error_relay_transactions_biconomy')
     ).toEqual(true)
   })
 
@@ -99,10 +92,7 @@ test('biconomy flow test', function ({ components, stubComponents }) {
 
     expect(
       metrics.increment.calledOnceWith(
-        'dcl_error_cannot_estimate_gas_transactions_biconomy',
-        {
-          contract: tx.params[0],
-        }
+        'dcl_error_cannot_estimate_gas_transactions_biconomy'
       )
     ).toEqual(true)
   })
@@ -135,7 +125,6 @@ test('biconomy flow test', function ({ components, stubComponents }) {
       metrics.increment.calledOnceWith(
         'dcl_error_limit_reached_transactions_biconomy',
         {
-          contract: tx.params[0],
           code: ErrorCode.DAPP_LIMIT_REACHED,
         }
       )
