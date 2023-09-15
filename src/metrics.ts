@@ -11,7 +11,7 @@ export const metricDeclarations = {
   dcl_sent_transactions_biconomy: {
     help: 'Count transactions sent to BICONOMY',
     type: IMetricsComponent.CounterType,
-    labelNames: ['contract'],
+    labelNames: [],
   },
   dcl_error_limit_reached_transactions_biconomy: {
     help: 'Count limit errors when trying to relay a transaction to BICONOMY',
