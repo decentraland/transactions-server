@@ -25,7 +25,6 @@ export const checkSalePrice: ITransactionValidator = async (
 
   if (salePrice !== null && BigNumber.from(salePrice).lt(minPriceInWei)) {
     metrics.increment('dcl_error_sale_price_too_low', {
-      contract: params[0],
       minPrice: minPriceInWei,
       salePrice,
     })

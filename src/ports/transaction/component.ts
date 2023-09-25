@@ -48,10 +48,6 @@ export function createTransactionComponent(
       method: 'POST',
     })
 
-    const metricPayload = {
-      contract: transactionData.params[0],
-    }
-
     if (result.status !== MetaTransactionStatus.OK) {
       let message: string | undefined
       let code: ErrorCode | undefined
@@ -65,7 +61,6 @@ export function createTransactionComponent(
 
           // A limit was reached, check ErrorCode for possible values
           metrics.increment('dcl_error_limit_reached_transactions_biconomy', {
-            ...metricPayload,
             code,
           })
           break
@@ -74,18 +69,14 @@ export function createTransactionComponent(
 
           // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/2e5d833f672a87a7acf0ff761f986421676c4ec9/ERRORS.md
           metrics.increment(
-            'dcl_error_cannot_estimate_gas_transactions_biconomy',
-            metricPayload
+            'dcl_error_cannot_estimate_gas_transactions_biconomy'
           )
           break
         case MetaTransactionStatus.NOT_FOUND:
         case MetaTransactionStatus.INTERNAL_SERVER_ERROR:
         default:
           // Any other error is related to the Biconomy API
-          metrics.increment(
-            'dcl_error_relay_transactions_biconomy',
-            metricPayload
-          )
+          metrics.increment('dcl_error_relay_transactions_biconomy')
           break
       }
 
@@ -100,7 +91,7 @@ export function createTransactionComponent(
 
     const data: MetaTransactionResponse = await result.json()
 
-    metrics.increment('dcl_sent_transactions_biconomy', metricPayload)
+    metrics.increment('dcl_sent_transactions_biconomy')
 
     return data.txHash!
   }
