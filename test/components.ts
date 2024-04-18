@@ -49,7 +49,9 @@ export async function initComponents(): Promise<TestComponents> {
   )}:${await config.requireNumber('HTTP_SERVER_PORT')}`
 
   const cors = {
-    origin: await config.getString('CORS_ORIGIN'),
+    origin: (await config.requireString('CORS_ORIGIN'))
+      .split(';')
+      .map((origin) => new RegExp(origin)),
     method: await config.getString('CORS_METHOD'),
   }
 
