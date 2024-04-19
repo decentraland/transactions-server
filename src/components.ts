@@ -29,7 +29,9 @@ export async function initComponents(): Promise<AppComponents> {
   )
 
   const cors = {
-    origin: await config.getString('CORS_ORIGIN'),
+    origin: (await config.requireString('CORS_ORIGIN'))
+      .split(';')
+      .map((origin) => new RegExp(origin)),
     method: await config.getString('CORS_METHOD'),
   }
 
