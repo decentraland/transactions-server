@@ -100,6 +100,26 @@ test('checkGasPrice component', function ({ components }) {
       })
 
       describe('and the txn contract method is allowed to skip max gas price', () => {
+        beforeEach(() => {
+          const { features, fetcher } = components
+          jest.spyOn(features, 'getFeatureVariant').mockResolvedValueOnce({
+            name: 'max-gas-price-allowed-in-wei',
+            payload: {
+              type: 'string',
+              value: '2000000000',
+            },
+            enabled: true,
+          })
+          jest.spyOn(fetcher, 'fetch').mockResolvedValueOnce({
+            ok: true,
+            json: jest.fn().mockResolvedValueOnce({
+              gasPrice: {
+                unit: 'gwei',
+                value: 1,
+              },
+            }),
+          } as unknown as Response)
+        })
         describe('and the txn is an approve of the collection manager to spend mana on behalf of the user', () => {
           it('should not throw an error', async () => {
             await expect(
