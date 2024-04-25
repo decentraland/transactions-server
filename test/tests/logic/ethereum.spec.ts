@@ -14,9 +14,9 @@ describe('getMaticChainIdFromNetwork', () => {
       )
     })
 
-    it('should return the mapped MUMBAI Matic Chain Id for ETHEREUM ROPSTEN', () => {
-      expect(getMaticChainIdFromChainName(ChainName.ETHEREUM_ROPSTEN)).toBe(
-        ChainId.MATIC_MUMBAI
+    it('should return the mapped AMOY Matic Chain Id for ETHEREUM SEPOLIA', () => {
+      expect(getMaticChainIdFromChainName(ChainName.ETHEREUM_SEPOLIA)).toBe(
+        ChainId.MATIC_AMOY
       )
     })
   })
@@ -40,7 +40,7 @@ describe('decodeFunctionData', () => {
     it('should decode and return the function data', () => {
       const store = getContract(
         ContractName.CollectionStore,
-        ChainId.MATIC_MUMBAI
+        ChainId.MATIC_AMOY
       )
 
       const values = {
@@ -81,7 +81,7 @@ describe('decodeFunctionData', () => {
       expect(() =>
         decodeFunctionData(
           // prettier-ignore
-          [{ inputs: [], name: 'domainSeparator', outputs: [ { internalType: 'bytes32', name: '', type: 'bytes32' } ], stateMutability: 'view', type: 'function' }],
+          [{ inputs: [], name: 'domainSeparator', outputs: [{ internalType: 'bytes32', name: '', type: 'bytes32' }], stateMutability: 'view', type: 'function' }],
           'domainSeparator',
           txData
         )
@@ -95,7 +95,7 @@ describe('decodeFunctionData', () => {
     it('should throw an error showing the incorrect data', () => {
       const store = getContract(
         ContractName.CollectionStore,
-        ChainId.MATIC_MUMBAI
+        ChainId.MATIC_AMOY
       )
       expect(() =>
         decodeFunctionData(
