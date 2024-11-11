@@ -13,7 +13,7 @@ TRANSACTIONS_SERVER_URL=https://transactions-api.decentraland.org
 
 FF_URL=https://feature-flags.decentraland.org
 
-BICONOMY_API_URL=https://api.biconomy.io/api/v1
+BICONOMY_API_URL=https://api.biconomy.io
 BICONOMY_API_KEY=1234abc
 BICONOMY_API_ID=1234
 
