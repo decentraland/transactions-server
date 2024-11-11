@@ -106,7 +106,7 @@ export function createGelatoComponent(
             ErrorCode.EXPECTATION_FAILED
           )
         } else if (data.task.taskState === TaskState.Cancelled) {
-          logger.error(`Gelato task ${taskId} reverted`)
+          logger.error(`Gelato task ${taskId} cancelled`)
           metrics.increment('dcl_error_cancelled_transactions_gelato')
           throw new InvalidTransactionError(
             'Transaction cancelled',
