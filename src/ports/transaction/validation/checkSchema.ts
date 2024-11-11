@@ -1,5 +1,5 @@
 import { generateValidator } from '../../../logic/validation'
-import { InvalidSchemaError } from '../errors'
+import { InvalidSchemaError } from '../../../types/transactions/errors'
 import { transactionSchema } from '../types'
 import { ITransactionValidator } from './types'
 

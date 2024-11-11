@@ -1,4 +1,9 @@
-import { InvalidTransactionError } from '../ports/transaction/errors'
+import { ErrorCode } from 'decentraland-transactions'
+import { isErrorWithMessage } from '../logic/errors'
+import {
+  InvalidTransactionError,
+  RelayerTimeout,
+} from '../types/transactions/errors'
 import { SendTransactionRequest } from '../ports/transaction/types'
 import { HandlerContextWithPath } from '../types'
 import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
@@ -54,12 +59,32 @@ export async function sendTransaction(
     }
   } catch (error) {
     globalLogger.error(error as Error)
+    if (error instanceof InvalidTransactionError) {
+      return {
+        status: StatusCode.ERROR,
+        body: {
+          ok: false,
+          message: error.message,
+          code: error.code,
+        },
+      }
+    } else if (error instanceof RelayerTimeout) {
+      return {
+        status: StatusCode.GATEWAY_TIMEOUT,
+        body: {
+          ok: false,
+          message: error.message,
+          code: ErrorCode.UNKNOWN,
+        },
+      }
+    }
+
     return {
       status: StatusCode.ERROR,
       body: {
         ok: false,
-        message: (error as Error).message,
-        code: (error as InvalidTransactionError).code,
+        message: isErrorWithMessage(error) ? error.message : 'Unknown error',
+        code: ErrorCode.UNKNOWN,
       },
     }
   }

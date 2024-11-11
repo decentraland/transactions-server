@@ -20,6 +20,8 @@ import { createFeaturesComponent } from './ports/features'
 import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
+import { createBiconomyComponent } from './ports/biconomy'
+import { createGelatoComponent } from './ports/gelato'
 
 export async function initComponents(): Promise<AppComponents> {
   // default config from process.env + .env file
@@ -100,12 +102,17 @@ export async function initComponents(): Promise<AppComponents> {
     collectionsSubgraph,
   })
 
+  const biconomy = createBiconomyComponent({ logs, config, fetcher, metrics })
+  const gelato = createGelatoComponent({ logs, config, fetcher, metrics })
+
   const transaction = createTransactionComponent({
     config,
     features,
     fetcher,
     logs,
     pg,
+    biconomy,
+    gelato,
     contracts,
     metrics,
   })
@@ -120,6 +127,8 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     pg,
+    biconomy,
+    gelato,
     transaction,
     contracts,
     collectionsSubgraph,

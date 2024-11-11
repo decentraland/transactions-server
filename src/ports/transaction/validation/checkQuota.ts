@@ -1,5 +1,5 @@
 import SQL from 'sql-template-strings'
-import { QuotaReachedError } from '../errors'
+import { QuotaReachedError } from '../../../types/transactions/errors'
 import { ITransactionValidator } from './types'
 
 export const checkQuota: ITransactionValidator = async (

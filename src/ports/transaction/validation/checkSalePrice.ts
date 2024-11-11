@@ -5,8 +5,8 @@ import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
-import { InvalidSalePriceError } from '../errors'
-import { TransactionData } from '../types'
+import { InvalidSalePriceError } from '../../../types/transactions/errors'
+import { TransactionData } from '../../../types/transactions/transactions'
 import { ITransactionValidator } from './types'
 
 export const checkSalePrice: ITransactionValidator = async (

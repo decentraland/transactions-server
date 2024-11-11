@@ -1,5 +1,5 @@
 import { AppComponents } from '../../../types'
-import { TransactionData } from '../types'
+import { TransactionData } from '../../../types/transactions/transactions'
 
 /**
  * Checks for the validity of the transaction data.
@@ -16,17 +16,7 @@ export type ITransactionValidator = (
 export type IGasPriceValidator = (
   components: Pick<
     AppComponents,
-    'config' | 'contracts' | 'features' | 'fetcher' | 'logs'
+    'config' | 'contracts' | 'features' | 'biconomy' | 'gelato'
   >,
   transactionData: TransactionData
 ) => Promise<void>
-
-export type GasPriceResponse = {
-  code: number
-  message: string
-  gasPrice: {
-    value: number
-    unit: string
-  }
-  networkId: string
-}

@@ -15,6 +15,8 @@ import { createTestFetchComponent } from '../src/ports/fetcher'
 import { createFeaturesComponent } from '../src/ports/features'
 import { GlobalContext, TestComponents } from '../src/types'
 import { main } from '../src/service'
+import { createBiconomyComponent } from '../src/ports/biconomy'
+import { createGelatoComponent } from '../src/ports/gelato'
 
 // start TCP port for listeners
 let lastUsedPort = 19000 + parseInt(process.env.JEST_WORKER_ID || '1') * 1000
@@ -87,6 +89,10 @@ export async function initComponents(): Promise<TestComponents> {
     fetcher,
     collectionsSubgraph,
   })
+
+  const biconomy = createBiconomyComponent({ config, logs, fetcher, metrics })
+  const gelato = createGelatoComponent({ config, logs, fetcher, metrics })
+
   const transaction = createTransactionComponent({
     fetcher,
     features,
@@ -95,6 +101,8 @@ export async function initComponents(): Promise<TestComponents> {
     pg,
     metrics,
     contracts,
+    gelato,
+    biconomy,
   })
 
   const globalLogger = logs.getLogger('transactions-server')
@@ -115,5 +123,7 @@ export async function initComponents(): Promise<TestComponents> {
     contracts,
     collectionsSubgraph,
     statusChecks,
+    biconomy,
+    gelato,
   }
 }

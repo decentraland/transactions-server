@@ -1,5 +1,4 @@
 import { ChainId, ChainName } from '@dcl/schemas'
-import { parseUnits } from '@ethersproject/units'
 import { BigNumber } from 'ethers'
 import { ContractName, getContract } from 'decentraland-transactions'
 import {
@@ -7,10 +6,10 @@ import {
   getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
 import { AppComponents } from '../../../types'
-import { ApplicationName } from '../../features'
-import { HighCongestionError } from '../errors'
-import { TransactionData } from '../types'
-import { GasPriceResponse, IGasPriceValidator } from './types'
+import { ApplicationName, Feature } from '../../features'
+import { HighCongestionError } from '../../../types/transactions/errors'
+import { IGasPriceValidator } from './types'
+import { TransactionData } from '../../../types/transactions/transactions'
 
 const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'max-gas-price-allowed'
 
@@ -63,7 +62,7 @@ export const checkGasPrice: IGasPriceValidator = async (
  */
 
 const getMaxGasPriceAllowed = async (
-  components: Pick<AppComponents, 'config' | 'features' | 'fetcher' | 'logs'>
+  components: Pick<AppComponents, 'features'>
 ) => {
   const { features } = components
   const gasPriceAllowedVariant = await features.getFeatureVariant(
@@ -85,29 +84,20 @@ const getMaxGasPriceAllowed = async (
  * @param chainId - Network Chain ID
  */
 const getNetworkGasPrice = async (
-  components: Pick<AppComponents, 'config' | 'features' | 'fetcher' | 'logs'>,
+  components: Pick<AppComponents, 'features' | 'gelato' | 'biconomy'>,
   chainId: ChainId
 ): Promise<BigNumber | null> => {
-  const { config, fetcher, logs } = components
-  const logger = logs.getLogger('transactions-server')
-  const biconomyAPIURL = await config.requireString('BICONOMY_API_V1_URL')
+  const { features, gelato, biconomy } = components
+  const isGelatoRelayerEnabled = await features.getIsFeatureEnabled(
+    ApplicationName.DAPPS,
+    Feature.GELATO_RELAYER
+  )
 
-  try {
-    const response = await fetcher.fetch(
-      `${biconomyAPIURL}/gas-price?networkId=${chainId}`
-    )
-
-    if (response.ok) {
-      const result: GasPriceResponse = await response.json()
-      return parseUnits(result.gasPrice.value.toString(), result.gasPrice.unit)
-    } else {
-      throw new Error(`Could not fetch the gas price from ${biconomyAPIURL}`)
-    }
-  } catch (error) {
-    logger.error(error as Error)
+  if (isGelatoRelayerEnabled) {
+    return gelato.getNetworkGasPrice(chainId)
   }
 
-  return null
+  return biconomy.getNetworkGasPrice(chainId)
 }
 
 /**
@@ -118,10 +108,7 @@ const getNetworkGasPrice = async (
  * @param transactionData - Transaction data params
  */
 const isMethodAllowedToSkipMaxGasPriceCheck = async (
-  components: Pick<
-    AppComponents,
-    'config' | 'contracts' | 'features' | 'fetcher' | 'logs'
-  >,
+  components: Pick<AppComponents, 'contracts'>,
   transactionData: TransactionData,
   chainId: ChainId
 ) => {
@@ -142,25 +129,30 @@ const isMethodAllowedToSkipMaxGasPriceCheck = async (
     )
 
     // Allow the collection manager to create collections using the CollectionFactoryV3
-    if (contractAddress === manager.address) {
+    if (contractAddress.toLowerCase() === manager.address.toLowerCase()) {
       const { _factory: collectionFactoryAddress } = decodeFunctionData(
         manager.abi,
         'createCollection',
         data
       )
 
-      return collectionFactoryAddress === factory.address
+      return (
+        collectionFactoryAddress.toLowerCase() === factory.address.toLowerCase()
+      )
     }
 
     // Approve the collection manager to spend mana on behalf of the user
-    if (contractAddress === manaConfig.address) {
+    if (contractAddress.toLowerCase() === manaConfig.address.toLowerCase()) {
       const { spender: contractToAuthorizeToSpend } = decodeFunctionData(
         manaConfig.abi,
         'approve',
         data
       )
 
-      return contractToAuthorizeToSpend === manager.address
+      return (
+        contractToAuthorizeToSpend.toLowerCase() ===
+        manager.address.toLowerCase()
+      )
     }
 
     // Allow/Disallow the collection store to mint items
@@ -171,7 +163,10 @@ const isMethodAllowedToSkipMaxGasPriceCheck = async (
         data
       )
 
-      return contractsAuthorizedToMint.includes(store.address)
+      return contractsAuthorizedToMint.some(
+        (contract: string) =>
+          contract.toLowerCase() === store.address.toLowerCase()
+      )
     }
   } catch (error) {
     // When the decode fails, we just return false
