@@ -28,7 +28,9 @@ export function createGelatoComponent(
       if (response.headers.get('content-type')?.includes('application/json')) {
         return ((await response.json()) as { message: string }).message
       }
-    } catch (_) {}
+    } catch (_) {
+      // Ignore
+    }
     return 'Unknown error'
   }
 
