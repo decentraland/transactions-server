@@ -55,6 +55,11 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
+  dcl_error_no_balance_transactions_gelato: {
+    help: 'Count errors of no balance when trying to relay a transaction to Gelato',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
   ...thegraphMetrics,
 }
 

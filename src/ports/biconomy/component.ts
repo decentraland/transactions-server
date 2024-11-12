@@ -17,7 +17,8 @@ import { InvalidTransactionError } from '../../types/transactions/errors'
 export function createBiconomyComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'logs' | 'metrics'>
 ): BiconomyMetaTransactionComponent {
-  const { config, fetcher, metrics } = components
+  const { config, fetcher, metrics, logs } = components
+  const logger = logs.getLogger('biconomy')
 
   async function sendMetaTransaction(
     transactionData: TransactionData
@@ -53,6 +54,7 @@ export function createBiconomyComponent(
           // Conflict errors always have message and code values
           message = response.message!
           code = toErrorCode(response.code!)
+          logger.log(`Transaction relaying error: ${message} (${code})`)
 
           // A limit was reached, check ErrorCode for possible values
           metrics.increment('dcl_error_limit_reached_transactions_biconomy', {
@@ -62,6 +64,7 @@ export function createBiconomyComponent(
         case MetaTransactionStatus.EXPECTATION_FAILED:
           code = ErrorCode.EXPECTATION_FAILED
 
+          logger.log('Transaction relaying error: Cannot estimate gas')
           // This error happens when the contract execution will fail. See https://github.com/decentraland/transactions-server/blob/2e5d833f672a87a7acf0ff761f986421676c4ec9/ERRORS.md
           metrics.increment(
             'dcl_error_cannot_estimate_gas_transactions_biconomy'
@@ -70,6 +73,9 @@ export function createBiconomyComponent(
         case MetaTransactionStatus.NOT_FOUND:
         case MetaTransactionStatus.INTERNAL_SERVER_ERROR:
         default:
+          logger.log(
+            `Transaction relaying error: Server error ${result.status}`
+          )
           // Any other error is related to the Biconomy API
           metrics.increment('dcl_error_relay_transactions_biconomy')
           break
@@ -93,8 +99,6 @@ export function createBiconomyComponent(
   const getNetworkGasPrice = async (
     chainId: ChainId
   ): Promise<BigNumber | null> => {
-    const { config, fetcher, logs } = components
-    const logger = logs.getLogger('transactions-server')
     const biconomyAPIURL = await config.requireString('BICONOMY_API_URL')
 
     try {

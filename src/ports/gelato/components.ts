@@ -99,15 +99,31 @@ export function createGelatoComponent(
       if (response.ok) {
         const data = (await response.json()) as GelatoTaskStatusResponse
         if (data.task.taskState === TaskState.ExecReverted) {
-          logger.error(`Gelato task ${taskId} reverted`)
+          logger.error(
+            `Gelato task ${taskId} reverted: ${data.task.lastCheckMessage}`
+          )
           metrics.increment('dcl_error_reverted_transactions_gelato')
           throw new InvalidTransactionError(
             'Transaction reverted',
             ErrorCode.EXPECTATION_FAILED
           )
         } else if (data.task.taskState === TaskState.Cancelled) {
-          logger.error(`Gelato task ${taskId} cancelled`)
+          logger.error(
+            `Gelato task ${taskId} cancelled: ${data.task.lastCheckMessage}`
+          )
           metrics.increment('dcl_error_cancelled_transactions_gelato')
+          const noBalanceLeftInGasTankError =
+            data.task.lastCheckMessage?.includes('No available token balance')
+          const noTokensConfiguredInGasTankSetError =
+            data.task.lastCheckMessage?.includes('No available token balance')
+
+          if (
+            noBalanceLeftInGasTankError ||
+            noTokensConfiguredInGasTankSetError
+          ) {
+            metrics.increment('dcl_error_no_balance_transactions_gelato')
+          }
+
           throw new InvalidTransactionError(
             'Transaction cancelled',
             ErrorCode.EXPECTATION_FAILED
