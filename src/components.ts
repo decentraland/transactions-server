@@ -96,14 +96,19 @@ export async function initComponents(): Promise<AppComponents> {
     await config.requireString('COLLECTIONS_SUBGRAPH_URL')
   )
 
-  const contracts = createContractsComponent({
+  const contracts = await createContractsComponent({
     config,
     fetcher,
     collectionsSubgraph,
   })
 
-  const biconomy = createBiconomyComponent({ logs, config, fetcher, metrics })
-  const gelato = createGelatoComponent({ logs, config, fetcher, metrics })
+  const biconomy = await createBiconomyComponent({
+    logs,
+    config,
+    fetcher,
+    metrics,
+  })
+  const gelato = await createGelatoComponent({ logs, config, fetcher, metrics })
 
   const transaction = createTransactionComponent({
     config,

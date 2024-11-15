@@ -1,231 +1,202 @@
 import { Response } from 'node-fetch'
-import { test } from '../../../components'
+import { IFetchComponent } from '@well-known-components/http-server'
+import { IConfigComponent } from '@well-known-components/interfaces'
+import { ISubgraphComponent } from '@well-known-components/thegraph-component'
 import { createContractsComponent } from '../../../../src/ports/contracts/component'
 import {
   IContractsComponent,
   RemoteCollection,
 } from '../../../../src/ports/contracts/types'
 
-test('contracts component', function ({ components, stubComponents }) {
-  describe('when checking for a valid contract address', () => {
-    let contracts: IContractsComponent
-    let address: string
+let requireNumberMock: jest.Mock
+let requireStringMock: jest.Mock
+let mockedQuery: jest.Mock
+let mockedFetch: jest.Mock
+let address: string
+let contracts: IContractsComponent
+let components: {
+  config: IConfigComponent
+  collectionsSubgraph: ISubgraphComponent
+  fetcher: IFetchComponent
+}
 
+beforeEach(async () => {
+  mockedQuery = jest.fn()
+  mockedFetch = jest.fn()
+  requireNumberMock = jest.fn().mockImplementation((key: string) => {
+    switch (key) {
+      case 'COLLECTIONS_FETCH_INTERVAL_MS':
+        return 1000
+      case 'COLLECTIONS_CHAIN_ID':
+        return 80002
+      default:
+        throw new Error(`Unknown key ${key}`)
+    }
+  })
+  requireStringMock = jest.fn().mockImplementation((key: string) => {
+    switch (key) {
+      case 'CONTRACT_ADDRESSES_URL':
+        return 'https://contracts.decentraland.org/addresses.json'
+      default:
+        throw new Error(`Unknown key ${key}`)
+    }
+  })
+  components = {
+    config: {
+      requireString: requireStringMock,
+      requireNumber: requireNumberMock,
+      getString: jest.fn(),
+      getNumber: jest.fn(),
+    },
+    collectionsSubgraph: {
+      query: mockedQuery,
+    },
+    fetcher: {
+      fetch: mockedFetch,
+    },
+  }
+  address = '0xabc123123'
+  contracts = await createContractsComponent(components)
+})
+
+describe('when checking for a valid contract address', () => {
+  describe('when the address is a valid collection and whitelisted', () => {
     beforeEach(() => {
-      const { config, collectionsSubgraph } = components
-      const { fetcher } = stubComponents
-
-      address = '0xabc123123'
-      contracts = createContractsComponent({
-        config,
-        fetcher,
-        collectionsSubgraph,
+      mockedQuery.mockResolvedValueOnce({ collections: [{ id: address }] })
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => ({ amoy: { SomeContract: address } }),
       })
     })
 
-    afterEach(() => {
-      jest.resetAllMocks()
-      contracts.clearCache()
-    })
-
-    describe('when the address is a valid collection and whitelisted', () => {
-      beforeEach(() => {
-        jest.spyOn(contracts, 'isCollectionAddress').mockResolvedValueOnce(true)
-        jest.spyOn(contracts, 'isWhitelisted').mockResolvedValueOnce(true)
-      })
-
-      it('should return true', async () => {
-        expect(await contracts.isValidAddress(address)).toBe(true)
-      })
-    })
-
-    describe('when the address is a valid collection', () => {
-      beforeEach(() => {
-        jest.spyOn(contracts, 'isCollectionAddress').mockResolvedValueOnce(true)
-        jest.spyOn(contracts, 'isWhitelisted').mockResolvedValueOnce(false)
-      })
-
-      it('should return true', async () => {
-        expect(await contracts.isValidAddress(address)).toBe(true)
-      })
-    })
-
-    describe('when the address is a whitelisted', () => {
-      beforeEach(() => {
-        jest
-          .spyOn(contracts, 'isCollectionAddress')
-          .mockResolvedValueOnce(false)
-        jest.spyOn(contracts, 'isWhitelisted').mockResolvedValueOnce(true)
-      })
-
-      it('should return true', async () => {
-        expect(await contracts.isValidAddress(address)).toBe(true)
-      })
-    })
-
-    describe('when the address is invalid', () => {
-      beforeEach(() => {
-        jest
-          .spyOn(contracts, 'isCollectionAddress')
-          .mockResolvedValueOnce(false)
-        jest.spyOn(contracts, 'isWhitelisted').mockResolvedValueOnce(false)
-      })
-
-      it('should return true', async () => {
-        expect(await contracts.isValidAddress(address)).toBe(false)
-      })
+    it('should return true', () => {
+      return expect(contracts.isValidAddress(address)).resolves.toBe(true)
     })
   })
 
-  describe('when checking if an address belongs to a collection', () => {
-    let contracts: IContractsComponent
-    let address: string
-    let collections: RemoteCollection[]
-    let subgraphMock: jest.SpyInstance
-
+  describe('when the address is a valid collection', () => {
     beforeEach(() => {
-      const { config, collectionsSubgraph } = components
-      const { fetcher } = stubComponents
-
-      collections = [{ id: address }]
-
-      subgraphMock = jest
-        .spyOn(collectionsSubgraph, 'query')
-        .mockImplementationOnce(async (_query, variables) => ({
-          collections: variables!.id === address ? collections : [],
-        }))
-
-      address = '0xabc123123'
-      contracts = createContractsComponent({
-        config,
-        fetcher,
-        collectionsSubgraph,
+      mockedQuery.mockResolvedValueOnce({ collections: [{ id: address }] })
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => ({ amoy: {} }),
       })
     })
 
-    afterEach(() => {
-      jest.resetAllMocks()
-      contracts.clearCache()
+    it('should return true', async () => {
+      expect(await contracts.isValidAddress(address)).toBe(true)
+    })
+  })
+
+  describe('when the address is a whitelisted', () => {
+    beforeEach(() => {
+      mockedQuery.mockResolvedValueOnce({ collections: [] })
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => ({ amoy: { SomeContract: address } }),
+      })
     })
 
-    describe('when the collection address is valid', () => {
+    it('should return true', async () => {
+      expect(await contracts.isValidAddress(address)).toBe(true)
+    })
+  })
+
+  describe('when the address is invalid and not whitelisted', () => {
+    beforeEach(() => {
+      mockedQuery.mockResolvedValueOnce({ collections: [] })
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => ({ amoy: {} }),
+      })
+    })
+
+    it('should return true', async () => {
+      expect(await contracts.isValidAddress(address)).toBe(false)
+    })
+  })
+})
+
+describe('when checking if an address belongs to a collection', () => {
+  let collections: RemoteCollection[]
+
+  beforeEach(() => {
+    collections = [{ id: address }]
+    mockedQuery.mockImplementationOnce(async (_query, variables) => ({
+      collections: variables!.id === address ? collections : [],
+    }))
+  })
+
+  describe('when the collection address is valid', () => {
+    it('should return true', async () => {
+      expect(await contracts.isCollectionAddress(address)).toBe(true)
+    })
+  })
+
+  describe('when the collection address is valid', () => {
+    it('should return false', async () => {
+      expect(await contracts.isCollectionAddress('some nonsense')).toBe(false)
+    })
+  })
+
+  describe('when the method is called more than once', () => {
+    it('should cache the subsequent requests', async () => {
+      await contracts.isCollectionAddress(address)
+      await contracts.isCollectionAddress(address)
+
+      expect(mockedQuery).toBeCalledWith(contracts.getCollectionQuery(), {
+        id: address,
+      })
+      expect(mockedQuery).toBeCalledTimes(1)
+    })
+  })
+})
+
+describe('when checking for a whitelisted address', () => {
+  const url = 'https://contracts.decentraland.org/addresses.json'
+
+  describe('when the remote resource fails', () => {
+    beforeEach(() => {
+      mockedFetch.mockResolvedValueOnce(new Response('', { status: 500 }))
+    })
+
+    it('should throw an error', async () => {
+      await expect(contracts.isWhitelisted('')).rejects.toEqual(
+        new Error(`Could not get the whitelisted addresses from ${url}`)
+      )
+    })
+  })
+
+  describe('when the remote resource returns data', () => {
+    beforeEach(() => {
+      const body = JSON.stringify({
+        amoy: {
+          SomeContract: address,
+        },
+      })
+
+      mockedFetch.mockResolvedValueOnce(new Response(body, { status: 200 }))
+    })
+
+    describe('and the address is whitelisted', () => {
       it('should return true', async () => {
-        expect(await contracts.isCollectionAddress(address)).toBe(true)
+        expect(await contracts.isWhitelisted(address)).toBe(true)
       })
     })
 
-    describe('when the collection address is valid', () => {
-      it('should return false', async () => {
-        expect(await contracts.isCollectionAddress('some nonsense')).toBe(false)
+    describe('and the address is not whitelisted', () => {
+      it('should return true', async () => {
+        expect(await contracts.isWhitelisted('nonsense')).toBe(false)
       })
     })
 
-    describe('when the method is called more than once', () => {
+    describe('and the method is called more than once', () => {
       it('should cache the subsequent requests', async () => {
-        await contracts.isCollectionAddress(address)
-        await contracts.isCollectionAddress(address)
+        await contracts.isWhitelisted(address)
+        await contracts.isWhitelisted(address)
+        await contracts.isWhitelisted(address)
 
-        expect(subgraphMock).toBeCalledWith(contracts.getCollectionQuery(), {
-          id: address,
-        })
-        expect(subgraphMock).toBeCalledTimes(1)
-      })
-    })
-  })
-
-  describe('when checking for a whitelisted address', () => {
-    const url = 'https://contracts.decentraland.org/addresses.json'
-
-    describe('when the remote resource fails', () => {
-      let contracts: IContractsComponent
-
-      beforeEach(() => {
-        const { config, collectionsSubgraph } = components
-        const { fetcher } = stubComponents
-
-        fetcher.fetch
-          .withArgs(url, {
-            headers: { 'content-type': 'application/json' },
-            method: 'GET',
-          })
-          .returns(Promise.resolve(new Response('', { status: 500 })))
-
-        contracts = createContractsComponent({
-          config,
-          fetcher,
-          collectionsSubgraph,
-        })
-      })
-
-      afterEach(() => {
-        contracts.clearCache()
-      })
-
-      it('should throw an error', async () => {
-        await expect(contracts.isWhitelisted('')).rejects.toEqual(
-          new Error(`Could not get the whitelisted addresses from ${url}`)
-        )
-      })
-    })
-
-    describe('when the remote resource returns data', () => {
-      let contracts: IContractsComponent
-      let address: string
-      let fetcher: any
-
-      beforeEach(() => {
-        const { config, collectionsSubgraph } = components
-
-        fetcher = stubComponents.fetcher
-        address = '0xabc123'
-
-        const url = 'https://contracts.decentraland.org/addresses.json'
-        const body = JSON.stringify({
-          matic: {
-            SomeContract: address,
-          },
-        })
-
-        fetcher.fetch
-          .withArgs(url, {
-            headers: { 'content-type': 'application/json' },
-            method: 'GET',
-          })
-          .returns(Promise.resolve(new Response(body, { status: 200 })))
-
-        contracts = createContractsComponent({
-          config,
-          fetcher,
-          collectionsSubgraph,
-        })
-      })
-
-      afterEach(() => {
-        contracts.clearCache()
-      })
-
-      describe('when the address is whitelisted', () => {
-        it('should return true', async () => {
-          expect(await contracts.isWhitelisted(address)).toBe(true)
-        })
-      })
-
-      describe('when the address is not whitelisted', () => {
-        it('should return true', async () => {
-          expect(await contracts.isWhitelisted('nonsense')).toBe(false)
-        })
-      })
-
-      describe('when the method is called more than once', () => {
-        it('should cache the subsequent requests', async () => {
-          const { fetcher } = stubComponents
-
-          await contracts.isWhitelisted(address)
-          await contracts.isWhitelisted(address)
-          await contracts.isWhitelisted(address)
-
-          expect(fetcher.fetch.calledOnce).toBe(true)
-        })
+        expect(mockedFetch).toHaveBeenCalledTimes(1)
       })
     })
   })

@@ -14,19 +14,18 @@ import {
 } from './types'
 import { InvalidTransactionError } from '../../types/transactions/errors'
 
-export function createBiconomyComponent(
+export async function createBiconomyComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'logs' | 'metrics'>
-): BiconomyMetaTransactionComponent {
+): Promise<BiconomyMetaTransactionComponent> {
   const { config, fetcher, metrics, logs } = components
   const logger = logs.getLogger('biconomy')
+  const biconomyAPIId = await config.requireString('BICONOMY_API_ID')
+  const biconomyAPIKey = await config.requireString('BICONOMY_API_KEY')
+  const biconomyAPIURL = await config.requireString('BICONOMY_API_URL')
 
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
-    const biconomyAPIId = await config.requireString('BICONOMY_API_ID')
-    const biconomyAPIKey = await config.requireString('BICONOMY_API_KEY')
-    const biconomyAPIURL = await config.requireString('BICONOMY_API_URL')
-
     const body: MetaTransactionRequest = {
       apiId: biconomyAPIId,
       ...transactionData,
@@ -99,8 +98,6 @@ export function createBiconomyComponent(
   const getNetworkGasPrice = async (
     chainId: ChainId
   ): Promise<BigNumber | null> => {
-    const biconomyAPIURL = await config.requireString('BICONOMY_API_URL')
-
     try {
       const response = await fetcher.fetch(
         `${biconomyAPIURL}/api/v1/gas-price?networkId=${chainId}`

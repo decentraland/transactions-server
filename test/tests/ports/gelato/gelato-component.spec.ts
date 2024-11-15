@@ -7,17 +7,15 @@ import {
 import { metricDeclarations } from '@well-known-components/thegraph-component'
 import { ErrorCode } from 'decentraland-transactions'
 import { ethers } from 'ethers'
+import { createGelatoComponent } from '../../../../src/ports/gelato'
 import {
-  createGelatoComponent,
-  GelatoMetaTransactionComponent,
-} from '../../../../src/ports/gelato'
-import {
+  IMetaTransactionProviderComponent,
   InvalidTransactionError,
   RelayerError,
   TransactionData,
 } from '../../../../src/types/transactions'
 
-let gelato: GelatoMetaTransactionComponent
+let gelato: IMetaTransactionProviderComponent
 let fetcher: IFetchComponent
 let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
@@ -25,7 +23,7 @@ let logs: ILoggerComponent
 let transactionData: TransactionData
 let mockedFetch: jest.Mock
 
-beforeEach(() => {
+beforeEach(async () => {
   mockedFetch = jest.fn()
   logs = {
     getLogger: () => ({
@@ -78,7 +76,7 @@ beforeEach(() => {
     getNumber: jest.fn(),
   } as IConfigComponent
   transactionData = { from: '0x1', params: ['1', '2'] }
-  gelato = createGelatoComponent({ config, fetcher, metrics, logs })
+  gelato = await createGelatoComponent({ config, fetcher, metrics, logs })
 })
 
 describe('when sending a meta transaction', () => {

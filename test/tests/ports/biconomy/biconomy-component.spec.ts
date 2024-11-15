@@ -8,17 +8,17 @@ import { ErrorCode } from 'decentraland-transactions'
 import { ethers } from 'ethers'
 import { metricDeclarations } from '../../../../src/metrics'
 import {
-  BiconomyMetaTransactionComponent,
   createBiconomyComponent,
   MetaTransactionErrorCode,
   MetaTransactionStatus,
 } from '../../../../src/ports/biconomy'
 import {
+  IMetaTransactionProviderComponent,
   InvalidTransactionError,
   TransactionData,
 } from '../../../../src/types/transactions'
 
-let biconomy: BiconomyMetaTransactionComponent
+let biconomy: IMetaTransactionProviderComponent
 let fetcher: IFetchComponent
 let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
@@ -26,7 +26,7 @@ let logs: ILoggerComponent
 let transactionData: TransactionData
 let mockedFetch: jest.Mock
 
-beforeEach(() => {
+beforeEach(async () => {
   mockedFetch = jest.fn()
   logs = {
     getLogger: () => ({
@@ -68,7 +68,7 @@ beforeEach(() => {
     getNumber: jest.fn(),
   } as IConfigComponent
   transactionData = { from: '0x1', params: ['1', '2'] }
-  biconomy = createBiconomyComponent({ config, fetcher, metrics, logs })
+  biconomy = await createBiconomyComponent({ config, fetcher, metrics, logs })
 })
 
 describe('when sending a meta transaction', () => {

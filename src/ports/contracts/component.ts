@@ -6,43 +6,42 @@ import {
   RemoteCollection,
 } from './types'
 
-let collectionAddresses: string[] = []
-let whitelistedAddresses: string[] = []
-let lastFetch: number = Date.now()
-
-export function createContractsComponent(
+export async function createContractsComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'collectionsSubgraph'>
-): IContractsComponent {
+): Promise<IContractsComponent> {
+  let collectionAddresses: string[] = []
+  let whitelistedAddresses: string[] = []
+  let lastFetch: number = Date.now()
+
   const {
     config,
     collectionsSubgraph,
     fetcher: { fetch },
   } = components
 
+  const contractAddressesURL = await config.requireString(
+    'CONTRACT_ADDRESSES_URL'
+  )
+  const collectionsFetchInterval = await config.requireNumber(
+    'COLLECTIONS_FETCH_INTERVAL_MS'
+  )
+  const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
+  const chainName = await getRemoteContractURLChainName(chainId)
+
   // Methods
   async function isValidAddress(address: string): Promise<boolean> {
     const validations = await Promise.all([
-      component.isCollectionAddress(address.toLowerCase()),
-      component.isWhitelisted(address.toLowerCase()),
+      isCollectionAddress(address.toLowerCase()),
+      isWhitelisted(address.toLowerCase()),
     ])
     return validations.some((isValid) => isValid)
   }
 
   async function isWhitelisted(address: string): Promise<boolean> {
-    const collectionsFetchInterval = await config.requireNumber(
-      'COLLECTIONS_FETCH_INTERVAL_MS'
-    )
-
     if (
       whitelistedAddresses.length === 0 ||
       isOlderThan(lastFetch, collectionsFetchInterval)
     ) {
-      const contractAddressesURL = await config.requireString(
-        'CONTRACT_ADDRESSES_URL'
-      )
-      const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
-      const chainName = await getRemoteContractURLChainName(chainId)
-
       const remoteResult = await fetch(contractAddressesURL, {
         headers: { 'content-type': 'application/json' },
         method: 'GET',
@@ -57,7 +56,7 @@ export function createContractsComponent(
       const contractAddresses: ContractsResponse = await remoteResult.json()
 
       whitelistedAddresses = Object.values(
-        contractAddresses[chainName.toLowerCase()]
+        contractAddresses[chainName.toLowerCase()] ?? {}
       ).map((contractAddress) => contractAddress.toLowerCase())
       lastFetch = Date.now()
     }
@@ -72,7 +71,7 @@ export function createContractsComponent(
 
     const { collections } = await collectionsSubgraph.query<{
       collections: RemoteCollection[]
-    }>(component.getCollectionQuery(), { id: address })
+    }>(getCollectionQuery(), { id: address })
 
     if (collections.length >= 1) {
       collectionAddresses.push(collections[0].id)
@@ -96,15 +95,13 @@ export function createContractsComponent(
     lastFetch = Date.now()
   }
 
-  const component = {
+  return {
     isValidAddress,
     isCollectionAddress,
     isWhitelisted,
     getCollectionQuery,
     clearCache,
   }
-
-  return component
 }
 
 async function getRemoteContractURLChainName(
