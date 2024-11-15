@@ -9,6 +9,7 @@ export enum StatusCode {
   LOCKED = 423,
   CONFLICT = 409,
   ERROR = 500,
+  GATEWAY_TIMEOUT = 504,
   SERVICE_UNAVAILABLE = 503,
 }
 

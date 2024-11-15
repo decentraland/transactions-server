@@ -1,47 +1,17 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import { Schema } from '../../types/validation'
+import {
+  IMetaTransactionProviderComponent,
+  TransactionData,
+} from '../../types/transactions/transactions'
 
-export interface ITransactionComponent {
-  sendMetaTransaction(transactionData: TransactionData): Promise<string>
+export interface ITransactionComponent
+  extends Pick<IMetaTransactionProviderComponent, 'sendMetaTransaction'> {
   insert(row: Omit<TransactionRow, 'id' | 'created_at'>): Promise<void>
   getByUserAddress(
     userAddress: string
   ): Promise<IDatabase.IQueryResult<TransactionRow>>
   checkData(transactionData: TransactionData): Promise<void>
-}
-
-export type TransactionData = {
-  from: string
-  params: [string, string] // manaAddress, txData
-}
-
-export type MetaTransactionRequest = TransactionData & {
-  apiId: string
-}
-
-export type MetaTransactionResponse = {
-  txHash?: string
-  log: string
-  flag: MetaTransactionStatus
-  code?: MetaTransactionErrorCode
-  message?: string
-}
-
-export enum MetaTransactionStatus {
-  OK = 200,
-  NOT_FOUND = 404,
-  CONFLICT = 409,
-  EXPECTATION_FAILED = 417,
-  INTERNAL_SERVER_ERROR = 500,
-}
-
-// For more info on error codes, see https://docs.biconomy.io/api/native-meta-tx
-export enum MetaTransactionErrorCode {
-  DAPP_LIMIT_REACHED = 150,
-  USER_LIMIT_REACHED = 151,
-  API_LIMIT_REACHED = 152,
-  GAS_LIMIT_REACHED = 153,
-  EXPECTATION_FAILED = 417,
 }
 
 export type SendTransactionRequest = {

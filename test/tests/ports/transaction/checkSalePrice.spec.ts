@@ -1,7 +1,7 @@
 import { ChainId } from '@dcl/schemas'
 import { utils } from 'ethers'
-import { TransactionData } from '../../../../src/ports/transaction/types'
 import { getSalePrice } from '../../../../src/ports/transaction/validation/checkSalePrice'
+import { TransactionData } from '../../../../src/types/transactions'
 
 describe('getSalePrice', () => {
   describe('when getting the sale price for a store buy', () => {

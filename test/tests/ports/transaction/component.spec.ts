@@ -1,15 +1,13 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
-import {
-  TransactionData,
-  TransactionRow,
-} from '../../../../src/ports/transaction/types'
+import { TransactionRow } from '../../../../src/ports/transaction/types'
 import {
   checkSchema,
   checkSalePrice,
   checkContractAddress,
   checkQuota,
 } from '../../../../src/ports/transaction/validation'
+import { TransactionData } from '../../../../src/types/transactions'
 import { test } from '../../../components'
 
 jest.mock('../../../../src/ports/transaction/validation')
@@ -87,9 +85,9 @@ test('transactions component', function ({ components }) {
     it('should query the database with the supplied data', async () => {
       const { transaction, pg } = components
       await transaction.getByUserAddress(userAddress)
-      expect(pg.query).toHaveBeenCalledWith(SQL`SELECT *
-          FROM transactions
-          WHERE user_address = ${userAddress}`)
+      expect(pg.query).toHaveBeenCalledWith(
+        SQL`SELECT * FROM transactions WHERE user_address = ${userAddress}`
+      )
     })
 
     it('should return the query result', async () => {
@@ -118,11 +116,7 @@ test('transactions component', function ({ components }) {
       const { transaction, pg } = components
       await transaction.insert(transactionRow)
       expect(pg.query).toHaveBeenCalledWith(
-        SQL`INSERT INTO transactions(
-          tx_hash, user_address
-        ) VALUES (
-          ${transactionRow.tx_hash}, ${transactionRow.user_address}
-        )`
+        SQL`INSERT INTO transactions(tx_hash, user_address) VALUES (${transactionRow.tx_hash}, ${transactionRow.user_address})`
       )
     })
   })

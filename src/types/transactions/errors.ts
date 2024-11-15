@@ -1,26 +1,6 @@
 import { ValidateFunction } from 'ajv'
 import { ErrorCode } from 'decentraland-transactions'
-import { MetaTransactionErrorCode, TransactionData } from './types'
-
-export function toErrorCode(
-  metaTransactionCode: MetaTransactionErrorCode
-): ErrorCode {
-  const {
-    DAPP_LIMIT_REACHED,
-    USER_LIMIT_REACHED,
-    API_LIMIT_REACHED,
-    GAS_LIMIT_REACHED,
-    EXPECTATION_FAILED,
-  } = MetaTransactionErrorCode
-
-  return {
-    [DAPP_LIMIT_REACHED]: ErrorCode.DAPP_LIMIT_REACHED,
-    [USER_LIMIT_REACHED]: ErrorCode.USER_LIMIT_REACHED,
-    [API_LIMIT_REACHED]: ErrorCode.API_LIMIT_REACHED,
-    [GAS_LIMIT_REACHED]: ErrorCode.GAS_LIMIT_REACHED,
-    [EXPECTATION_FAILED]: ErrorCode.EXPECTATION_FAILED,
-  }[metaTransactionCode]
-}
+import { TransactionData } from './transactions'
 
 export class InvalidTransactionError extends Error {
   public code: ErrorCode
@@ -79,5 +59,17 @@ export class HighCongestionError extends Error {
     super(
       `Current network gas price ${currentGasPrice} exceeds max gas price allowed ${maxGasPriceAllowed}`
     )
+  }
+}
+
+export class RelayerError extends Error {
+  constructor(public statusCode: number, public message: string) {
+    super(`The relayer responded with a ${statusCode} status code: ${message}`)
+  }
+}
+
+export class RelayerTimeout extends Error {
+  constructor(public message: string) {
+    super(`The relayer took too long to respond: ${message}`)
   }
 }

@@ -4,6 +4,7 @@
     "no-commented-out-code": false,
     "trailing-comma": false,
     "variable-name": [true, "ban-keywords", "allow-leading-underscore"],
+    "no-circular-imports": false,
     "prettier": [true, { "printWidth": 80, "singleQuote": true, "semi": false }]
   },
   "linterOptions": {

@@ -2,7 +2,7 @@ import { IHttpServerComponent } from '@well-known-components/interfaces'
 import {
   HighCongestionError,
   InvalidTransactionError,
-} from '../ports/transaction/errors'
+} from '../types/transactions/errors'
 import { AppComponents, Context } from '../types'
 import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
 

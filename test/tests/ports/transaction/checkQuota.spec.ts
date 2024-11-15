@@ -1,7 +1,9 @@
 import { IDatabase } from '@well-known-components/interfaces'
-import { QuotaReachedError } from '../../../../src/ports/transaction/errors'
-import { TransactionData } from '../../../../src/ports/transaction/types'
 import { checkQuota } from '../../../../src/ports/transaction/validation'
+import {
+  QuotaReachedError,
+  TransactionData,
+} from '../../../../src/types/transactions'
 import { test } from '../../../components'
 
 test('checkQuota component', function ({ components }) {

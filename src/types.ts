@@ -13,6 +13,8 @@ import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
 import { ITransactionComponent } from './ports/transaction/types'
 import { IFeaturesComponent } from './ports/features'
+import { BiconomyMetaTransactionComponent } from './ports/biconomy'
+import { GelatoMetaTransactionComponent } from './ports/gelato'
 
 export type GlobalContext = {
   components: AppComponents
@@ -22,6 +24,8 @@ export type BaseComponents = {
   config: IConfigComponent
   logs: ILoggerComponent
   globalLogger: ILoggerComponent.ILogger
+  biconomy: BiconomyMetaTransactionComponent
+  gelato: GelatoMetaTransactionComponent
   features: IFeaturesComponent
   fetcher: IFetchComponent
   metrics: IMetricsComponent<keyof typeof metricDeclarations>

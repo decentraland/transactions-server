@@ -125,6 +125,10 @@ export type NeededComponents = {
   logs: ILoggerComponent
 }
 
+export enum Feature {
+  GELATO_RELAYER = 'gelato-relayer',
+}
+
 export enum ApplicationName {
   EXPLORER = 'explorer',
   BUILDER = 'builder',
