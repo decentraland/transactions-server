@@ -115,7 +115,9 @@ export function createGelatoComponent(
           const noBalanceLeftInGasTankError =
             data.task.lastCheckMessage?.includes('No available token balance')
           const noTokensConfiguredInGasTankSetError =
-            data.task.lastCheckMessage?.includes('No available token balance')
+            data.task.lastCheckMessage?.includes(
+              '1Balance tokens could not be selected'
+            )
 
           if (
             noBalanceLeftInGasTankError ||
