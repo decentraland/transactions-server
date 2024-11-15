@@ -1,67 +1,94 @@
-import { IDatabase } from '@well-known-components/interfaces'
+import { IConfigComponent, IDatabase } from '@well-known-components/interfaces'
+import {
+  IMetricsComponent,
+  IPgComponent,
+} from '@well-known-components/pg-component'
+import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { checkQuota } from '../../../../src/ports/transaction/validation'
 import {
   QuotaReachedError,
   TransactionData,
 } from '../../../../src/types/transactions'
-import { test } from '../../../components'
 
-test('checkQuota component', function ({ components }) {
-  const from = '0x9Ab8A53AA9695dAb57e62684aBA6978E5225ED0b'
-  let transactionData: TransactionData
+let from: string
+let transactionData: TransactionData
+let requiredNumberMock: jest.Mock
+let queryMock: jest.Mock
+let components: {
+  config: IConfigComponent
+  pg: IPgComponent
+  contracts: IContractsComponent
+  metrics: IMetricsComponent
+}
 
-  beforeEach(async () => {
-    transactionData = {
-      from,
-      params: ['', ''],
-    }
+beforeEach(() => {
+  requiredNumberMock = jest.fn()
+  queryMock = jest.fn()
+  from = '0x9Ab8A53AA9695dAb57e62684aBA6978E5225ED0b'
+  transactionData = {
+    from,
+    params: ['', ''],
+  }
+  components = {
+    config: {
+      requireNumber: requiredNumberMock,
+      requireString: jest.fn(),
+      getString: jest.fn(),
+      getNumber: jest.fn(),
+    },
+    pg: {
+      query: queryMock,
+      start: jest.fn(),
+      stop: jest.fn(),
+      streamQuery: jest.fn(),
+      getPool: jest.fn(),
+    },
+    contracts: {
+      isValidAddress: jest.fn(),
+      isCollectionAddress: jest.fn(),
+      isWhitelisted: jest.fn(),
+      getCollectionQuery: jest.fn(),
+      clearCache: jest.fn(),
+    },
+    metrics: {} as IMetricsComponent,
+  }
+})
+
+describe('when checking the quota for a new address', () => {
+  beforeEach(() => {
+    const databaseResult = {
+      rows: [{ count: 1 }],
+    } as IDatabase.IQueryResult<{
+      count: number
+    }>
+    requiredNumberMock.mockResolvedValueOnce(100)
+    queryMock.mockResolvedValueOnce(databaseResult)
   })
 
-  describe('when checking the quota for a new address', () => {
-    beforeEach(() => {
-      const { config, pg } = components
-      const databaseResult = {
-        rows: [{ count: 1 }],
-      } as IDatabase.IQueryResult<{
-        count: number
-      }>
+  it('should not throw an error', async () => {
+    await expect(checkQuota(components, transactionData)).resolves.not.toThrow()
+  })
+})
 
-      jest.spyOn(config, 'requireNumber').mockResolvedValueOnce(100)
-      jest.spyOn(pg, 'query').mockResolvedValueOnce(databaseResult)
-    })
+describe('when the quota limit is reached for a single day', () => {
+  const maxTransactionsPerDay = 2
 
-    it('should not throw an error', async () => {
-      await expect(
-        checkQuota(components, transactionData)
-      ).resolves.not.toThrow()
-    })
+  beforeEach(() => {
+    const databaseResult = {
+      rows: [{ count: maxTransactionsPerDay }],
+    } as IDatabase.IQueryResult<{
+      count: number
+    }>
+
+    requiredNumberMock.mockResolvedValueOnce(maxTransactionsPerDay)
+    queryMock.mockResolvedValueOnce(databaseResult)
   })
 
-  describe('when the quota limit is reached for a single day', () => {
-    const maxTransactionsPerDay = 2
+  it('should throw an error signaling that the quota was reached', async () => {
+    const error = new QuotaReachedError(from, maxTransactionsPerDay)
 
-    beforeEach(() => {
-      const { config, pg } = components
-      const databaseResult = {
-        rows: [{ count: maxTransactionsPerDay }],
-      } as IDatabase.IQueryResult<{
-        count: number
-      }>
-
-      jest.spyOn(config, 'requireNumber').mockResolvedValueOnce(2)
-      jest.spyOn(pg, 'query').mockResolvedValueOnce(databaseResult)
-    })
-
-    afterEach(() => {
-      jest.restoreAllMocks()
-    })
-
-    it('should throw an error signaling that the quota was reached', async () => {
-      const error = new QuotaReachedError(from, maxTransactionsPerDay)
-
-      await expect(checkQuota(components, transactionData)).rejects.toThrow(
-        error.message
-      )
-    })
+    await expect(checkQuota(components, transactionData)).rejects.toThrow(
+      error.message
+    )
   })
 })

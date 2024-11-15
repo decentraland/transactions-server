@@ -15,11 +15,21 @@ import {
   TaskState,
 } from './types'
 
-export function createGelatoComponent(
+export async function createGelatoComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'logs' | 'metrics'>
-): GelatoMetaTransactionComponent {
+): Promise<GelatoMetaTransactionComponent> {
   const { config, fetcher, logs, metrics } = components
   const logger = logs.getLogger('gelato')
+  const gelatoAPIKey = await config.requireString('GELATO_API_KEY')
+  const gelatoAPIURL = await config.requireString('GELATO_API_URL')
+  const rpcURL = await config.requireString('RPC_URL')
+  const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
+  const gelatoMaxStatusChecks = await config.requireNumber(
+    'GELATO_MAX_STATUS_CHECKS'
+  )
+  const gelatoSleepTimeBetweenChecks = await config.requireNumber(
+    'GELATO_SLEEP_TIME_BETWEEN_CHECKS'
+  )
 
   const extractErrorMessage = async (
     response: fetch.Response
@@ -37,10 +47,6 @@ export function createGelatoComponent(
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
-    const gelatoAPIKey = await config.requireString('GELATO_API_KEY')
-    const gelatoAPIURL = await config.requireString('GELATO_API_URL')
-    const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
-
     const response = await fetcher.fetch(
       `${gelatoAPIURL}/relays/v2/sponsored-call`,
       {
@@ -74,14 +80,6 @@ export function createGelatoComponent(
   const getTxHashFromGelatoResponse = async (
     taskId: string
   ): Promise<string> => {
-    const gelatoAPIURL = await config.requireString('GELATO_API_URL')
-    const gelatoMaxStatusChecks = await config.requireNumber(
-      'GELATO_MAX_STATUS_CHECKS'
-    )
-    const gelatoSleepTimeBetweenChecks = await config.requireNumber(
-      'GELATO_SLEEP_TIME_BETWEEN_CHECKS'
-    )
-
     let txHash: string | undefined
     let checks: number = 0
 
@@ -154,7 +152,6 @@ export function createGelatoComponent(
 
   const getNetworkGasPrice = async (): Promise<BigNumber | null> => {
     try {
-      const rpcURL = await config.requireString('RPC_URL')
       const provider = new providers.JsonRpcProvider(rpcURL)
       const gasPrice = await provider.getGasPrice()
       return gasPrice
