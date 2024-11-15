@@ -1,5 +1,9 @@
 import { IConfigComponent, IDatabase } from '@well-known-components/interfaces'
-import { IPgComponent } from '@well-known-components/pg-component'
+import {
+  IMetricsComponent,
+  IPgComponent,
+} from '@well-known-components/pg-component'
+import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { checkQuota } from '../../../../src/ports/transaction/validation'
 import {
   QuotaReachedError,
@@ -13,6 +17,8 @@ let queryMock: jest.Mock
 let components: {
   config: IConfigComponent
   pg: IPgComponent
+  contracts: IContractsComponent
+  metrics: IMetricsComponent
 }
 
 beforeEach(() => {
@@ -37,6 +43,14 @@ beforeEach(() => {
       streamQuery: jest.fn(),
       getPool: jest.fn(),
     },
+    contracts: {
+      isValidAddress: jest.fn(),
+      isCollectionAddress: jest.fn(),
+      isWhitelisted: jest.fn(),
+      getCollectionQuery: jest.fn(),
+      clearCache: jest.fn(),
+    },
+    metrics: {} as IMetricsComponent,
   }
 })
 
