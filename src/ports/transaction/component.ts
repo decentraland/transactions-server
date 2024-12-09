@@ -9,6 +9,7 @@ import {
   checkContractAddress,
   checkQuota,
   checkGasPrice,
+  checkTransaction,
 } from './validation'
 import { ITransactionComponent, TransactionRow } from './types'
 
@@ -61,6 +62,7 @@ export function createTransactionComponent(
   async function checkData(transactionData: TransactionData): Promise<void> {
     await checkSchema(components, transactionData)
     await checkGasPrice(components, transactionData)
+    await checkTransaction(components, transactionData)
     await checkSalePrice(components, transactionData)
     await checkContractAddress(components, transactionData)
     await checkQuota(components, transactionData)
