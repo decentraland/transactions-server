@@ -8,7 +8,9 @@ import {
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
+import { encodeFunctionData } from '../../logic/ethereum'
 import { sleep } from '../../logic/time'
+import { getMetaTxForwarder } from '../contracts/MetaTxForwarder'
 import {
   GelatoMetaTransactionComponent,
   GelatoTaskStatusResponse,
@@ -47,6 +49,21 @@ export async function createGelatoComponent(
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
+    /* The Gelato relayer is configured to support the MetaTxForwarder.forwardMetaTx method.
+     * To ensure the relay endpoint processes the transaction correctly, we must encode the
+     * parameters of the transaction (`transactionData.params`) into the required format.
+     * For more information, refer to:
+     * https://docs.gelato.network/web3-services/relay/non-erc-2771/sponsoredcall#request-body
+     */
+
+    const metaTxForwarderContract = getMetaTxForwarder(chainId)
+
+    const encodedData = encodeFunctionData(
+      metaTxForwarderContract.abi,
+      'forwardMetaTx',
+      transactionData.params
+    )
+
     const response = await fetcher.fetch(
       `${gelatoAPIURL}/relays/v2/sponsored-call`,
       {
@@ -56,8 +73,8 @@ export async function createGelatoComponent(
         },
         body: JSON.stringify({
           chainId,
-          target: transactionData.params[0],
-          data: transactionData.params[1],
+          target: metaTxForwarderContract.address,
+          data: encodedData,
           sponsorApiKey: gelatoAPIKey,
         }),
       }
