@@ -28,3 +28,19 @@ export function decodeFunctionData(
   const contractInterface = new utils.Interface(abi)
   return contractInterface.decodeFunctionData(methodName, data)
 }
+
+/**
+ * Encode the data for a function call
+ * It thorws if the data, method or abi are incorrect
+ * @param abi - Contract abi
+ * @param methodName - Method to encode
+ * @param data - Arguments to encode (transaction.params)
+ */
+export function encodeFunctionData(
+  abi: ContractData['abi'],
+  methodName: string,
+  data: string[]
+): string {
+  const contractInterface = new utils.Interface(abi)
+  return contractInterface.encodeFunctionData(methodName, data)
+}

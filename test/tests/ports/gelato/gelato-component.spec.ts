@@ -5,8 +5,10 @@ import {
   IMetricsComponent,
 } from '@well-known-components/interfaces'
 import { metricDeclarations } from '@well-known-components/thegraph-component'
+import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
 import { ethers } from 'ethers'
+import { encodeFunctionData } from '../../../../src/logic/ethereum'
 import { createGelatoComponent } from '../../../../src/ports/gelato'
 import {
   IMetaTransactionProviderComponent,
@@ -22,8 +24,10 @@ let config: IConfigComponent
 let logs: ILoggerComponent
 let transactionData: TransactionData
 let mockedFetch: jest.Mock
+let chainId: ChainId
 
 beforeEach(async () => {
+  chainId = ChainId.MATIC_AMOY
   mockedFetch = jest.fn()
   logs = {
     getLogger: () => ({
@@ -63,7 +67,7 @@ beforeEach(async () => {
     requireNumber: async (key: string) => {
       switch (key) {
         case 'COLLECTIONS_CHAIN_ID':
-          return 80002
+          return chainId
         case 'GELATO_MAX_STATUS_CHECKS':
           return 150
         case 'GELATO_SLEEP_TIME_BETWEEN_CHECKS':
@@ -75,7 +79,13 @@ beforeEach(async () => {
     getString: jest.fn(),
     getNumber: jest.fn(),
   } as IConfigComponent
-  transactionData = { from: '0x1', params: ['1', '2'] }
+  transactionData = {
+    from: '0x1234567890abcdef1234567890abcdef12345678',
+    params: [
+      '0x2a39d4f68133491f0442496f601cde2a945b6d31',
+      '0x' + Buffer.from('mock data').toString('hex'),
+    ],
+  }
   gelato = await createGelatoComponent({ config, fetcher, metrics, logs })
 })
 
@@ -133,7 +143,7 @@ describe('when sending a meta transaction', () => {
           json: () =>
             Promise.resolve({
               task: {
-                chainId: 80002,
+                chainId: chainId,
                 taskId: 'aTaskId',
                 taskState: 'ExecReverted',
                 creationDate: '2021-08-31T12:00:00Z',
@@ -172,7 +182,7 @@ describe('when sending a meta transaction', () => {
           json: () =>
             Promise.resolve({
               task: {
-                chainId: 80002,
+                chainId: chainId,
                 taskId: 'aTaskId',
                 taskState: 'Cancelled',
                 creationDate: '2021-08-31T12:00:00Z',
@@ -211,7 +221,7 @@ describe('when sending a meta transaction', () => {
           json: () =>
             Promise.resolve({
               task: {
-                chainId: 80002,
+                chainId: chainId,
                 taskId: 'aTaskId',
                 taskState: 'CheckPending',
                 creationDate: '2021-08-31T12:00:00Z',
@@ -228,7 +238,7 @@ describe('when sending a meta transaction', () => {
             json: () =>
               Promise.resolve({
                 task: {
-                  chainId: 80002,
+                  chainId: chainId,
                   taskId: 'aTaskId',
                   taskState: 'ExecPending',
                   creationDate: '2021-08-31T12:00:00Z',
@@ -263,7 +273,7 @@ describe('when sending a meta transaction', () => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                chainId: 80002,
+                chainId: chainId,
                 target: transactionData.params[0],
                 data: transactionData.params[1],
                 sponsorApiKey: 'aKey',
@@ -290,7 +300,7 @@ describe('when sending a meta transaction', () => {
             json: () =>
               Promise.resolve({
                 task: {
-                  chainId: 80002,
+                  chainId: chainId,
                   taskId: 'aTaskId',
                   taskState: 'ExecSuccess',
                   creationDate: '2021-08-31T12:00:00Z',
@@ -322,7 +332,7 @@ describe('when sending a meta transaction', () => {
             json: () =>
               Promise.resolve({
                 task: {
-                  chainId: 80002,
+                  chainId: chainId,
                   taskId: 'aTaskId',
                   taskState: 'WaitingForConfirmation',
                   creationDate: '2021-08-31T12:00:00Z',
@@ -398,7 +408,7 @@ describe('when getting the network gas price', () => {
     })
 
     it('should resolve to a big number representing the network gas price in wei', () => {
-      return expect(gelato.getNetworkGasPrice(80002)).resolves.toEqual(
+      return expect(gelato.getNetworkGasPrice(chainId)).resolves.toEqual(
         ethers.BigNumber.from(20)
       )
     })
@@ -410,7 +420,7 @@ describe('when getting the network gas price', () => {
     })
 
     it('should resolve to null', () => {
-      return expect(gelato.getNetworkGasPrice(80002)).resolves.toBeNull()
+      return expect(gelato.getNetworkGasPrice(chainId)).resolves.toBeNull()
     })
   })
 })
