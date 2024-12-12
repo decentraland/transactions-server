@@ -9,7 +9,6 @@ import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
 import { ethers } from 'ethers'
 import { encodeFunctionData } from '../../../../src/logic/ethereum'
-import { getMetaTxForwarder } from '../../../../src/ports/contracts/MetaTxForwarder'
 import { createGelatoComponent } from '../../../../src/ports/gelato'
 import {
   IMetaTransactionProviderComponent,
@@ -24,10 +23,8 @@ let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
 let logs: ILoggerComponent
 let transactionData: TransactionData
-let transactionDataEncoded: string
 let mockedFetch: jest.Mock
 let chainId: ChainId
-let metaTxForwarderContract: ReturnType<typeof getMetaTxForwarder>
 
 beforeEach(async () => {
   chainId = ChainId.MATIC_AMOY
@@ -89,12 +86,6 @@ beforeEach(async () => {
       '0x' + Buffer.from('mock data').toString('hex'),
     ],
   }
-  metaTxForwarderContract = getMetaTxForwarder(chainId)
-  transactionDataEncoded = encodeFunctionData(
-    metaTxForwarderContract.abi,
-    'forwardMetaTx',
-    transactionData.params
-  )
   gelato = await createGelatoComponent({ config, fetcher, metrics, logs })
 })
 
@@ -283,8 +274,8 @@ describe('when sending a meta transaction', () => {
               },
               body: JSON.stringify({
                 chainId: chainId,
-                target: metaTxForwarderContract.address,
-                data: transactionDataEncoded,
+                target: transactionData.params[0],
+                data: transactionData.params[1],
                 sponsorApiKey: 'aKey',
               }),
             }

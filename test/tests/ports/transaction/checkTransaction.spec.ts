@@ -19,8 +19,8 @@ let components: {
 
 beforeEach(() => {
   transactionData = {
-    to: '0x1234567890abcdef1234567890abcdef12345678',
-    value: '0x1',
+    from: '0x1234567890abcdef1234567890abcdef12345678',
+    params: ['0x1234567890abcdef1234567890abcdef12345678', '0x1'],
   }
 
   mockProvider = {
@@ -68,14 +68,19 @@ describe('checkTransaction', () => {
       await expect(
         checkTransaction(components, transactionData)
       ).resolves.not.toThrow()
-      expect(mockProvider.estimateGas).toHaveBeenCalledWith(transactionData)
+      expect(mockProvider.estimateGas).toHaveBeenCalledWith({
+        from: transactionData.from,
+        to: transactionData.params[0],
+        data: transactionData.params[1],
+      })
     })
   })
 
   describe('when the transaction data is malformed', () => {
     beforeEach(() => {
       transactionData = {
-        to: '0xInvalidAddress',
+        from: '0xonvalidAddress',
+        params: ['a', 'b'],
       }
       mockProvider.estimateGas.mockRejectedValue(
         new Error('Malformed transaction')
@@ -86,7 +91,11 @@ describe('checkTransaction', () => {
       await expect(
         checkTransaction(components, transactionData)
       ).rejects.toThrow('Malformed transaction')
-      expect(mockProvider.estimateGas).toHaveBeenCalledWith(transactionData)
+      expect(mockProvider.estimateGas).toHaveBeenCalledWith({
+        from: transactionData.from.toLowerCase(),
+        to: transactionData.params[0].toLowerCase(),
+        data: transactionData.params[1],
+      })
     })
   })
 })
