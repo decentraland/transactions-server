@@ -50,7 +50,7 @@ beforeEach(() => {
       getCollectionQuery: jest.fn(),
       clearCache: jest.fn(),
     },
-    metrics: {} as IMetricsComponent,
+    metrics: { increment: jest.fn() } as unknown as IMetricsComponent,
   }
 
   jest

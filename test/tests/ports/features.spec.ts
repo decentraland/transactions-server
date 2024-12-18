@@ -1,13 +1,11 @@
-import fetch, { Response } from 'node-fetch'
+import { Response } from 'node-fetch'
 import { IFetchComponent } from '@well-known-components/http-server'
+import { createFeaturesComponent } from '@well-known-components/features-component'
 import {
   IConfigComponent,
   ILoggerComponent,
 } from '@well-known-components/interfaces'
-import {
-  IFeaturesComponent,
-  createFeaturesComponent,
-} from '../../../src/ports/features'
+import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 
 const FF_APP = 'TestApp'
 const FF_TOGGLE = 'TestFF'
