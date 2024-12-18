@@ -7,12 +7,12 @@ import type {
   IBaseComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { metricDeclarations } from './metrics'
+import { IFeaturesComponent } from '@well-known-components/features-component'
 import { IPgComponent } from '@well-known-components/pg-component'
+import { metricDeclarations } from './metrics'
 import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
 import { ITransactionComponent } from './ports/transaction/types'
-import { IFeaturesComponent } from './ports/features'
 import { BiconomyMetaTransactionComponent } from './ports/biconomy'
 import { GelatoMetaTransactionComponent } from './ports/gelato'
 

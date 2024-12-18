@@ -1,8 +1,9 @@
 import { IDatabase } from '@well-known-components/interfaces'
+import { ApplicationName } from '@well-known-components/features-component'
 import SQL from 'sql-template-strings'
 import { AppComponents } from '../../types'
 import { TransactionData } from '../../types/transactions/transactions'
-import { ApplicationName, Feature } from '../features'
+import { Feature } from '../features'
 import {
   checkSchema,
   checkSalePrice,
