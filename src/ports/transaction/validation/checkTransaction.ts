@@ -13,7 +13,7 @@ export const checkTransaction: ITransactionValidator = async (
   const provider = new providers.JsonRpcProvider(rpcURL)
 
   try {
-    // Estimage Transaction Gas to avoid send a transaction malformed to the providers
+    // Estimate the transaction gas to avoid sending a malformed transaction to the providers
     await provider.estimateGas({
       from: transactionData.from.toLowerCase(),
       to: transactionData.params[0].toLowerCase(),
