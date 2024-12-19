@@ -14,9 +14,9 @@ import {
   Verbosity,
 } from '@well-known-components/http-requests-logger-component'
 import { createPgComponent } from '@well-known-components/pg-component'
+import { createFeaturesComponent } from '@well-known-components/features-component'
 import { createContractsComponent } from './ports/contracts/component'
 import { createFetchComponent } from './ports/fetcher'
-import { createFeaturesComponent } from './ports/features'
 import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'

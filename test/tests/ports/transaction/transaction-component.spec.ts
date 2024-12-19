@@ -5,10 +5,10 @@ import {
   IMetricsComponent,
 } from '@well-known-components/interfaces'
 import { IPgComponent } from '@well-known-components/pg-component'
+import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { metricDeclarations } from '../../../../src/metrics'
 import { BiconomyMetaTransactionComponent } from '../../../../src/ports/biconomy'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
-import { IFeaturesComponent } from '../../../../src/ports/features'
 import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
 import { createTransactionComponent } from '../../../../src/ports/transaction/component'
 import { ITransactionComponent } from '../../../../src/ports/transaction/types'

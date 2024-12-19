@@ -60,6 +60,11 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
+  dcl_error_simulate_transaction: {
+    help: 'Count errors of simulate transaction',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
   ...thegraphMetrics,
 }
 

@@ -73,3 +73,11 @@ export class RelayerTimeout extends Error {
     super(`The relayer took too long to respond: ${message}`)
   }
 }
+
+export class SimulateTransactionError extends Error {
+  public code = ErrorCode.INVALID_TRANSACTION
+
+  constructor(public message: string) {
+    super(`Error simulating transaction: ${message}`)
+  }
+}

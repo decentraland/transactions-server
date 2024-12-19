@@ -1,17 +1,16 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { BigNumber } from 'ethers'
 import { ContractName, getContract } from 'decentraland-transactions'
+import { ApplicationName } from '@well-known-components/features-component'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
 import { AppComponents } from '../../../types'
-import { ApplicationName, Feature } from '../../features'
+import { Feature } from '../../features'
 import { HighCongestionError } from '../../../types/transactions/errors'
 import { IGasPriceValidator } from './types'
 import { TransactionData } from '../../../types/transactions/transactions'
-
-const FF_MAX_GAS_PRICE_ALLOWED_IN_WEI = 'max-gas-price-allowed'
 
 export const checkGasPrice: IGasPriceValidator = async (
   components,
@@ -22,7 +21,7 @@ export const checkGasPrice: IGasPriceValidator = async (
 
   const isGasPriceAllowedFFEnabled = await features.getIsFeatureEnabled(
     ApplicationName.DAPPS,
-    FF_MAX_GAS_PRICE_ALLOWED_IN_WEI
+    Feature.MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
 
   if (isGasPriceAllowedFFEnabled) {
@@ -67,7 +66,7 @@ const getMaxGasPriceAllowed = async (
   const { features } = components
   const gasPriceAllowedVariant = await features.getFeatureVariant(
     ApplicationName.DAPPS,
-    FF_MAX_GAS_PRICE_ALLOWED_IN_WEI
+    Feature.MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
 
   if (!gasPriceAllowedVariant) {
