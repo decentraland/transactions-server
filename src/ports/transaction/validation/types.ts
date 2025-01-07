@@ -13,7 +13,7 @@ export type ITransactionValidator = (
 export type IGasPriceValidator = (
   components: Pick<
     AppComponents,
-    'config' | 'contracts' | 'features' | 'biconomy' | 'gelato'
+    'config' | 'contracts' | 'features' | 'gelato'
   >,
   transactionData: TransactionData
 ) => Promise<void>

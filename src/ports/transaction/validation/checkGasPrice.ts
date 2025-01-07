@@ -83,20 +83,11 @@ const getMaxGasPriceAllowed = async (
  * @param chainId - Network Chain ID
  */
 const getNetworkGasPrice = async (
-  components: Pick<AppComponents, 'features' | 'gelato' | 'biconomy'>,
+  components: Pick<AppComponents, 'gelato'>,
   chainId: ChainId
 ): Promise<BigNumber | null> => {
-  const { features, gelato, biconomy } = components
-  const isGelatoRelayerEnabled = await features.getIsFeatureEnabled(
-    ApplicationName.DAPPS,
-    Feature.GELATO_RELAYER
-  )
-
-  if (isGelatoRelayerEnabled) {
-    return gelato.getNetworkGasPrice(chainId)
-  }
-
-  return biconomy.getNetworkGasPrice(chainId)
+  const { gelato } = components
+  return gelato.getNetworkGasPrice(chainId)
 }
 
 /**

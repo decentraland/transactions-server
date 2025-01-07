@@ -1,7 +1,6 @@
 import { IConfigComponent } from '@well-known-components/interfaces'
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { BigNumber } from 'ethers'
-import { BiconomyMetaTransactionComponent } from '../../../../src/ports/biconomy'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'
@@ -13,9 +12,7 @@ let config: IConfigComponent
 let contracts: IContractsComponent
 let features: IFeaturesComponent
 let gelato: GelatoMetaTransactionComponent
-let biconomy: BiconomyMetaTransactionComponent
 let gelatoGetNetworkGasPriceMock: jest.Mock
-let biconomyGetNetworkGasPriceMock: jest.Mock
 let getIsFeatureEnabledMock: jest.Mock
 let getFeatureVariantMock: jest.Mock
 let isCollectionAddressMock: jest.Mock
@@ -24,7 +21,6 @@ let components: {
   contracts: IContractsComponent
   features: IFeaturesComponent
   gelato: GelatoMetaTransactionComponent
-  biconomy: BiconomyMetaTransactionComponent
 }
 
 beforeEach(() => {
@@ -32,7 +28,6 @@ beforeEach(() => {
   getIsFeatureEnabledMock = jest.fn()
   getFeatureVariantMock = jest.fn()
   gelatoGetNetworkGasPriceMock = jest.fn()
-  biconomyGetNetworkGasPriceMock = jest.fn()
   config = {
     requireString: async () => 'Sepolia',
     requireNumber: jest.fn(),
@@ -55,17 +50,12 @@ beforeEach(() => {
     sendMetaTransaction: jest.fn(),
     getNetworkGasPrice: gelatoGetNetworkGasPriceMock,
   }
-  biconomy = {
-    sendMetaTransaction: jest.fn(),
-    getNetworkGasPrice: biconomyGetNetworkGasPriceMock,
-  }
 
   components = {
     config,
     contracts,
     features,
     gelato,
-    biconomy,
   }
 })
 
@@ -87,102 +77,49 @@ describe('when checking the gas price for a txn', () => {
           },
           enabled: true,
         })
+        getIsFeatureEnabledMock.mockResolvedValueOnce(true)
       })
 
-      describe('and the is gelato enabled feature flag is set', () => {
+      describe('and the current network gas price is lower than max gas price allowed', () => {
         beforeEach(() => {
-          getIsFeatureEnabledMock.mockResolvedValueOnce(true)
+          gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
+            BigNumber.from(1000000000)
+          )
         })
 
-        describe('and the current network gas price is lower than max gas price allowed', () => {
+        it('should not throw an error', async () => {
+          await expect(
+            checkGasPrice(components, transactionData)
+          ).resolves.not.toThrow()
+        })
+      })
+
+      describe('and the current network gas price is greater than max gas price allowed', () => {
+        beforeEach(() => {
           beforeEach(() => {
             gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
-              BigNumber.from(1000000000)
+              BigNumber.from(2100000000)
             )
           })
-
-          it('should not throw an error', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).resolves.not.toThrow()
-          })
         })
 
-        describe('and the current network gas price is greater than max gas price allowed', () => {
-          beforeEach(() => {
-            beforeEach(() => {
-              gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
-                BigNumber.from(2100000000)
-              )
-            })
-          })
-
-          it('should throw an error', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).rejects.toThrow()
-          })
-        })
-
-        describe('and the current network gas price could not be fetched', () => {
-          beforeEach(() => {
-            const { gelato } = components
-            gelatoGetNetworkGasPriceMock.mockRejectedValueOnce(new Error())
-          })
-
-          it('should throw an error', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).rejects.toThrow()
-          })
+        it('should throw an error', async () => {
+          await expect(
+            checkGasPrice(components, transactionData)
+          ).rejects.toThrow()
         })
       })
 
-      describe('and the gelato enabled feature is not set', () => {
+      describe('and the current network gas price could not be fetched', () => {
         beforeEach(() => {
-          getIsFeatureEnabledMock.mockResolvedValueOnce(false)
+          const { gelato } = components
+          gelatoGetNetworkGasPriceMock.mockRejectedValueOnce(new Error())
         })
 
-        describe('and the current network gas price is lower than max gas price allowed', () => {
-          beforeEach(() => {
-            biconomyGetNetworkGasPriceMock.mockResolvedValueOnce(
-              BigNumber.from(1000000000)
-            )
-          })
-
-          it('should not throw an error', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).resolves.not.toThrow()
-          })
-        })
-
-        describe('and the current network gas price is greater than max gas price allowed', () => {
-          beforeEach(() => {
-            beforeEach(() => {
-              biconomyGetNetworkGasPriceMock.mockResolvedValueOnce(
-                BigNumber.from(2100000000)
-              )
-            })
-          })
-
-          it('should throw an error', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).rejects.toThrow()
-          })
-        })
-
-        describe('and the current network gas price could not be fetched', () => {
-          beforeEach(() => {
-            biconomyGetNetworkGasPriceMock.mockRejectedValueOnce(new Error())
-          })
-
-          it('should throw an error', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).rejects.toThrow()
-          })
+        it('should throw an error', async () => {
+          await expect(
+            checkGasPrice(components, transactionData)
+          ).rejects.toThrow()
         })
       })
     })
