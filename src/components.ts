@@ -116,7 +116,6 @@ export async function initComponents(): Promise<AppComponents> {
     fetcher,
     logs,
     pg,
-    biconomy,
     gelato,
     contracts,
     metrics,
