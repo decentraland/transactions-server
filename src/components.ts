@@ -20,7 +20,6 @@ import { createFetchComponent } from './ports/fetcher'
 import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
-import { createBiconomyComponent } from './ports/biconomy'
 import { createGelatoComponent } from './ports/gelato'
 
 export async function initComponents(): Promise<AppComponents> {
@@ -102,12 +101,6 @@ export async function initComponents(): Promise<AppComponents> {
     collectionsSubgraph,
   })
 
-  const biconomy = await createBiconomyComponent({
-    logs,
-    config,
-    fetcher,
-    metrics,
-  })
   const gelato = await createGelatoComponent({ logs, config, fetcher, metrics })
 
   const transaction = createTransactionComponent({
@@ -131,7 +124,6 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     pg,
-    biconomy,
     gelato,
     transaction,
     contracts,
