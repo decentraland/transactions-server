@@ -14,6 +14,10 @@ import {
 } from './types'
 import { InvalidTransactionError } from '../../types/transactions/errors'
 
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * The Gelato component should be used instead.
+ */
 export async function createBiconomyComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'logs' | 'metrics'>
 ): Promise<BiconomyMetaTransactionComponent> {

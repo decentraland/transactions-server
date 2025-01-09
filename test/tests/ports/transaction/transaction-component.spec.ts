@@ -7,7 +7,6 @@ import {
 import { IPgComponent } from '@well-known-components/pg-component'
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { metricDeclarations } from '../../../../src/metrics'
-import { BiconomyMetaTransactionComponent } from '../../../../src/ports/biconomy'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
 import { createTransactionComponent } from '../../../../src/ports/transaction/component'
@@ -20,14 +19,12 @@ let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
 let logs: ILoggerComponent
 let gelato: GelatoMetaTransactionComponent
-let biconomy: BiconomyMetaTransactionComponent
 let transactionData: TransactionData
 let contracts: IContractsComponent
 let pg: IPgComponent
 let features: IFeaturesComponent
 let mockedGetIsFeatureEnabled: jest.Mock
 let mockedGelatoSendMetaTransaction: jest.Mock
-let mockedBiconomySendMetaTransaction: jest.Mock
 let mockedQuery: jest.Mock
 
 beforeEach(() => {
@@ -35,14 +32,9 @@ beforeEach(() => {
   logs = {} as ILoggerComponent
   config = {} as IConfigComponent
   mockedGetIsFeatureEnabled = jest.fn()
-  mockedBiconomySendMetaTransaction = jest.fn()
   mockedGelatoSendMetaTransaction = jest.fn()
   mockedQuery = jest.fn()
   transactionData = { from: '0x1', params: ['1', '2'] }
-  biconomy = {
-    sendMetaTransaction: mockedBiconomySendMetaTransaction,
-    getNetworkGasPrice: jest.fn(),
-  }
   gelato = {
     sendMetaTransaction: mockedGelatoSendMetaTransaction,
     getNetworkGasPrice: jest.fn(),
@@ -67,7 +59,6 @@ beforeEach(() => {
     metrics,
     logs,
     gelato,
-    biconomy,
     pg,
     contracts,
     features,
@@ -77,71 +68,34 @@ beforeEach(() => {
 describe('when sending a transaction', () => {
   let txHash: string
 
-  describe('and gelato relayer enabled feature flag is set', () => {
+  beforeEach(() => {
+    mockedGetIsFeatureEnabled.mockResolvedValueOnce(true)
+  })
+
+  describe('and the request is successful', () => {
     beforeEach(() => {
-      mockedGetIsFeatureEnabled.mockResolvedValueOnce(true)
+      mockedGelatoSendMetaTransaction.mockResolvedValueOnce(txHash)
     })
 
-    describe('and the request is successful', () => {
-      beforeEach(() => {
-        mockedGelatoSendMetaTransaction.mockResolvedValueOnce(txHash)
-      })
-
-      it('should send the transaction using gelato and resolve with its result', async () => {
-        await expect(
-          transaction.sendMetaTransaction(transactionData)
-        ).resolves.toEqual(txHash)
-        expect(gelato.sendMetaTransaction).toHaveBeenCalledWith(transactionData)
-      })
-    })
-
-    describe('and the request fails with an error', () => {
-      let error: Error
-      beforeEach(() => {
-        error = new Error('Failed to send transaction')
-        mockedGelatoSendMetaTransaction.mockRejectedValueOnce(error)
-      })
-
-      it('should reject with the error', async () => {
-        await expect(
-          transaction.sendMetaTransaction(transactionData)
-        ).rejects.toEqual(error)
-      })
+    it('should send the transaction using gelato and resolve with its result', async () => {
+      await expect(
+        transaction.sendMetaTransaction(transactionData)
+      ).resolves.toEqual(txHash)
+      expect(gelato.sendMetaTransaction).toHaveBeenCalledWith(transactionData)
     })
   })
 
-  describe('and gelato relayer enabled feature flag is not set', () => {
+  describe('and the request fails with an error', () => {
+    let error: Error
     beforeEach(() => {
-      mockedGetIsFeatureEnabled.mockResolvedValueOnce(false)
+      error = new Error('Failed to send transaction')
+      mockedGelatoSendMetaTransaction.mockRejectedValueOnce(error)
     })
 
-    describe('and the request is successful', () => {
-      beforeEach(() => {
-        mockedBiconomySendMetaTransaction.mockResolvedValueOnce(txHash)
-      })
-
-      it('should send the transaction using biconomy and resolve with its result', async () => {
-        await expect(
-          transaction.sendMetaTransaction(transactionData)
-        ).resolves.toEqual(txHash)
-        expect(biconomy.sendMetaTransaction).toHaveBeenCalledWith(
-          transactionData
-        )
-      })
-    })
-
-    describe('and the request fails with an error', () => {
-      let error: Error
-      beforeEach(() => {
-        error = new Error('Failed to send transaction')
-        mockedBiconomySendMetaTransaction.mockRejectedValueOnce(error)
-      })
-
-      it('should reject with the error', async () => {
-        await expect(
-          transaction.sendMetaTransaction(transactionData)
-        ).rejects.toEqual(error)
-      })
+    it('should reject with the error', async () => {
+      await expect(
+        transaction.sendMetaTransaction(transactionData)
+      ).rejects.toEqual(error)
     })
   })
 })

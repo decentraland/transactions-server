@@ -1,9 +1,7 @@
 import { IDatabase } from '@well-known-components/interfaces'
-import { ApplicationName } from '@well-known-components/features-component'
 import SQL from 'sql-template-strings'
 import { AppComponents } from '../../types'
 import { TransactionData } from '../../types/transactions/transactions'
-import { Feature } from '../features'
 import {
   checkSchema,
   checkSalePrice,
@@ -25,23 +23,14 @@ export function createTransactionComponent(
     | 'logs'
     | 'metrics'
     | 'gelato'
-    | 'biconomy'
   >
 ): ITransactionComponent {
-  const { features, gelato, biconomy, pg } = components
+  const { gelato, pg } = components
 
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
-    const isGelatoRelayerEnabled = await features.getIsFeatureEnabled(
-      ApplicationName.DAPPS,
-      Feature.GELATO_RELAYER
-    )
-    if (isGelatoRelayerEnabled) {
-      return gelato.sendMetaTransaction(transactionData)
-    }
-
-    return biconomy.sendMetaTransaction(transactionData)
+    return gelato.sendMetaTransaction(transactionData)
   }
 
   async function insert(
