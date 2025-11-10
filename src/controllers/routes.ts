@@ -1,7 +1,7 @@
 import { Router } from '@well-known-components/http-server'
 import { createTransactionMiddleware } from '../logic/transaction-middleware'
 import { GlobalContext } from '../types'
-import { getUserTransactions, sendTransaction } from './handlers'
+import { getUserTransactions, sendTransaction, validateAddress } from './handlers'
 
 // We return the entire router because it will be easier to test than a whole server
 export async function setupRoutes(globalContext: GlobalContext) {
@@ -17,6 +17,7 @@ export async function setupRoutes(globalContext: GlobalContext) {
   router.get('/transactions/:userAddress', getUserTransactions)
   router.use('/transactions', createTransactionMiddleware(components))
   router.post('/transactions', sendTransaction)
+  router.get('/validate/:address', validateAddress)
 
   return router
 }
