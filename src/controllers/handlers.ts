@@ -89,3 +89,46 @@ export async function sendTransaction(
     }
   }
 }
+
+export async function contractsAddress(
+  context: HandlerContextWithPath<
+    'globalLogger' | 'contracts',
+    '/contracts/:address'
+  >
+): Promise<HTTPResponse> {
+  const { globalLogger, contracts } = context.components
+  const address = context.params.address.toLowerCase()
+
+  globalLogger.info(`Validating address ${address}`)
+
+  try {
+    // isValidAddress already checks isCollectionAddress and isWhitelisted internally
+    const isValid = await contracts.isValidAddress(address)
+
+    if (isValid) {
+      return {
+        status: StatusCode.OK,
+        body: { ok: true },
+      }
+    } else {
+      return {
+        status: StatusCode.NOT_FOUND,
+        body: {
+          ok: false,
+          message: 'Address is not valid',
+          code: ErrorCode.UNKNOWN,
+        },
+      }
+    }
+  } catch (error) {
+    globalLogger.error(error as Error)
+    return {
+      status: StatusCode.ERROR,
+      body: {
+        ok: false,
+        message: isErrorWithMessage(error) ? error.message : 'Unknown error',
+        code: ErrorCode.UNKNOWN,
+      },
+    }
+  }
+}

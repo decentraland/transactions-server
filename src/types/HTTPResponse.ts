@@ -18,6 +18,9 @@ type TxHashResponseBody = {
   ok: true
   txHash: string
 }
+type ValidationResponseBody = {
+  ok: true
+}
 type ErrorResponseBody = {
   ok: false
   message: string
@@ -26,5 +29,9 @@ type ErrorResponseBody = {
 
 export type HTTPResponse = {
   status: StatusCode
-  body: TxHashResponseBody | TransactionsResponseBody | ErrorResponseBody
+  body:
+    | TxHashResponseBody
+    | TransactionsResponseBody
+    | ErrorResponseBody
+    | ValidationResponseBody
 }
