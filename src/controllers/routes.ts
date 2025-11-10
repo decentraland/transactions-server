@@ -4,7 +4,7 @@ import { GlobalContext } from '../types'
 import {
   getUserTransactions,
   sendTransaction,
-  validateAddress,
+  contractsAddress,
 } from './handlers'
 
 // We return the entire router because it will be easier to test than a whole server
@@ -21,7 +21,7 @@ export async function setupRoutes(globalContext: GlobalContext) {
   router.get('/transactions/:userAddress', getUserTransactions)
   router.use('/transactions', createTransactionMiddleware(components))
   router.post('/transactions', sendTransaction)
-  router.get('/validate/:address', validateAddress)
+  router.get('/contracts/:address', contractsAddress)
 
   return router
 }

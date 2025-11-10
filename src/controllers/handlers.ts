@@ -90,10 +90,10 @@ export async function sendTransaction(
   }
 }
 
-export async function validateAddress(
+export async function contractsAddress(
   context: HandlerContextWithPath<
     'globalLogger' | 'contracts',
-    '/validate/:address'
+    '/contracts/:address'
   >
 ): Promise<HTTPResponse> {
   const { globalLogger, contracts } = context.components
