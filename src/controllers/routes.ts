@@ -1,7 +1,11 @@
 import { Router } from '@well-known-components/http-server'
 import { createTransactionMiddleware } from '../logic/transaction-middleware'
 import { GlobalContext } from '../types'
-import { getUserTransactions, sendTransaction, validateAddress } from './handlers'
+import {
+  getUserTransactions,
+  sendTransaction,
+  validateAddress,
+} from './handlers'
 
 // We return the entire router because it will be easier to test than a whole server
 export async function setupRoutes(globalContext: GlobalContext) {

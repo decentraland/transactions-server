@@ -29,5 +29,9 @@ type ErrorResponseBody = {
 
 export type HTTPResponse = {
   status: StatusCode
-  body: TxHashResponseBody | TransactionsResponseBody | ErrorResponseBody | ValidationResponseBody
+  body:
+    | TxHashResponseBody
+    | TransactionsResponseBody
+    | ErrorResponseBody
+    | ValidationResponseBody
 }
