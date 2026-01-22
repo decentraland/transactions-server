@@ -1,6 +1,7 @@
-import { IConfigComponent } from '@well-known-components/interfaces'
+import { IConfigComponent, IMetricsComponent } from '@well-known-components/interfaces'
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { BigNumber } from 'ethers'
+import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'
@@ -21,6 +22,7 @@ let components: {
   contracts: IContractsComponent
   features: IFeaturesComponent
   gelato: GelatoMetaTransactionComponent
+  metrics: IMetricsComponent<keyof typeof metricDeclarations>
 }
 
 beforeEach(() => {
@@ -56,6 +58,9 @@ beforeEach(() => {
     contracts,
     features,
     gelato,
+    metrics: {
+      increment: jest.fn(),
+    } as unknown as IMetricsComponent<keyof typeof metricDeclarations>,
   }
 })
 
