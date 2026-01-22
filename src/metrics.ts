@@ -60,6 +60,11 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
+  dcl_error_high_gas_price_gelato: {
+    help: 'Count errors when gas price exceeds allowed limit for Gelato transactions',
+    type: IMetricsComponent.CounterType,
+    labelNames: ['currentGasPrice', 'maxGasPriceAllowed'],
+  },
   dcl_error_simulate_transaction: {
     help: 'Count errors of simulate transaction',
     type: IMetricsComponent.CounterType,

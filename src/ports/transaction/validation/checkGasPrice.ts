@@ -16,7 +16,7 @@ export const checkGasPrice: IGasPriceValidator = async (
   components,
   transactionData
 ) => {
-  const { config, features } = components
+  const { config, features, metrics } = components
   const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
 
   const isGasPriceAllowedFFEnabled = await features.getIsFeatureEnabled(
@@ -45,6 +45,10 @@ export const checkGasPrice: IGasPriceValidator = async (
       }
 
       if (currentGasPrice.gt(maxGasPriceAllowed)) {
+        metrics.increment('dcl_error_high_gas_price_gelato', {
+          currentGasPrice: currentGasPrice.toString(),
+          maxGasPriceAllowed: maxGasPriceAllowed.toString(),
+        })
         throw new HighCongestionError(
           currentGasPrice.toString(),
           maxGasPriceAllowed.toString()
