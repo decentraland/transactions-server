@@ -424,3 +424,17 @@ describe('when getting the network gas price', () => {
     })
   })
 })
+
+describe('when gas price exceeds the allowed limit', () => {
+  it('should have the high gas price metric available', () => {
+    expect(metrics.increment).toBeDefined()
+  })
+
+  it('should be able to increment the high gas price metric with gas price values', () => {
+    metrics.increment('dcl_error_high_gas_price_gelato')
+
+    expect(metrics.increment).toHaveBeenCalledWith(
+      'dcl_error_high_gas_price_gelato'
+    )
+  })
+})
