@@ -1,4 +1,7 @@
-import { IConfigComponent, IMetricsComponent } from '@well-known-components/interfaces'
+import {
+  IConfigComponent,
+  IMetricsComponent,
+} from '@well-known-components/interfaces'
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { BigNumber } from 'ethers'
 import { metricDeclarations } from '../../../../src/metrics'
@@ -101,17 +104,25 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price is greater than max gas price allowed', () => {
         beforeEach(() => {
-          beforeEach(() => {
-            gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
-              BigNumber.from(2100000000)
-            )
-          })
+          gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
+            BigNumber.from(2100000000)
+          )
         })
 
         it('should throw an error', async () => {
           await expect(
             checkGasPrice(components, transactionData)
           ).rejects.toThrow()
+        })
+
+        it('should increment the high gas price metric', async () => {
+          await expect(
+            checkGasPrice(components, transactionData)
+          ).rejects.toThrow()
+
+          expect(components.metrics.increment).toHaveBeenCalledWith(
+            'dcl_error_high_gas_price_gelato'
+          )
         })
       })
 

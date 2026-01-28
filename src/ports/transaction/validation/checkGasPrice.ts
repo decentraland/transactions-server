@@ -45,10 +45,7 @@ export const checkGasPrice: IGasPriceValidator = async (
       }
 
       if (currentGasPrice.gt(maxGasPriceAllowed)) {
-        metrics.increment('dcl_error_high_gas_price_gelato', {
-          currentGasPrice: currentGasPrice.toString(),
-          maxGasPriceAllowed: maxGasPriceAllowed.toString(),
-        })
+        metrics.increment('dcl_error_high_gas_price_gelato')
         throw new HighCongestionError(
           currentGasPrice.toString(),
           maxGasPriceAllowed.toString()
