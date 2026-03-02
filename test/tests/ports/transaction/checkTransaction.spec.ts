@@ -1,4 +1,3 @@
-import { providers } from 'ethers'
 import { IConfigComponent } from '@well-known-components/interfaces'
 import {
   IMetricsComponent,
@@ -7,8 +6,19 @@ import {
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { checkTransaction } from '../../../../src/ports/transaction/validation/checkTransaction'
 
+const mockEstimateGas = jest.fn()
+
+jest.mock('viem', () => {
+  const actual = jest.requireActual('viem')
+  return {
+    ...actual,
+    createPublicClient: () => ({
+      estimateGas: mockEstimateGas,
+    }),
+  }
+})
+
 let transactionData: any
-let mockProvider: any
 let config: IConfigComponent
 let components: {
   config: IConfigComponent
@@ -23,9 +33,7 @@ beforeEach(() => {
     params: ['0x1234567890abcdef1234567890abcdef12345678', '0x1'],
   }
 
-  mockProvider = {
-    estimateGas: jest.fn(),
-  }
+  mockEstimateGas.mockReset()
 
   config = {
     requireString: async () => 'http://mock-rpc-url',
@@ -52,24 +60,20 @@ beforeEach(() => {
     },
     metrics: { increment: jest.fn() } as unknown as IMetricsComponent,
   }
-
-  jest
-    .spyOn(providers, 'JsonRpcProvider')
-    .mockImplementation(() => mockProvider)
 })
 
 describe('checkTransaction', () => {
   describe('when the transaction data is valid', () => {
     beforeEach(() => {
-      mockProvider.estimateGas.mockResolvedValue('0x5208')
+      mockEstimateGas.mockResolvedValue(21000n)
     })
 
     it('should estimate gas without throwing an error', async () => {
       await expect(
         checkTransaction(components, transactionData)
       ).resolves.not.toThrow()
-      expect(mockProvider.estimateGas).toHaveBeenCalledWith({
-        from: transactionData.from,
+      expect(mockEstimateGas).toHaveBeenCalledWith({
+        account: transactionData.from,
         to: transactionData.params[0],
         data: transactionData.params[1],
       })
@@ -82,7 +86,7 @@ describe('checkTransaction', () => {
         from: '0xonvalidAddress',
         params: ['a', 'b'],
       }
-      mockProvider.estimateGas.mockRejectedValue(
+      mockEstimateGas.mockRejectedValue(
         new Error('Malformed transaction')
       )
     })
@@ -91,8 +95,8 @@ describe('checkTransaction', () => {
       await expect(
         checkTransaction(components, transactionData)
       ).rejects.toThrow('Malformed transaction')
-      expect(mockProvider.estimateGas).toHaveBeenCalledWith({
-        from: transactionData.from.toLowerCase(),
+      expect(mockEstimateGas).toHaveBeenCalledWith({
+        account: transactionData.from.toLowerCase(),
         to: transactionData.params[0].toLowerCase(),
         data: transactionData.params[1],
       })

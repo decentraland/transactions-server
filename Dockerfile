@@ -1,6 +1,6 @@
 ARG RUN
 
-FROM node:20-alpine as builderenv
+FROM node:24-alpine as builderenv
 
 WORKDIR /app
 

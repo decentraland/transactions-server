@@ -1,0 +1,234 @@
+openapi: 3.0.3
+info:
+  title: Transactions Server API
+  version: 1.0.0
+  description: |
+    ## Overview
+
+    The Transactions Server provides a meta-transaction relay service for the Decentraland ecosystem.
+    It allows users to interact with blockchain smart contracts without directly paying gas fees.
+
+    The server relays transactions through multiple providers (Biconomy, Gelato, Tenderly) and maintains
+    a history of all relayed transactions for auditing and user queries.
+
+    ### Key Features
+
+    - Meta-transaction relay with gas fee abstraction
+    - Transaction history by user address
+    - Transaction validation and error handling
+
+  contact:
+    name: Decentraland Foundation
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://transactions-api.decentraland.org
+    description: Production server
+
+tags:
+  - name: Transactions
+    description: Meta-transaction relay and history endpoints
+
+paths:
+  /{apiVersion}/transactions:
+    post:
+      summary: Relay a meta-transaction
+      description: |
+        Accepts a meta-transaction request, validates it, and relays it to the blockchain
+        through one of the configured providers. Returns the transaction hash upon success.
+      tags:
+        - Transactions
+      parameters:
+        - in: path
+          name: apiVersion
+          required: true
+          schema:
+            type: string
+            example: v1
+          description: API version prefix
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transactionData
+              properties:
+                transactionData:
+                  type: object
+                  required:
+                    - from
+                    - params
+                  properties:
+                    from:
+                      type: string
+                      description: Ethereum address of the user initiating the transaction
+                      example: '0x1234567890123456789012345678901234567890'
+                    params:
+                      type: array
+                      description: Transaction parameters [manaAddress, txData]
+                      items:
+                        type: string
+                      minItems: 2
+                      maxItems: 2
+                      example:
+                        [
+                          '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+                          '0x095ea7b3...',
+                        ]
+      responses:
+        '200':
+          description: Transaction successfully relayed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  txHash:
+                    type: string
+                    description: The blockchain transaction hash
+                    example: '0xabc123...'
+        '400':
+          description: Invalid transaction data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Invalid transaction data'
+                  code:
+                    type: string
+                    example: 'INVALID_TRANSACTION'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Unknown error'
+                  code:
+                    type: string
+                    example: 'UNKNOWN'
+        '504':
+          description: Gateway timeout - relayer took too long to respond
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Relayer timeout'
+                  code:
+                    type: string
+                    example: 'UNKNOWN'
+
+  /{apiVersion}/transactions/{userAddress}:
+    get:
+      summary: Get transactions by user address
+      description: |
+        Retrieves all transactions that have been relayed for a specific user address.
+        The address lookup is case-insensitive.
+      tags:
+        - Transactions
+      parameters:
+        - in: path
+          name: apiVersion
+          required: true
+          schema:
+            type: string
+            example: v1
+          description: API version prefix
+        - in: path
+          name: userAddress
+          required: true
+          schema:
+            type: string
+          description: Ethereum address of the user (case-insensitive)
+          example: '0x1234567890123456789012345678901234567890'
+      responses:
+        '200':
+          description: List of transactions for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Internal transaction ID
+                      example: 1
+                    tx_hash:
+                      type: string
+                      description: Blockchain transaction hash
+                      example: '0xabc123...'
+                    user_address:
+                      type: string
+                      description: User's Ethereum address (lowercase)
+                      example: '0x1234567890123456789012345678901234567890'
+                    created_at:
+                      type: string
+                      format: date-time
+                      description: Timestamp when transaction was relayed
+                      example: '2024-01-15T10:30:00.000Z'
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    TransactionData:
+      type: object
+      required:
+        - from
+        - params
+      properties:
+        from:
+          type: string
+          description: Ethereum address of the user
+        params:
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 2
+          description: '[manaAddress, txData]'
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        tx_hash:
+          type: string
+        user_address:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+
+

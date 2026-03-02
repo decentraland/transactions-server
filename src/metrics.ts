@@ -8,27 +8,6 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: ['minPrice', 'salePrice'],
   },
-  // Biconomy metrics
-  dcl_sent_transactions_biconomy: {
-    help: 'Count transactions sent to BICONOMY',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  dcl_error_limit_reached_transactions_biconomy: {
-    help: 'Count limit errors when trying to relay a transaction to BICONOMY',
-    type: IMetricsComponent.CounterType,
-    labelNames: ['code'],
-  },
-  dcl_error_cannot_estimate_gas_transactions_biconomy: {
-    help: 'Count errors of cannot estimate gas when trying to relay a transaction to BICONOMY',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  dcl_error_relay_transactions_biconomy: {
-    help: 'Count errors of BICONOMY Api when trying to relay a transaction to BICONOMY',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
   // Gelato metrics
   dcl_sent_transactions_gelato: {
     help: 'Count transactions sent to Gelato',

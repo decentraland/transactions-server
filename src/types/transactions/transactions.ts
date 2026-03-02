@@ -1,9 +1,8 @@
 import { ChainId } from '@dcl/schemas'
-import { BigNumber } from 'ethers'
 
 export interface IMetaTransactionProviderComponent {
   sendMetaTransaction(transactionData: TransactionData): Promise<string>
-  getNetworkGasPrice(chainId: ChainId): Promise<BigNumber | null>
+  getNetworkGasPrice(chainId: ChainId): Promise<bigint | null>
 }
 
 export type TransactionData = {
