@@ -42,9 +42,7 @@ export async function createGelatoComponent(
     } catch (error) {
       metrics.increment('dcl_error_service_errors_gelato')
       const message = error instanceof Error ? error.message : 'Unknown error'
-      logger.error(
-        `Gelato failed to relay the transaction: ${message}`
-      )
+      logger.error(`Gelato failed to relay the transaction: ${message}`)
 
       if (error instanceof InsufficientBalanceRpcError) {
         metrics.increment('dcl_error_no_balance_transactions_gelato')
@@ -62,9 +60,7 @@ export async function createGelatoComponent(
       return receipt.transactionHash
     } catch (error) {
       if (error instanceof TransactionRevertedError) {
-        logger.error(
-          `Gelato task ${taskId} reverted: ${error.errorMessage}`
-        )
+        logger.error(`Gelato task ${taskId} reverted: ${error.errorMessage}`)
         metrics.increment('dcl_error_reverted_transactions_gelato')
         throw new InvalidTransactionError(
           'Transaction reverted',
@@ -73,9 +69,7 @@ export async function createGelatoComponent(
       }
 
       if (error instanceof TransactionRejectedError) {
-        logger.error(
-          `Gelato task ${taskId} cancelled: ${error.errorMessage}`
-        )
+        logger.error(`Gelato task ${taskId} cancelled: ${error.errorMessage}`)
         metrics.increment('dcl_error_cancelled_transactions_gelato')
 
         const errorMsg = error.errorMessage || ''

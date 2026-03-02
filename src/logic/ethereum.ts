@@ -47,9 +47,7 @@ export function decodeFunctionData(
   )
 
   if (!abiFunction) {
-    throw new Error(
-      `Function "${methodName}" not found in ABI`
-    )
+    throw new Error(`Function "${methodName}" not found in ABI`)
   }
 
   // Build a result array with named properties (like ethers' Result)
