@@ -54,8 +54,7 @@ export async function createGelatoComponent(
     })
 
     if (response.ok) {
-      const data =
-        (await response.json()) as GelatoJsonRpcResponse<string>
+      const data = (await response.json()) as GelatoJsonRpcResponse<string>
 
       if (data.error) {
         metrics.increment('dcl_error_service_errors_gelato')
@@ -120,26 +119,22 @@ export async function createGelatoComponent(
         const result = data.result!
 
         if (result.status === TaskStatus.Reverted) {
-          logger.error(
-            `Gelato task ${taskId} reverted: ${result.error}`
-          )
+          logger.error(`Gelato task ${taskId} reverted: ${result.error}`)
           metrics.increment('dcl_error_reverted_transactions_gelato')
           throw new InvalidTransactionError(
             'Transaction reverted',
             ErrorCode.EXPECTATION_FAILED
           )
         } else if (result.status === TaskStatus.Rejected) {
-          logger.error(
-            `Gelato task ${taskId} rejected: ${result.error}`
-          )
+          logger.error(`Gelato task ${taskId} rejected: ${result.error}`)
           metrics.increment('dcl_error_cancelled_transactions_gelato')
 
-          const noBalanceLeftInGasTankError =
-            result.error?.includes('No available token balance')
-          const noTokensConfiguredInGasTankSetError =
-            result.error?.includes(
-              '1Balance tokens could not be selected'
-            )
+          const noBalanceLeftInGasTankError = result.error?.includes(
+            'No available token balance'
+          )
+          const noTokensConfiguredInGasTankSetError = result.error?.includes(
+            '1Balance tokens could not be selected'
+          )
 
           if (
             noBalanceLeftInGasTankError ||
@@ -164,7 +159,10 @@ export async function createGelatoComponent(
           `Gelato failed to get the status of the related transaction with a ${response.status} status`
         )
         metrics.increment('dcl_error_service_errors_gelato')
-        throw new RelayerError(response.status, 'Failed to get transaction status')
+        throw new RelayerError(
+          response.status,
+          'Failed to get transaction status'
+        )
       }
 
       checks++
