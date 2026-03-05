@@ -1,4 +1,3 @@
-import { IFetchComponent } from '@well-known-components/http-server'
 import {
   IConfigComponent,
   ILoggerComponent,
@@ -7,8 +6,11 @@ import {
 import { metricDeclarations } from '@well-known-components/thegraph-component'
 import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
-import { ethers } from 'ethers'
-import { encodeFunctionData } from '../../../../src/logic/ethereum'
+import {
+  TransactionRejectedError,
+  TransactionRevertedError,
+  InsufficientBalanceRpcError,
+} from '@gelatocloud/gasless'
 import { createGelatoComponent } from '../../../../src/ports/gelato'
 import {
   IMetaTransactionProviderComponent,
@@ -17,18 +19,44 @@ import {
   TransactionData,
 } from '../../../../src/types/transactions'
 
+const mockSendTransaction = jest.fn()
+const mockWaitForReceipt = jest.fn()
+
+jest.mock('@gelatocloud/gasless', () => {
+  const actual = jest.requireActual('@gelatocloud/gasless')
+  return {
+    ...actual,
+    createGelatoEvmRelayerClient: () => ({
+      sendTransaction: mockSendTransaction,
+      waitForReceipt: mockWaitForReceipt,
+    }),
+  }
+})
+
+const mockGetGasPrice = jest.fn()
+
+jest.mock('viem', () => {
+  const actual = jest.requireActual('viem')
+  return {
+    ...actual,
+    createPublicClient: () => ({
+      getGasPrice: mockGetGasPrice,
+    }),
+  }
+})
+
 let gelato: IMetaTransactionProviderComponent
-let fetcher: IFetchComponent
 let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
 let logs: ILoggerComponent
 let transactionData: TransactionData
-let mockedFetch: jest.Mock
 let chainId: ChainId
 
 beforeEach(async () => {
   chainId = ChainId.MATIC_AMOY
-  mockedFetch = jest.fn()
+  mockSendTransaction.mockReset()
+  mockWaitForReceipt.mockReset()
+  mockGetGasPrice.mockReset()
   logs = {
     getLogger: () => ({
       error: jest.fn(),
@@ -38,9 +66,6 @@ beforeEach(async () => {
       debug: jest.fn(),
     }),
   } as ILoggerComponent
-  fetcher = {
-    fetch: mockedFetch,
-  } as IFetchComponent
   metrics = {
     increment: jest.fn(),
     startTimer: jest.fn(),
@@ -54,8 +79,6 @@ beforeEach(async () => {
   config = {
     requireString: async (key: string) => {
       switch (key) {
-        case 'GELATO_API_URL':
-          return 'https://biconmy.com'
         case 'GELATO_API_KEY':
           return 'aKey'
         case 'RPC_URL':
@@ -68,10 +91,6 @@ beforeEach(async () => {
       switch (key) {
         case 'COLLECTIONS_CHAIN_ID':
           return chainId
-        case 'GELATO_MAX_STATUS_CHECKS':
-          return 150
-        case 'GELATO_SLEEP_TIME_BETWEEN_CHECKS':
-          return 800
         default:
           throw new Error(`Unknown key: ${key}`)
       }
@@ -86,70 +105,70 @@ beforeEach(async () => {
       '0x' + Buffer.from('mock data').toString('hex'),
     ],
   }
-  gelato = await createGelatoComponent({ config, fetcher, metrics, logs })
+  gelato = await createGelatoComponent({ config, metrics, logs })
 })
 
 describe('when sending a meta transaction', () => {
-  describe('and the response is successful', () => {
+  describe('and the send transaction is successful', () => {
     let taskId: string
 
     beforeEach(() => {
-      taskId = 'aTaskId'
-      mockedFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ taskId }),
-      })
+      taskId = '0xaTaskId'
+      mockSendTransaction.mockResolvedValueOnce(taskId)
     })
 
-    describe('and requesting the task id is unsuccessful', () => {
+    describe('and waiting for receipt succeeds', () => {
       beforeEach(() => {
-        mockedFetch.mockResolvedValueOnce({
-          status: 500,
-          ok: false,
-          headers: {
-            get: (key: string) => {
-              if (key === 'content-type') {
-                return 'application/json'
-              }
-              throw new Error(`Unknown key: ${key}`)
-            },
-          },
-          json: () => Promise.resolve({ message: 'Internal server error' }),
+        mockWaitForReceipt.mockResolvedValueOnce({
+          transactionHash: 'aTransactionHash',
         })
       })
 
-      it('should reject with a relayer error', () => {
+      it('should return the transaction hash', () => {
         return expect(
           gelato.sendMetaTransaction(transactionData)
-        ).rejects.toThrow(new RelayerError(500, 'Internal server error'))
+        ).resolves.toBe('aTransactionHash')
       })
 
-      it('should increment the service errors metric', async () => {
-        await expect(
-          gelato.sendMetaTransaction(transactionData)
-        ).rejects.toThrow()
+      it('should increment the sent transactions metric', async () => {
+        await gelato.sendMetaTransaction(transactionData)
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_service_errors_gelato'
+          'dcl_sent_transactions_gelato'
+        )
+      })
+
+      it('should have called sendTransaction with the correct parameters', async () => {
+        await gelato.sendMetaTransaction(transactionData)
+        expect(mockSendTransaction).toHaveBeenCalledWith({
+          chainId: chainId,
+          to: transactionData.params[0],
+          data: transactionData.params[1],
+        })
+      })
+
+      it('should have called waitForReceipt with the task id', async () => {
+        await gelato.sendMetaTransaction(transactionData)
+        expect(mockWaitForReceipt).toHaveBeenCalledWith(
+          { id: taskId },
+          { throwOnReverted: true }
         )
       })
     })
 
-    describe('and requesting the task id results with a execution reverted status', () => {
+    describe('and waiting for receipt results with a reverted error', () => {
       beforeEach(() => {
-        mockedFetch.mockResolvedValueOnce({
-          status: 200,
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              task: {
-                chainId: chainId,
-                taskId: 'aTaskId',
-                taskState: 'ExecReverted',
-                creationDate: '2021-08-31T12:00:00Z',
-              },
-            }),
-        })
+        mockWaitForReceipt.mockRejectedValueOnce(
+          new TransactionRevertedError({
+            id: taskId,
+            chainId: chainId,
+            createdAt: Date.now(),
+            errorData: '0x',
+            errorMessage: 'execution reverted',
+            receipt: {
+              transactionHash: 'aTransactionHash',
+            } as any,
+          })
+        )
       })
 
       it('should reject with an invalid transaction error', () => {
@@ -174,21 +193,17 @@ describe('when sending a meta transaction', () => {
       })
     })
 
-    describe('and requesting the task id results with a cancelled status', () => {
+    describe('and waiting for receipt results with a rejected error', () => {
       beforeEach(() => {
-        mockedFetch.mockResolvedValueOnce({
-          status: 200,
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              task: {
-                chainId: chainId,
-                taskId: 'aTaskId',
-                taskState: 'Cancelled',
-                creationDate: '2021-08-31T12:00:00Z',
-              },
-            }),
-        })
+        mockWaitForReceipt.mockRejectedValueOnce(
+          new TransactionRejectedError({
+            id: taskId,
+            chainId: chainId,
+            createdAt: Date.now(),
+            errorData: undefined,
+            errorMessage: 'Transaction rejected',
+          })
+        )
       })
 
       it('should reject with an invalid transaction error', () => {
@@ -213,166 +228,79 @@ describe('when sending a meta transaction', () => {
       })
     })
 
-    describe('and requesting the task id results with a check pending status', () => {
+    describe('and waiting for receipt results with a rejected error due to no balance', () => {
       beforeEach(() => {
-        mockedFetch.mockResolvedValueOnce({
-          status: 200,
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              task: {
-                chainId: chainId,
-                taskId: 'aTaskId',
-                taskState: 'CheckPending',
-                creationDate: '2021-08-31T12:00:00Z',
-              },
-            }),
-        })
+        mockWaitForReceipt.mockRejectedValueOnce(
+          new TransactionRejectedError({
+            id: taskId,
+            chainId: chainId,
+            createdAt: Date.now(),
+            errorData: undefined,
+            errorMessage: 'No available token balance',
+          })
+        )
       })
 
-      describe('and later with a execution pending status', () => {
-        beforeEach(() => {
-          mockedFetch.mockResolvedValueOnce({
-            status: 200,
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                task: {
-                  chainId: chainId,
-                  taskId: 'aTaskId',
-                  taskState: 'ExecPending',
-                  creationDate: '2021-08-31T12:00:00Z',
-                  transactionHash: 'aTransactionHash',
-                },
-              }),
-          })
-        })
+      it('should increment both cancelled and no balance metrics', async () => {
+        await expect(
+          gelato.sendMetaTransaction(transactionData)
+        ).rejects.toThrow()
 
-        it('should return the transaction hash', () => {
-          return expect(
-            gelato.sendMetaTransaction(transactionData)
-          ).resolves.toBe('aTransactionHash')
-        })
+        expect(metrics.increment).toHaveBeenCalledWith(
+          'dcl_error_cancelled_transactions_gelato'
+        )
+        expect(metrics.increment).toHaveBeenCalledWith(
+          'dcl_error_no_balance_transactions_gelato'
+        )
+      })
+    })
 
-        it('should increment the sent transactions metric', async () => {
-          await gelato.sendMetaTransaction(transactionData)
-          expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_sent_transactions_gelato'
-          )
-        })
-
-        it('should have requested the relayer with the transaction data', async () => {
-          await expect(
-            gelato.sendMetaTransaction(transactionData)
-          ).resolves.toBe('aTransactionHash')
-          expect(mockedFetch).toHaveBeenCalledWith(
-            'https://biconmy.com/relays/v2/sponsored-call',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                chainId: chainId,
-                target: transactionData.params[0],
-                data: transactionData.params[1],
-                sponsorApiKey: 'aKey',
-              }),
-            }
-          )
-        })
-
-        it('should have requested the status of the task with the task id retrieved in the request to the relayer', async () => {
-          await expect(
-            gelato.sendMetaTransaction(transactionData)
-          ).resolves.toBe('aTransactionHash')
-          expect(mockedFetch).toHaveBeenCalledWith(
-            `https://biconmy.com/tasks/status/${taskId}`
-          )
-        })
+    describe('and waiting for receipt times out', () => {
+      beforeEach(() => {
+        mockWaitForReceipt.mockRejectedValueOnce(
+          new Error('Timeout waiting for status for transaction 0xaTaskId')
+        )
       })
 
-      describe('and later with an execution success status', () => {
-        beforeEach(() => {
-          mockedFetch.mockResolvedValueOnce({
-            status: 200,
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                task: {
-                  chainId: chainId,
-                  taskId: 'aTaskId',
-                  taskState: 'ExecSuccess',
-                  creationDate: '2021-08-31T12:00:00Z',
-                  transactionHash: 'aTransactionHash',
-                },
-              }),
-          })
-        })
+      it('should increment the timeout metric', async () => {
+        await expect(
+          gelato.sendMetaTransaction(transactionData)
+        ).rejects.toThrow()
+        expect(metrics.increment).toHaveBeenCalledWith(
+          'dcl_error_timeout_gelato'
+        )
+      })
+    })
 
-        it('should return the transaction hash', () => {
-          return expect(
-            gelato.sendMetaTransaction(transactionData)
-          ).resolves.toBe('aTransactionHash')
-        })
-
-        it('should increment the sent transactions metric', async () => {
-          await gelato.sendMetaTransaction(transactionData)
-          expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_sent_transactions_gelato'
-          )
-        })
+    describe('and waiting for receipt fails with an unknown error', () => {
+      beforeEach(() => {
+        mockWaitForReceipt.mockRejectedValueOnce(
+          new Error('Unknown error')
+        )
       })
 
-      describe('and later with a waiting for confirmation status', () => {
-        beforeEach(() => {
-          mockedFetch.mockResolvedValueOnce({
-            status: 200,
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                task: {
-                  chainId: chainId,
-                  taskId: 'aTaskId',
-                  taskState: 'WaitingForConfirmation',
-                  creationDate: '2021-08-31T12:00:00Z',
-                  transactionHash: 'aTransactionHash',
-                },
-              }),
-          })
-        })
+      it('should reject with a relayer error', () => {
+        return expect(
+          gelato.sendMetaTransaction(transactionData)
+        ).rejects.toThrow(new RelayerError(500, 'Unknown error'))
+      })
 
-        it('should return the transaction hash', () => {
-          return expect(
-            gelato.sendMetaTransaction(transactionData)
-          ).resolves.toBe('aTransactionHash')
-        })
-
-        it('should increment the sent transactions metric', async () => {
-          await gelato.sendMetaTransaction(transactionData)
-          expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_sent_transactions_gelato'
-          )
-        })
+      it('should increment the service errors metric', async () => {
+        await expect(
+          gelato.sendMetaTransaction(transactionData)
+        ).rejects.toThrow()
+        expect(metrics.increment).toHaveBeenCalledWith(
+          'dcl_error_service_errors_gelato'
+        )
       })
     })
   })
 
-  describe('and the response is unsuccessful', () => {
+  describe('and the send transaction is unsuccessful', () => {
     beforeEach(() => {
-      mockedFetch.mockResolvedValueOnce({
-        status: 500,
-        ok: false,
-        headers: {
-          get: (key: string) => {
-            if (key === 'content-type') {
-              return 'application/json'
-            }
-            throw new Error(`Unknown key: ${key}`)
-          },
-        },
-        json: () => Promise.resolve({ message: 'Internal server error' }),
-      })
+      mockSendTransaction.mockRejectedValueOnce(
+        new Error('Internal server error')
+      )
     })
 
     it('should reject with a relayer error', () => {
@@ -390,33 +318,45 @@ describe('when sending a meta transaction', () => {
       )
     })
   })
+
+  describe('and the send transaction fails due to insufficient balance', () => {
+    beforeEach(() => {
+      const cause = { code: 4205, message: 'Insufficient balance' } as any
+      mockSendTransaction.mockRejectedValueOnce(
+        new InsufficientBalanceRpcError(cause)
+      )
+    })
+
+    it('should increment both service errors and no balance metrics', async () => {
+      await expect(
+        gelato.sendMetaTransaction(transactionData)
+      ).rejects.toThrow()
+      expect(metrics.increment).toHaveBeenCalledWith(
+        'dcl_error_service_errors_gelato'
+      )
+      expect(metrics.increment).toHaveBeenCalledWith(
+        'dcl_error_no_balance_transactions_gelato'
+      )
+    })
+  })
 })
 
 describe('when getting the network gas price', () => {
-  let spiedProvider: jest.SpyInstance
-
-  beforeEach(() => {
-    spiedProvider = jest.spyOn(
-      ethers.providers.JsonRpcProvider.prototype,
-      'getGasPrice'
-    )
-  })
-
   describe('and retrieving the gas price from the RPC provider is successful', () => {
     beforeEach(() => {
-      spiedProvider.mockResolvedValueOnce(ethers.BigNumber.from(20))
+      mockGetGasPrice.mockResolvedValueOnce(20n)
     })
 
-    it('should resolve to a big number representing the network gas price in wei', () => {
+    it('should resolve to a bigint representing the network gas price in wei', () => {
       return expect(gelato.getNetworkGasPrice(chainId)).resolves.toEqual(
-        ethers.BigNumber.from(20)
+        20n
       )
     })
   })
 
   describe('and retrieving the gas price from the RPC provider is unsuccessful', () => {
     beforeEach(() => {
-      spiedProvider.mockRejectedValueOnce(new Error('An error occurred'))
+      mockGetGasPrice.mockRejectedValueOnce(new Error('An error occurred'))
     })
 
     it('should resolve to null', () => {

@@ -3,7 +3,6 @@ import {
   IMetricsComponent,
 } from '@well-known-components/interfaces'
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
-import { BigNumber } from 'ethers'
 import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
@@ -91,7 +90,7 @@ describe('when checking the gas price for a txn', () => {
       describe('and the current network gas price is lower than max gas price allowed', () => {
         beforeEach(() => {
           gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
-            BigNumber.from(1000000000)
+            1000000000n
           )
         })
 
@@ -105,7 +104,7 @@ describe('when checking the gas price for a txn', () => {
       describe('and the current network gas price is greater than max gas price allowed', () => {
         beforeEach(() => {
           gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
-            BigNumber.from(2100000000)
+            2100000000n
           )
         })
 
@@ -128,7 +127,6 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price could not be fetched', () => {
         beforeEach(() => {
-          const { gelato } = components
           gelatoGetNetworkGasPriceMock.mockRejectedValueOnce(new Error())
         })
 
@@ -160,7 +158,7 @@ describe('when checking the gas price for a txn', () => {
           enabled: true,
         })
         gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
-          BigNumber.from(2100000000)
+          2100000000n
         )
       })
 

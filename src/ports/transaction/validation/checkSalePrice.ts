@@ -1,6 +1,5 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
@@ -23,7 +22,7 @@ export const checkSalePrice: ITransactionValidator = async (
     getMaticChainIdFromChainName(chainName)
   )
 
-  if (salePrice !== null && BigNumber.from(salePrice).lt(minPriceInWei)) {
+  if (salePrice !== null && BigInt(salePrice) < BigInt(minPriceInWei)) {
     metrics.increment('dcl_error_sale_price_too_low', {
       minPrice: minPriceInWei,
       salePrice,

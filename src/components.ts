@@ -101,7 +101,7 @@ export async function initComponents(): Promise<AppComponents> {
     collectionsSubgraph,
   })
 
-  const gelato = await createGelatoComponent({ logs, config, fetcher, metrics })
+  const gelato = await createGelatoComponent({ logs, config, metrics })
 
   const transaction = createTransactionComponent({
     config,

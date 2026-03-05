@@ -1,10 +1,10 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import { BigNumber } from 'ethers'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
 } from '../../../src/logic/ethereum'
+
 
 describe('getMaticChainIdFromNetwork', () => {
   describe('when using a valid chain name', () => {
@@ -43,26 +43,34 @@ describe('decodeFunctionData', () => {
         ChainId.MATIC_AMOY
       )
 
-      const values = {
-        userAddress: '0x1D9aa2025b67f0F21d1603ce521bda7869098f8a',
-        functionSignature:
-          '0x81281be80000000000000000000000005c8bf33e673dc712ba62c5459e59dd9a15d458ff000000000000000000000000000000000000000000000000000000000000000b0000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000000000000000000000000000000000000026adcc',
-        sigR: '0xe9b8200260f8789fb7946507975ebec26bd12b7c25dd3d4da52a2c6b8c8470e3',
-        sigS: '0x119591fc1e5dc84e8dce9b15237da1f89fdbe786546adb53ea05274566ebbcde',
-        sigV: 28,
-      }
-      const expectedResult = [
-        values.userAddress,
-        values.functionSignature,
-        values.sigR,
-        values.sigS,
-        values.sigV,
-      ]
-      Object.assign(expectedResult, values)
+      const result = decodeFunctionData(
+        store.abi,
+        'executeMetaTransaction',
+        txData
+      )
 
-      expect(
-        decodeFunctionData(store.abi, 'executeMetaTransaction', txData)
-      ).toEqual(expectedResult)
+      // Check positional values
+      expect(result[0]).toBe(
+        '0x1D9aa2025b67f0F21d1603ce521bda7869098f8a'
+      )
+      expect(result[1]).toBe(
+        '0x81281be80000000000000000000000005c8bf33e673dc712ba62c5459e59dd9a15d458ff000000000000000000000000000000000000000000000000000000000000000b0000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000000000000000000000000000000000000026adcc'
+      )
+      expect(result[2]).toBe(
+        '0xe9b8200260f8789fb7946507975ebec26bd12b7c25dd3d4da52a2c6b8c8470e3'
+      )
+      expect(result[3]).toBe(
+        '0x119591fc1e5dc84e8dce9b15237da1f89fdbe786546adb53ea05274566ebbcde'
+      )
+      // viem returns uint8 as bigint; use Number() to avoid Jest BigInt serialization issues
+      expect(Number(result[4])).toBe(28)
+
+      // Check named properties
+      expect(result.userAddress).toBe(result[0])
+      expect(result.functionSignature).toBe(result[1])
+      expect(result.sigR).toBe(result[2])
+      expect(result.sigS).toBe(result[3])
+      expect(Number(result.sigV)).toBe(Number(result[4]))
     })
   })
 
@@ -70,9 +78,7 @@ describe('decodeFunctionData', () => {
     it('should throw an error showing the incorrect data', () => {
       expect(() =>
         decodeFunctionData([], 'executeMetaTransaction', txData)
-      ).toThrow(
-        'no matching function (argument="name", value="executeMetaTransaction", code=INVALID_ARGUMENT, version=abi/5.6.1)'
-      )
+      ).toThrow()
     })
   })
 
@@ -85,9 +91,7 @@ describe('decodeFunctionData', () => {
           'domainSeparator',
           txData
         )
-      ).toThrow(
-        `data signature does not match function domainSeparator. (argument=\"data\", value=\"${txData}", code=INVALID_ARGUMENT, version=abi/5.6.1)`
-      )
+      ).toThrow()
     })
   })
 
@@ -103,9 +107,7 @@ describe('decodeFunctionData', () => {
           'executeMetaTransaction',
           txData + 'wrong'
         )
-      ).toThrow(
-        `invalid arrayify value (argument=\"value\", value=\"${txData}wrong\", code=INVALID_ARGUMENT, version=bytes/5.6.1)`
-      )
+      ).toThrow()
     })
   })
 })

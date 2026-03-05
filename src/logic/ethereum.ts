@@ -1,4 +1,10 @@
-import { utils } from 'ethers'
+import {
+  decodeFunctionData as viemDecodeFunctionData,
+  encodeFunctionData as viemEncodeFunctionData,
+  Abi,
+  AbiFunction,
+  Hex,
+} from 'viem'
 import { ChainName, ChainId, getChainId } from '@dcl/schemas'
 import { ContractData } from 'decentraland-transactions'
 import { getNetworkMapping } from '@dcl/schemas/dist/dapps/chain-id'
@@ -24,9 +30,36 @@ export function decodeFunctionData(
   abi: ContractData['abi'],
   methodName: string,
   data: string
-): utils.Result {
-  const contractInterface = new utils.Interface(abi)
-  return contractInterface.decodeFunctionData(methodName, data)
+): any[] & Record<string, any> {
+  const viemAbi = abi as Abi
+  const { args } = viemDecodeFunctionData({
+    abi: viemAbi,
+    data: data as Hex,
+  })
+
+  // Find the matching ABI function to get parameter names
+  const abiFunction = (viemAbi as AbiFunction[]).find(
+    (item) =>
+      item.type === 'function' &&
+      (item.name === methodName ||
+        `${item.name}(${item.inputs.map((i) => i.type).join(',')})` ===
+          methodName)
+  )
+
+  if (!abiFunction) {
+    throw new Error(`Function "${methodName}" not found in ABI`)
+  }
+
+  // Build a result array with named properties (like ethers' Result)
+  const decodedArgs = args as readonly unknown[]
+  const result: any[] & Record<string, any> = [...decodedArgs] as any
+  abiFunction.inputs.forEach((input, i) => {
+    if (input.name) {
+      result[input.name] = decodedArgs[i]
+    }
+  })
+
+  return result
 }
 
 /**
@@ -41,6 +74,9 @@ export function encodeFunctionData(
   methodName: string,
   data: string[]
 ): string {
-  const contractInterface = new utils.Interface(abi)
-  return contractInterface.encodeFunctionData(methodName, data)
+  return viemEncodeFunctionData({
+    abi: abi as Abi,
+    functionName: methodName,
+    args: data,
+  })
 }

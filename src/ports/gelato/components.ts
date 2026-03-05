@@ -1,5 +1,10 @@
-import * as fetch from 'node-fetch'
-import { BigNumber, providers } from 'ethers'
+import {
+  createGelatoEvmRelayerClient,
+  TransactionRejectedError,
+  TransactionRevertedError,
+  InsufficientBalanceRpcError,
+} from '@gelatocloud/gasless'
+import { createPublicClient, http } from 'viem'
 import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
 import {
@@ -8,152 +13,99 @@ import {
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
-import { sleep } from '../../logic/time'
-import {
-  GelatoMetaTransactionComponent,
-  GelatoTaskStatusResponse,
-  TaskState,
-} from './types'
+import { GelatoMetaTransactionComponent } from './types'
 
 export async function createGelatoComponent(
-  components: Pick<AppComponents, 'config' | 'fetcher' | 'logs' | 'metrics'>
+  components: Pick<AppComponents, 'config' | 'logs' | 'metrics'>
 ): Promise<GelatoMetaTransactionComponent> {
-  const { config, fetcher, logs, metrics } = components
+  const { config, logs, metrics } = components
   const logger = logs.getLogger('gelato')
   const gelatoAPIKey = await config.requireString('GELATO_API_KEY')
-  const gelatoAPIURL = await config.requireString('GELATO_API_URL')
   const rpcURL = await config.requireString('RPC_URL')
   const chainId = await config.requireNumber('COLLECTIONS_CHAIN_ID')
-  const gelatoMaxStatusChecks = await config.requireNumber(
-    'GELATO_MAX_STATUS_CHECKS'
-  )
-  const gelatoSleepTimeBetweenChecks = await config.requireNumber(
-    'GELATO_SLEEP_TIME_BETWEEN_CHECKS'
-  )
 
-  const extractErrorMessage = async (
-    response: fetch.Response
-  ): Promise<string> => {
-    try {
-      if (response.headers.get('content-type')?.includes('application/json')) {
-        return ((await response.json()) as { message: string }).message
-      }
-    } catch (_) {
-      // Ignore
-    }
-    return 'Unknown error'
-  }
+  const relayer = createGelatoEvmRelayerClient({
+    apiKey: gelatoAPIKey,
+  })
 
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
-    const response = await fetcher.fetch(
-      `${gelatoAPIURL}/relays/v2/sponsored-call`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chainId,
-          target: transactionData.params[0],
-          data: transactionData.params[1],
-          sponsorApiKey: gelatoAPIKey,
-        }),
-      }
-    )
+    let taskId: string
 
-    if (response.ok) {
-      const data = (await response.json()) as { taskId: string }
-      return getTxHashFromGelatoResponse(data.taskId)
-    } else {
-      const message = await extractErrorMessage(response)
-
+    try {
+      taskId = await relayer.sendTransaction({
+        chainId,
+        to: transactionData.params[0] as `0x${string}`,
+        data: transactionData.params[1] as `0x${string}`,
+      })
+    } catch (error) {
       metrics.increment('dcl_error_service_errors_gelato')
-      logger.error(
-        `Gelato failed to relay the transaction with a ${response.status} status: ${message}`
-      )
-      throw new RelayerError(response.status, message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      logger.error(`Gelato failed to relay the transaction: ${message}`)
+
+      if (error instanceof InsufficientBalanceRpcError) {
+        metrics.increment('dcl_error_no_balance_transactions_gelato')
+      }
+
+      throw new RelayerError(500, message)
     }
-  }
 
-  const getTxHashFromGelatoResponse = async (
-    taskId: string
-  ): Promise<string> => {
-    let txHash: string | undefined
-    let checks: number = 0
+    try {
+      const receipt = await relayer.waitForReceipt(
+        { id: taskId },
+        { throwOnReverted: true }
+      )
+      metrics.increment('dcl_sent_transactions_gelato')
+      return receipt.transactionHash
+    } catch (error) {
+      if (error instanceof TransactionRevertedError) {
+        logger.error(`Gelato task ${taskId} reverted: ${error.errorMessage}`)
+        metrics.increment('dcl_error_reverted_transactions_gelato')
+        throw new InvalidTransactionError(
+          'Transaction reverted',
+          ErrorCode.EXPECTATION_FAILED
+        )
+      }
 
-    while (!txHash) {
-      if (checks >= gelatoMaxStatusChecks) {
+      if (error instanceof TransactionRejectedError) {
+        logger.error(`Gelato task ${taskId} cancelled: ${error.errorMessage}`)
+        metrics.increment('dcl_error_cancelled_transactions_gelato')
+
+        const errorMsg = error.errorMessage || ''
+        if (
+          errorMsg.includes('No available token balance') ||
+          errorMsg.includes('1Balance tokens could not be selected')
+        ) {
+          metrics.increment('dcl_error_no_balance_transactions_gelato')
+        }
+
+        throw new InvalidTransactionError(
+          'Transaction cancelled',
+          ErrorCode.EXPECTATION_FAILED
+        )
+      }
+
+      // Timeout or other errors
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      if (message.includes('Timeout')) {
         logger.error('Gelato task status checks limit reached')
         metrics.increment('dcl_error_timeout_gelato')
         throw new RelayerTimeout('The limit of status checks was reached')
       }
 
-      const response = await fetcher.fetch(
-        `${gelatoAPIURL}/tasks/status/${taskId}`
+      metrics.increment('dcl_error_service_errors_gelato')
+      logger.error(
+        `Gelato failed to get the status of the related transaction: ${message}`
       )
-
-      if (response.ok) {
-        const data = (await response.json()) as GelatoTaskStatusResponse
-        if (data.task.taskState === TaskState.ExecReverted) {
-          logger.error(
-            `Gelato task ${taskId} reverted: ${data.task.lastCheckMessage}`
-          )
-          metrics.increment('dcl_error_reverted_transactions_gelato')
-          throw new InvalidTransactionError(
-            'Transaction reverted',
-            ErrorCode.EXPECTATION_FAILED
-          )
-        } else if (data.task.taskState === TaskState.Cancelled) {
-          logger.error(
-            `Gelato task ${taskId} cancelled: ${data.task.lastCheckMessage}`
-          )
-          metrics.increment('dcl_error_cancelled_transactions_gelato')
-          const noBalanceLeftInGasTankError =
-            data.task.lastCheckMessage?.includes('No available token balance')
-          const noTokensConfiguredInGasTankSetError =
-            data.task.lastCheckMessage?.includes(
-              '1Balance tokens could not be selected'
-            )
-
-          if (
-            noBalanceLeftInGasTankError ||
-            noTokensConfiguredInGasTankSetError
-          ) {
-            metrics.increment('dcl_error_no_balance_transactions_gelato')
-          }
-
-          throw new InvalidTransactionError(
-            'Transaction cancelled',
-            ErrorCode.EXPECTATION_FAILED
-          )
-        } else if (
-          data.task.taskState === TaskState.ExecPending ||
-          data.task.taskState === TaskState.ExecSuccess ||
-          data.task.taskState === TaskState.WaitingForConfirmation
-        ) {
-          txHash = data.task.transactionHash
-        }
-        await sleep(gelatoSleepTimeBetweenChecks)
-      } else {
-        const message = await extractErrorMessage(response)
-        logger.error(
-          `Gelato failed to get the status of the related transaction with a ${response.status} status: ${message}`
-        )
-        metrics.increment('dcl_error_service_errors_gelato')
-        throw new RelayerError(response.status, message)
-      }
+      throw new RelayerError(500, message)
     }
-
-    metrics.increment('dcl_sent_transactions_gelato')
-    return txHash
   }
 
-  const getNetworkGasPrice = async (): Promise<BigNumber | null> => {
+  const getNetworkGasPrice = async (): Promise<bigint | null> => {
     try {
-      const provider = new providers.JsonRpcProvider(rpcURL)
-      const gasPrice = await provider.getGasPrice()
+      const client = createPublicClient({ transport: http(rpcURL) })
+      const gasPrice = await client.getGasPrice()
       return gasPrice
     } catch (error) {
       logger.error('Gelato failed to get the network gas price')

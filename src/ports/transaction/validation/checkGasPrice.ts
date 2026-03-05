@@ -1,5 +1,4 @@
 import { ChainId, ChainName } from '@dcl/schemas'
-import { BigNumber } from 'ethers'
 import { ContractName, getContract } from 'decentraland-transactions'
 import { ApplicationName } from '@well-known-components/features-component'
 import {
@@ -44,7 +43,7 @@ export const checkGasPrice: IGasPriceValidator = async (
         )
       }
 
-      if (currentGasPrice.gt(maxGasPriceAllowed)) {
+      if (currentGasPrice > maxGasPriceAllowed) {
         metrics.increment('dcl_error_high_gas_price_gelato')
         throw new HighCongestionError(
           currentGasPrice.toString(),
@@ -57,7 +56,7 @@ export const checkGasPrice: IGasPriceValidator = async (
 
 /**
  * Tries to get the max gas price allowed from the FF.
- * It'll return a BigNumber value in wei, and null otherwise
+ * It'll return a bigint value in wei, and null otherwise
  * @param components - Config | Features | Fetcher | Logs components
  */
 
@@ -74,19 +73,19 @@ const getMaxGasPriceAllowed = async (
     throw new Error('Max gas price allowed is not defined')
   }
 
-  return BigNumber.from(gasPriceAllowedVariant.payload.value)
+  return BigInt(gasPriceAllowedVariant.payload.value)
 }
 
 /**
  * Tries to get the current network gas price.
- * It'll return a BigNumber value in wei, and null otherwise
+ * It'll return a bigint value in wei, and null otherwise
  * @param components - Config | Features | Fetcher | Logs components
  * @param chainId - Network Chain ID
  */
 const getNetworkGasPrice = async (
   components: Pick<AppComponents, 'gelato'>,
   chainId: ChainId
-): Promise<BigNumber | null> => {
+): Promise<bigint | null> => {
   const { gelato } = components
   return gelato.getNetworkGasPrice(chainId)
 }
