@@ -5,26 +5,35 @@ export type GelatoSponsoredCallResponse = {
   taskId: string
 }
 
-export enum TaskState {
-  CheckPending = 'CheckPending',
-  ExecPending = 'ExecPending',
-  WaitingForConfirmation = 'WaitingForConfirmation',
-  ExecSuccess = 'ExecSuccess',
-  ExecReverted = 'ExecReverted',
-  Cancelled = 'Cancelled',
+export enum TaskStatus {
+  Pending = 100,
+  Submitted = 110,
+  Included = 200,
+  Rejected = 400,
+  Reverted = 500,
 }
-export type GelatoTaskStatusResponse = {
-  task: {
-    chainId: number
-    taskId: string
-    taskState: TaskState
-    creationDate: string
-    lastCheckDate?: string
-    lastCheckMessage?: string
-    transactionHash?: string
-    blockNumber?: number
-    executionDate?: string
-    gasUsed?: string
-    effectiveGasPrice?: string
+
+export type GelatoJsonRpcResponse<T> = {
+  jsonrpc: string
+  id: number
+  result?: T
+  error?: {
+    code: number
+    message: string
   }
+}
+
+export type GelatoTaskStatusResult = {
+  chainId: number
+  createdAt: number
+  status: TaskStatus
+  transactionHash?: string
+  receipt?: {
+    transactionHash: string
+    blockNumber: number
+    gasUsed: string
+    effectiveGasPrice: string
+  }
+  error?: string
+  errorData?: string
 }

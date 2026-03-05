@@ -1,4 +1,3 @@
-import * as fetch from 'node-fetch'
 import { BigNumber, providers } from 'ethers'
 import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
@@ -11,8 +10,9 @@ import {
 import { sleep } from '../../logic/time'
 import {
   GelatoMetaTransactionComponent,
-  GelatoTaskStatusResponse,
-  TaskState,
+  GelatoJsonRpcResponse,
+  GelatoTaskStatusResult,
+  TaskStatus,
 } from './types'
 
 export async function createGelatoComponent(
@@ -31,49 +31,47 @@ export async function createGelatoComponent(
     'GELATO_SLEEP_TIME_BETWEEN_CHECKS'
   )
 
-  const extractErrorMessage = async (
-    response: fetch.Response
-  ): Promise<string> => {
-    try {
-      if (response.headers.get('content-type')?.includes('application/json')) {
-        return ((await response.json()) as { message: string }).message
-      }
-    } catch (_) {
-      // Ignore
-    }
-    return 'Unknown error'
-  }
-
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
-    const response = await fetcher.fetch(
-      `${gelatoAPIURL}/relays/v2/sponsored-call`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chainId,
-          target: transactionData.params[0],
+    const response = await fetcher.fetch(`${gelatoAPIURL}/rpc`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': gelatoAPIKey,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'relayer_sendTransaction',
+        id: 1,
+        params: {
+          chainId: String(chainId),
+          to: transactionData.params[0],
           data: transactionData.params[1],
-          sponsorApiKey: gelatoAPIKey,
-        }),
-      }
-    )
+          payment: { type: 'sponsored' },
+        },
+      }),
+    })
 
     if (response.ok) {
-      const data = (await response.json()) as { taskId: string }
-      return getTxHashFromGelatoResponse(data.taskId)
-    } else {
-      const message = await extractErrorMessage(response)
+      const data =
+        (await response.json()) as GelatoJsonRpcResponse<string>
 
+      if (data.error) {
+        metrics.increment('dcl_error_service_errors_gelato')
+        logger.error(
+          `Gelato failed to relay the transaction: ${data.error.message}`
+        )
+        throw new RelayerError(data.error.code, data.error.message)
+      }
+
+      return getTxHashFromGelatoResponse(data.result!)
+    } else {
       metrics.increment('dcl_error_service_errors_gelato')
       logger.error(
-        `Gelato failed to relay the transaction with a ${response.status} status: ${message}`
+        `Gelato failed to relay the transaction with a ${response.status} status`
       )
-      throw new RelayerError(response.status, message)
+      throw new RelayerError(response.status, 'Failed to relay the transaction')
     }
   }
 
@@ -90,30 +88,56 @@ export async function createGelatoComponent(
         throw new RelayerTimeout('The limit of status checks was reached')
       }
 
-      const response = await fetcher.fetch(
-        `${gelatoAPIURL}/tasks/status/${taskId}`
-      )
+      const response = await fetcher.fetch(`${gelatoAPIURL}/rpc`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': gelatoAPIKey,
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'relayer_getStatus',
+          id: 1,
+          params: {
+            id: taskId,
+            logs: false,
+          },
+        }),
+      })
 
       if (response.ok) {
-        const data = (await response.json()) as GelatoTaskStatusResponse
-        if (data.task.taskState === TaskState.ExecReverted) {
+        const data =
+          (await response.json()) as GelatoJsonRpcResponse<GelatoTaskStatusResult>
+
+        if (data.error) {
           logger.error(
-            `Gelato task ${taskId} reverted: ${data.task.lastCheckMessage}`
+            `Gelato failed to get the status of the related transaction: ${data.error.message}`
+          )
+          metrics.increment('dcl_error_service_errors_gelato')
+          throw new RelayerError(data.error.code, data.error.message)
+        }
+
+        const result = data.result!
+
+        if (result.status === TaskStatus.Reverted) {
+          logger.error(
+            `Gelato task ${taskId} reverted: ${result.error}`
           )
           metrics.increment('dcl_error_reverted_transactions_gelato')
           throw new InvalidTransactionError(
             'Transaction reverted',
             ErrorCode.EXPECTATION_FAILED
           )
-        } else if (data.task.taskState === TaskState.Cancelled) {
+        } else if (result.status === TaskStatus.Rejected) {
           logger.error(
-            `Gelato task ${taskId} cancelled: ${data.task.lastCheckMessage}`
+            `Gelato task ${taskId} rejected: ${result.error}`
           )
           metrics.increment('dcl_error_cancelled_transactions_gelato')
+
           const noBalanceLeftInGasTankError =
-            data.task.lastCheckMessage?.includes('No available token balance')
+            result.error?.includes('No available token balance')
           const noTokensConfiguredInGasTankSetError =
-            data.task.lastCheckMessage?.includes(
+            result.error?.includes(
               '1Balance tokens could not be selected'
             )
 
@@ -129,21 +153,21 @@ export async function createGelatoComponent(
             ErrorCode.EXPECTATION_FAILED
           )
         } else if (
-          data.task.taskState === TaskState.ExecPending ||
-          data.task.taskState === TaskState.ExecSuccess ||
-          data.task.taskState === TaskState.WaitingForConfirmation
+          result.status === TaskStatus.Submitted ||
+          result.status === TaskStatus.Included
         ) {
-          txHash = data.task.transactionHash
+          txHash = result.transactionHash
         }
         await sleep(gelatoSleepTimeBetweenChecks)
       } else {
-        const message = await extractErrorMessage(response)
         logger.error(
-          `Gelato failed to get the status of the related transaction with a ${response.status} status: ${message}`
+          `Gelato failed to get the status of the related transaction with a ${response.status} status`
         )
         metrics.increment('dcl_error_service_errors_gelato')
-        throw new RelayerError(response.status, message)
+        throw new RelayerError(response.status, 'Failed to get transaction status')
       }
+
+      checks++
     }
 
     metrics.increment('dcl_sent_transactions_gelato')
