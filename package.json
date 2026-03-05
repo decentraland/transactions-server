@@ -26,7 +26,7 @@
     "printWidth": 80
   },
   "dependencies": {
-    "@dcl/schemas": "^15.1.0",
+    "@dcl/schemas": "^25.0.0",
     "@gelatocloud/gasless": "^0.0.12",
     "@well-known-components/env-config-provider": "^1.1.1",
     "@well-known-components/features-component": "^2.0.0",
