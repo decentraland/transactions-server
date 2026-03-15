@@ -26,13 +26,7 @@ export function createTransactionMiddleware(
       logger.debug(
         'Checking the validity of the request before sending the transaction'
       )
-      const id = Date.now()
-
-      logger.info(`Cloning the request when validating the tx ${id}`)
       const { transactionData } = await context.request.clone().json()
-      logger.info(
-        `Finish cloning the request when validating the tx ${id} and data: ${transactionData}`
-      )
 
       if (!transactionData) {
         logger.warn('Transaction rejected due to missing transaction data')
@@ -52,7 +46,6 @@ export function createTransactionMiddleware(
 
       return await next()
     } catch (error) {
-
       if (error instanceof HighCongestionError) {
         logger.warn('Transaction rejected due to high network congestion', {
           from,
