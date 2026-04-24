@@ -8,23 +8,25 @@ import { IPgComponent } from '@well-known-components/pg-component'
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
-import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
 import { createTransactionComponent } from '../../../../src/ports/transaction/component'
 import { ITransactionComponent } from '../../../../src/ports/transaction/types'
-import { TransactionData } from '../../../../src/types/transactions'
+import {
+  IMetaTransactionProviderComponent,
+  TransactionData,
+} from '../../../../src/types/transactions/transactions'
 
 let transaction: ITransactionComponent
 let fetcher: IFetchComponent
 let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
 let logs: ILoggerComponent
-let gelato: GelatoMetaTransactionComponent
+let relayer: IMetaTransactionProviderComponent
 let transactionData: TransactionData
 let contracts: IContractsComponent
 let pg: IPgComponent
 let features: IFeaturesComponent
 let mockedGetIsFeatureEnabled: jest.Mock
-let mockedGelatoSendMetaTransaction: jest.Mock
+let mockedRelayerSendMetaTransaction: jest.Mock
 let mockedQuery: jest.Mock
 
 beforeEach(() => {
@@ -32,11 +34,11 @@ beforeEach(() => {
   logs = {} as ILoggerComponent
   config = {} as IConfigComponent
   mockedGetIsFeatureEnabled = jest.fn()
-  mockedGelatoSendMetaTransaction = jest.fn()
+  mockedRelayerSendMetaTransaction = jest.fn()
   mockedQuery = jest.fn()
   transactionData = { from: '0x1', params: ['1', '2'] }
-  gelato = {
-    sendMetaTransaction: mockedGelatoSendMetaTransaction,
+  relayer = {
+    sendMetaTransaction: mockedRelayerSendMetaTransaction,
     getNetworkGasPrice: jest.fn(),
   }
   contracts = {} as IContractsComponent
@@ -58,7 +60,7 @@ beforeEach(() => {
     fetcher,
     metrics,
     logs,
-    gelato,
+    relayer,
     pg,
     contracts,
     features,
@@ -74,14 +76,14 @@ describe('when sending a transaction', () => {
 
   describe('and the request is successful', () => {
     beforeEach(() => {
-      mockedGelatoSendMetaTransaction.mockResolvedValueOnce(txHash)
+      mockedRelayerSendMetaTransaction.mockResolvedValueOnce(txHash)
     })
 
-    it('should send the transaction using gelato and resolve with its result', async () => {
+    it('should send the transaction using the relayer and resolve with its result', async () => {
       await expect(
         transaction.sendMetaTransaction(transactionData)
       ).resolves.toEqual(txHash)
-      expect(gelato.sendMetaTransaction).toHaveBeenCalledWith(transactionData)
+      expect(relayer.sendMetaTransaction).toHaveBeenCalledWith(transactionData)
     })
   })
 
@@ -89,7 +91,7 @@ describe('when sending a transaction', () => {
     let error: Error
     beforeEach(() => {
       error = new Error('Failed to send transaction')
-      mockedGelatoSendMetaTransaction.mockRejectedValueOnce(error)
+      mockedRelayerSendMetaTransaction.mockRejectedValueOnce(error)
     })
 
     it('should reject with the error', async () => {

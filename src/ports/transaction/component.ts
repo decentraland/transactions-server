@@ -22,15 +22,15 @@ export function createTransactionComponent(
     | 'fetcher'
     | 'logs'
     | 'metrics'
-    | 'gelato'
+    | 'relayer'
   >
 ): ITransactionComponent {
-  const { gelato, pg } = components
+  const { relayer, pg } = components
 
   async function sendMetaTransaction(
     transactionData: TransactionData
   ): Promise<string> {
-    return gelato.sendMetaTransaction(transactionData)
+    return relayer.sendMetaTransaction(transactionData)
   }
 
   async function insert(

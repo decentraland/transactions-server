@@ -104,13 +104,13 @@ export async function initComponents(): Promise<AppComponents> {
   })
 
   // Initialize each provider whose required config is present so both can
-  // coexist. When both are available, the relay-provider feature flag picks
-  // which one handles each transaction.
-  let gelatoComponent: AppComponents['gelato'] | undefined
+  // coexist. The relay router arbitrates between them via the relay-provider
+  // feature flag (and throws if neither is configured).
+  let gelato: AppComponents['gelato']
   let openzeppelin: AppComponents['openzeppelin']
 
   if (await config.getString('GELATO_API_KEY')) {
-    gelatoComponent = await createGelatoComponent({ logs, config, metrics })
+    gelato = await createGelatoComponent({ logs, config, metrics })
   }
 
   if (await config.getString('OZ_RELAYER_URL')) {
@@ -122,23 +122,12 @@ export async function initComponents(): Promise<AppComponents> {
     })
   }
 
-  let gelato: AppComponents['gelato']
-  if (gelatoComponent && openzeppelin) {
-    gelato = createRelayRouterComponent({
-      logs,
-      features,
-      gelato: gelatoComponent,
-      openzeppelin,
-    })
-  } else if (gelatoComponent) {
-    gelato = gelatoComponent
-  } else if (openzeppelin) {
-    gelato = openzeppelin
-  } else {
-    throw new Error(
-      'No relay provider configured. Set GELATO_API_KEY or OZ_RELAYER_URL.'
-    )
-  }
+  const relayer = createRelayRouterComponent({
+    logs,
+    features,
+    gelato,
+    openzeppelin,
+  })
 
   const transaction = createTransactionComponent({
     config,
@@ -146,7 +135,7 @@ export async function initComponents(): Promise<AppComponents> {
     fetcher,
     logs,
     pg,
-    gelato,
+    relayer,
     contracts,
     metrics,
   })
@@ -161,6 +150,7 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     pg,
+    relayer,
     gelato,
     openzeppelin,
     transaction,

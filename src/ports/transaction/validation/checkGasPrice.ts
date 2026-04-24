@@ -83,11 +83,11 @@ const getMaxGasPriceAllowed = async (
  * @param chainId - Network Chain ID
  */
 const getNetworkGasPrice = async (
-  components: Pick<AppComponents, 'gelato'>,
+  components: Pick<AppComponents, 'relayer'>,
   chainId: ChainId
 ): Promise<bigint | null> => {
-  const { gelato } = components
-  return gelato.getNetworkGasPrice(chainId)
+  const { relayer } = components
+  return relayer.getNetworkGasPrice(chainId)
 }
 
 /**
