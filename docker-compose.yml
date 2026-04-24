@@ -18,6 +18,28 @@ services:
       timeout: 5s
       retries: 5
 
+  tx-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transactions-server
+    ports:
+      - '5000:5000'
+    env_file:
+      - .env
+    environment:
+      # Override hosts so the container can reach sibling services.
+      # Postgres lives on the same compose network; OZ Relayer runs in a separate
+      # compose, so we reach it via the host gateway.
+      PG_COMPONENT_PSQL_CONNECTION_STRING: postgres://transactions:transactions@postgres:5432/transactions_db
+      OZ_RELAYER_URL: http://host.docker.internal:8080
+      HTTP_SERVER_HOST: 0.0.0.0
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     driver: local
