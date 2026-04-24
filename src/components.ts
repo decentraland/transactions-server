@@ -103,10 +103,9 @@ export async function initComponents(): Promise<AppComponents> {
     collectionsSubgraph,
   })
 
-  const relayProvider = await config.getString('RELAY_PROVIDER')
-
   // Initialize each provider whose required config is present so both can
-  // coexist. RELAY_PROVIDER selects which one is active for transactions.
+  // coexist. When both are available, the relay-provider feature flag picks
+  // which one handles each transaction.
   let gelatoComponent: AppComponents['gelato'] | undefined
   let openzeppelin: AppComponents['openzeppelin']
 
@@ -124,33 +123,21 @@ export async function initComponents(): Promise<AppComponents> {
   }
 
   let gelato: AppComponents['gelato']
-  if (relayProvider === 'openzeppelin' || relayProvider === 'oz') {
-    if (!openzeppelin) {
-      throw new Error(
-        'RELAY_PROVIDER=openzeppelin but OZ_RELAYER_URL is not configured'
-      )
-    }
-    gelato = openzeppelin
-  } else if (relayProvider === 'gelato') {
-    if (!gelatoComponent) {
-      throw new Error(
-        'RELAY_PROVIDER=gelato but GELATO_API_KEY is not configured'
-      )
-    }
-    gelato = gelatoComponent
-  } else {
-    // Empty/unset: use whichever providers are configured. If both → random router.
-    if (!gelatoComponent && !openzeppelin) {
-      throw new Error(
-        'No relay provider configured. Set GELATO_API_KEY or OZ_RELAYER_URL (and optionally RELAY_PROVIDER).'
-      )
-    }
+  if (gelatoComponent && openzeppelin) {
     gelato = createRelayRouterComponent({
       logs,
       features,
       gelato: gelatoComponent,
       openzeppelin,
     })
+  } else if (gelatoComponent) {
+    gelato = gelatoComponent
+  } else if (openzeppelin) {
+    gelato = openzeppelin
+  } else {
+    throw new Error(
+      'No relay provider configured. Set GELATO_API_KEY or OZ_RELAYER_URL.'
+    )
   }
 
   const transaction = createTransactionComponent({
