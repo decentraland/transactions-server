@@ -28,7 +28,9 @@ export function createRelayRouterComponent(
 
   const availableNames = Object.keys(available)
   if (availableNames.length === 0) {
-    throw new Error('relay-router: no providers available')
+    throw new Error(
+      'relay-router: no providers configured; set GELATO_API_KEY or OZ_RELAYER_URL to enable at least one relayer'
+    )
   }
 
   async function resolveProvider(): Promise<{
