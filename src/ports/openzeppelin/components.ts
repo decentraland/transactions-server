@@ -23,15 +23,6 @@ type OZTransactionData = {
   status_reason: string | null
 }
 
-// The status endpoint includes balance, pending count, and nonce
-type OZStatusData = {
-  balance: string
-  pending_transactions_count: number
-  nonce: string
-  paused: boolean
-  system_disabled: boolean
-}
-
 // Terminal transaction statuses that indicate the tx will never get a hash
 const FAILED_STATUSES = new Set(['failed', 'invalid', 'cancelled'])
 
@@ -172,45 +163,8 @@ export async function createOpenZeppelinComponent(
     }
   }
 
-  // readynessProbe is picked up by @well-known-components/http-server's
-  // createStatusCheckComponent for the /health/ready endpoint
-  const readynessProbe = async (): Promise<boolean> => {
-    try {
-      const response = await fetcher.fetch(
-        `${relayerURL}/api/v1/relayers/${relayerId}/status`,
-        { headers: authHeaders }
-      )
-
-      if (!response.ok) {
-        logger.error(
-          `OZ Relayer health check failed with status ${response.status}`
-        )
-        return false
-      }
-
-      const { success, data } =
-        (await response.json()) as OZResponse<OZStatusData>
-
-      if (!success || !data) {
-        logger.error('OZ Relayer health check returned unexpected response')
-        return false
-      }
-
-      logger.info(
-        `OZ Relayer health - balance: ${data.balance} wei, pending: ${data.pending_transactions_count}, nonce: ${data.nonce}`
-      )
-
-      return BigInt(data.balance) > 0n
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      logger.error(`OZ Relayer health check failed: ${message}`)
-      return false
-    }
-  }
-
   return {
     getNetworkGasPrice,
     sendMetaTransaction,
-    readynessProbe,
   }
 }
