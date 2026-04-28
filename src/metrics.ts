@@ -44,6 +44,22 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
+  // OpenZeppelin Relayer metrics
+  dcl_sent_transactions_openzeppelin: {
+    help: 'Count transactions sent to OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
+  dcl_error_service_errors_openzeppelin: {
+    help: 'Count service errors when trying to relay a transaction to OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
+  dcl_error_timeout_openzeppelin: {
+    help: 'Count timeout errors when polling for a transaction hash from OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
   dcl_error_simulate_transaction: {
     help: 'Count errors of simulate transaction',
     type: IMetricsComponent.CounterType,

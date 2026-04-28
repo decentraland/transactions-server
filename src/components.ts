@@ -21,6 +21,8 @@ import { createTransactionComponent } from './ports/transaction/component'
 import { metricDeclarations } from './metrics'
 import { AppComponents, GlobalContext } from './types'
 import { createGelatoComponent } from './ports/gelato'
+import { createOpenZeppelinComponent } from './ports/openzeppelin'
+import { createRelayRouterComponent } from './ports/relay-router'
 
 export async function initComponents(): Promise<AppComponents> {
   // default config from process.env + .env file
@@ -101,7 +103,31 @@ export async function initComponents(): Promise<AppComponents> {
     collectionsSubgraph,
   })
 
-  const gelato = await createGelatoComponent({ logs, config, metrics })
+  // Initialize each provider whose required config is present so both can
+  // coexist. The relay router arbitrates between them via the relay-provider
+  // feature flag (and throws if neither is configured).
+  let gelato: AppComponents['gelato']
+  let openzeppelin: AppComponents['openzeppelin']
+
+  if (await config.getString('GELATO_API_KEY')) {
+    gelato = await createGelatoComponent({ logs, config, metrics })
+  }
+
+  if (await config.getString('OZ_RELAYER_URL')) {
+    openzeppelin = await createOpenZeppelinComponent({
+      logs,
+      config,
+      metrics,
+      fetcher,
+    })
+  }
+
+  const relayer = createRelayRouterComponent({
+    logs,
+    features,
+    gelato,
+    openzeppelin,
+  })
 
   const transaction = createTransactionComponent({
     config,
@@ -109,7 +135,7 @@ export async function initComponents(): Promise<AppComponents> {
     fetcher,
     logs,
     pg,
-    gelato,
+    relayer,
     contracts,
     metrics,
   })
@@ -124,7 +150,9 @@ export async function initComponents(): Promise<AppComponents> {
     metrics,
     server,
     pg,
+    relayer,
     gelato,
+    openzeppelin,
     transaction,
     contracts,
     collectionsSubgraph,

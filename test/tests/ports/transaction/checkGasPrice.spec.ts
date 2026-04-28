@@ -5,17 +5,19 @@ import {
 import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
-import { GelatoMetaTransactionComponent } from '../../../../src/ports/gelato'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'
-import { TransactionData } from '../../../../src/types/transactions'
+import {
+  IMetaTransactionProviderComponent,
+  TransactionData,
+} from '../../../../src/types/transactions/transactions'
 import TransactionDataMock from '../../../mocks/transactionData'
 
 let transactionData: TransactionData
 let config: IConfigComponent
 let contracts: IContractsComponent
 let features: IFeaturesComponent
-let gelato: GelatoMetaTransactionComponent
-let gelatoGetNetworkGasPriceMock: jest.Mock
+let relayer: IMetaTransactionProviderComponent
+let relayerGetNetworkGasPriceMock: jest.Mock
 let getIsFeatureEnabledMock: jest.Mock
 let getFeatureVariantMock: jest.Mock
 let isCollectionAddressMock: jest.Mock
@@ -23,7 +25,7 @@ let components: {
   config: IConfigComponent
   contracts: IContractsComponent
   features: IFeaturesComponent
-  gelato: GelatoMetaTransactionComponent
+  relayer: IMetaTransactionProviderComponent
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
 }
 
@@ -31,7 +33,7 @@ beforeEach(() => {
   isCollectionAddressMock = jest.fn()
   getIsFeatureEnabledMock = jest.fn()
   getFeatureVariantMock = jest.fn()
-  gelatoGetNetworkGasPriceMock = jest.fn()
+  relayerGetNetworkGasPriceMock = jest.fn()
   config = {
     requireString: async () => 'Sepolia',
     requireNumber: jest.fn(),
@@ -50,16 +52,16 @@ beforeEach(() => {
     getFeatureVariant: getFeatureVariantMock,
     getEnvFeature: jest.fn(),
   }
-  gelato = {
+  relayer = {
     sendMetaTransaction: jest.fn(),
-    getNetworkGasPrice: gelatoGetNetworkGasPriceMock,
+    getNetworkGasPrice: relayerGetNetworkGasPriceMock,
   }
 
   components = {
     config,
     contracts,
     features,
-    gelato,
+    relayer,
     metrics: {
       increment: jest.fn(),
     } as unknown as IMetricsComponent<keyof typeof metricDeclarations>,
@@ -89,7 +91,7 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price is lower than max gas price allowed', () => {
         beforeEach(() => {
-          gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
+          relayerGetNetworkGasPriceMock.mockResolvedValueOnce(
             1000000000n
           )
         })
@@ -103,7 +105,7 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price is greater than max gas price allowed', () => {
         beforeEach(() => {
-          gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
+          relayerGetNetworkGasPriceMock.mockResolvedValueOnce(
             2100000000n
           )
         })
@@ -127,7 +129,7 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price could not be fetched', () => {
         beforeEach(() => {
-          gelatoGetNetworkGasPriceMock.mockRejectedValueOnce(new Error())
+          relayerGetNetworkGasPriceMock.mockRejectedValueOnce(new Error())
         })
 
         it('should throw an error', async () => {
@@ -157,7 +159,7 @@ describe('when checking the gas price for a txn', () => {
           },
           enabled: true,
         })
-        gelatoGetNetworkGasPriceMock.mockResolvedValueOnce(
+        relayerGetNetworkGasPriceMock.mockResolvedValueOnce(
           2100000000n
         )
       })

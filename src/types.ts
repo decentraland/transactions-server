@@ -14,6 +14,8 @@ import { ITestFetchComponent } from './ports/fetcher'
 import { IContractsComponent } from './ports/contracts/types'
 import { ITransactionComponent } from './ports/transaction/types'
 import { GelatoMetaTransactionComponent } from './ports/gelato'
+import { OpenZeppelinMetaTransactionComponent } from './ports/openzeppelin'
+import { IMetaTransactionProviderComponent } from './types/transactions/transactions'
 
 export type GlobalContext = {
   components: AppComponents
@@ -23,7 +25,9 @@ export type BaseComponents = {
   config: IConfigComponent
   logs: ILoggerComponent
   globalLogger: ILoggerComponent.ILogger
-  gelato: GelatoMetaTransactionComponent
+  relayer: IMetaTransactionProviderComponent
+  gelato?: GelatoMetaTransactionComponent
+  openzeppelin?: OpenZeppelinMetaTransactionComponent
   features: IFeaturesComponent
   fetcher: IFetchComponent
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
