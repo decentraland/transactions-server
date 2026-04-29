@@ -50,6 +50,16 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
+  dcl_error_cancelled_transactions_openzeppelin: {
+    help: 'Count transactions cancelled by OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
+  dcl_error_reverted_transactions_openzeppelin: {
+    help: 'Count transactions reverted by OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
   dcl_error_service_errors_openzeppelin: {
     help: 'Count service errors when trying to relay a transaction to OpenZeppelin Relayer',
     type: IMetricsComponent.CounterType,
@@ -57,6 +67,16 @@ export const metricDeclarations = {
   },
   dcl_error_timeout_openzeppelin: {
     help: 'Count timeout errors when polling for a transaction hash from OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
+  dcl_error_no_balance_transactions_openzeppelin: {
+    help: 'Count errors of no balance when trying to relay a transaction to OpenZeppelin Relayer',
+    type: IMetricsComponent.CounterType,
+    labelNames: [],
+  },
+  dcl_error_high_gas_price_openzeppelin: {
+    help: 'Count errors when gas price exceeds allowed limit for OpenZeppelin Relayer transactions',
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },

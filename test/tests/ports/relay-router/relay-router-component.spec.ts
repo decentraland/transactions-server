@@ -211,4 +211,48 @@ describe('when both providers are configured', () => {
       )
     })
   })
+
+  describe('and a caller asks the router which provider would handle the next transaction', () => {
+    describe('and the feature flag selects gelato', () => {
+      beforeEach(() => {
+        getFeatureVariantMock.mockResolvedValueOnce({
+          name: Feature.RELAY_PROVIDER,
+          payload: { value: 'gelato' },
+        })
+      })
+
+      it('should resolve to the gelato provider', async () => {
+        const resolved = await router.resolveProvider()
+        expect(resolved.name).toBe('gelato')
+        expect(resolved.provider).toBe(gelato)
+      })
+    })
+
+    describe('and the feature flag selects openzeppelin', () => {
+      beforeEach(() => {
+        getFeatureVariantMock.mockResolvedValueOnce({
+          name: Feature.RELAY_PROVIDER,
+          payload: { value: 'openzeppelin' },
+        })
+      })
+
+      it('should resolve to the openzeppelin provider', async () => {
+        const resolved = await router.resolveProvider()
+        expect(resolved.name).toBe('openzeppelin')
+        expect(resolved.provider).toBe(openzeppelin)
+      })
+    })
+
+    describe('and the feature flag is missing', () => {
+      beforeEach(() => {
+        getFeatureVariantMock.mockResolvedValueOnce(undefined)
+        jest.spyOn(Math, 'random').mockReturnValue(0)
+      })
+
+      it('should resolve to one of the configured providers', async () => {
+        const resolved = await router.resolveProvider()
+        expect(['gelato', 'openzeppelin']).toContain(resolved.name)
+      })
+    })
+  })
 })

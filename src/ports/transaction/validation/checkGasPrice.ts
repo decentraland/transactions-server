@@ -8,6 +8,7 @@ import {
 import { AppComponents } from '../../../types'
 import { Feature } from '../../features'
 import { HighCongestionError } from '../../../types/transactions/errors'
+import { metricDeclarations } from '../../../metrics'
 import { IGasPriceValidator } from './types'
 import { TransactionData } from '../../../types/transactions/transactions'
 
@@ -15,7 +16,7 @@ export const checkGasPrice: IGasPriceValidator = async (
   components,
   transactionData
 ) => {
-  const { config, features, metrics } = components
+  const { config, features, metrics, relayer } = components
   const chainName = (await config.requireString('CHAIN_NAME')) as ChainName
 
   const isGasPriceAllowedFFEnabled = await features.getIsFeatureEnabled(
@@ -44,7 +45,10 @@ export const checkGasPrice: IGasPriceValidator = async (
       }
 
       if (currentGasPrice > maxGasPriceAllowed) {
-        metrics.increment('dcl_error_high_gas_price_gelato')
+        const { name: providerName } = await relayer.resolveProvider()
+        metrics.increment(
+          `dcl_error_high_gas_price_${providerName}` as keyof typeof metricDeclarations
+        )
         throw new HighCongestionError(
           currentGasPrice.toString(),
           maxGasPriceAllowed.toString()

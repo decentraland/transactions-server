@@ -26,6 +26,23 @@ type OZTransactionData = {
 // Terminal transaction statuses that indicate the tx will never get a hash
 const FAILED_STATUSES = new Set(['failed', 'invalid', 'cancelled'])
 
+const BALANCE_KEYWORDS = [
+  'insufficient',
+  'balance',
+  'funds',
+  'no available token',
+]
+const REVERT_KEYWORDS = ['revert', 'reverted', 'execution reverted']
+
+function containsAny(
+  text: string | null | undefined,
+  keywords: string[]
+): boolean {
+  if (!text) return false
+  const lower = text.toLowerCase()
+  return keywords.some((kw) => lower.includes(kw))
+}
+
 export async function createOpenZeppelinComponent(
   components: Pick<AppComponents, 'config' | 'logs' | 'metrics' | 'fetcher'>
 ): Promise<OpenZeppelinMetaTransactionComponent> {
@@ -73,7 +90,20 @@ export async function createOpenZeppelinComponent(
       if (FAILED_STATUSES.has(data.status)) {
         const reason = data.status_reason || data.status
         logger.error(`OpenZeppelin transaction ${txId} failed: ${reason}`)
-        metrics.increment('dcl_error_service_errors_openzeppelin')
+
+        if (data.status === 'cancelled') {
+          metrics.increment('dcl_error_cancelled_transactions_openzeppelin')
+          if (containsAny(data.status_reason, BALANCE_KEYWORDS)) {
+            metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
+          }
+        } else if (containsAny(data.status_reason, REVERT_KEYWORDS)) {
+          metrics.increment('dcl_error_reverted_transactions_openzeppelin')
+        } else if (containsAny(data.status_reason, BALANCE_KEYWORDS)) {
+          metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
+        } else {
+          metrics.increment('dcl_error_service_errors_openzeppelin')
+        }
+
         throw new InvalidTransactionError(
           `Transaction ${data.status}: ${reason}`,
           ErrorCode.EXPECTATION_FAILED
@@ -119,6 +149,9 @@ export async function createOpenZeppelinComponent(
         `OpenZeppelin relayer responded with ${response.status}: ${body}`
       )
       metrics.increment('dcl_error_service_errors_openzeppelin')
+      if (containsAny(body, BALANCE_KEYWORDS)) {
+        metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
+      }
 
       if (response.status === 422 || response.status === 400) {
         throw new InvalidTransactionError(body, ErrorCode.EXPECTATION_FAILED)
@@ -134,6 +167,9 @@ export async function createOpenZeppelinComponent(
 
     if (!success || !txData) {
       metrics.increment('dcl_error_service_errors_openzeppelin')
+      if (containsAny(error, BALANCE_KEYWORDS)) {
+        metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
+      }
       throw new RelayerError(
         500,
         error || 'Unexpected response from OZ Relayer'

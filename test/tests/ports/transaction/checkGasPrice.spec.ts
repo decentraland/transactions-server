@@ -6,18 +6,17 @@ import { IFeaturesComponent } from '@well-known-components/features-component/di
 import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'
-import {
-  IMetaTransactionProviderComponent,
-  TransactionData,
-} from '../../../../src/types/transactions/transactions'
+import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import { TransactionData } from '../../../../src/types/transactions/transactions'
 import TransactionDataMock from '../../../mocks/transactionData'
 
 let transactionData: TransactionData
 let config: IConfigComponent
 let contracts: IContractsComponent
 let features: IFeaturesComponent
-let relayer: IMetaTransactionProviderComponent
+let relayer: IRelayRouterComponent
 let relayerGetNetworkGasPriceMock: jest.Mock
+let resolveProviderMock: jest.Mock
 let getIsFeatureEnabledMock: jest.Mock
 let getFeatureVariantMock: jest.Mock
 let isCollectionAddressMock: jest.Mock
@@ -25,7 +24,7 @@ let components: {
   config: IConfigComponent
   contracts: IContractsComponent
   features: IFeaturesComponent
-  relayer: IMetaTransactionProviderComponent
+  relayer: IRelayRouterComponent
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
 }
 
@@ -34,6 +33,9 @@ beforeEach(() => {
   getIsFeatureEnabledMock = jest.fn()
   getFeatureVariantMock = jest.fn()
   relayerGetNetworkGasPriceMock = jest.fn()
+  resolveProviderMock = jest
+    .fn()
+    .mockResolvedValue({ name: 'gelato', provider: {} })
   config = {
     requireString: async () => 'Sepolia',
     requireNumber: jest.fn(),
@@ -55,6 +57,7 @@ beforeEach(() => {
   relayer = {
     sendMetaTransaction: jest.fn(),
     getNetworkGasPrice: relayerGetNetworkGasPriceMock,
+    resolveProvider: resolveProviderMock,
   }
 
   components = {
@@ -91,9 +94,7 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price is lower than max gas price allowed', () => {
         beforeEach(() => {
-          relayerGetNetworkGasPriceMock.mockResolvedValueOnce(
-            1000000000n
-          )
+          relayerGetNetworkGasPriceMock.mockResolvedValueOnce(1000000000n)
         })
 
         it('should not throw an error', async () => {
@@ -105,9 +106,7 @@ describe('when checking the gas price for a txn', () => {
 
       describe('and the current network gas price is greater than max gas price allowed', () => {
         beforeEach(() => {
-          relayerGetNetworkGasPriceMock.mockResolvedValueOnce(
-            2100000000n
-          )
+          relayerGetNetworkGasPriceMock.mockResolvedValue(2100000000n)
         })
 
         it('should throw an error', async () => {
@@ -116,14 +115,42 @@ describe('when checking the gas price for a txn', () => {
           ).rejects.toThrow()
         })
 
-        it('should increment the high gas price metric', async () => {
-          await expect(
-            checkGasPrice(components, transactionData)
-          ).rejects.toThrow()
+        describe('and the FF resolves the provider to gelato', () => {
+          beforeEach(() => {
+            resolveProviderMock.mockResolvedValue({
+              name: 'gelato',
+              provider: {},
+            })
+          })
 
-          expect(components.metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_high_gas_price_gelato'
-          )
+          it('should increment the high gas price metric for gelato', async () => {
+            await expect(
+              checkGasPrice(components, transactionData)
+            ).rejects.toThrow()
+
+            expect(components.metrics.increment).toHaveBeenCalledWith(
+              'dcl_error_high_gas_price_gelato'
+            )
+          })
+        })
+
+        describe('and the FF resolves the provider to openzeppelin', () => {
+          beforeEach(() => {
+            resolveProviderMock.mockResolvedValue({
+              name: 'openzeppelin',
+              provider: {},
+            })
+          })
+
+          it('should increment the high gas price metric for openzeppelin', async () => {
+            await expect(
+              checkGasPrice(components, transactionData)
+            ).rejects.toThrow()
+
+            expect(components.metrics.increment).toHaveBeenCalledWith(
+              'dcl_error_high_gas_price_openzeppelin'
+            )
+          })
         })
       })
 
@@ -159,9 +186,7 @@ describe('when checking the gas price for a txn', () => {
           },
           enabled: true,
         })
-        relayerGetNetworkGasPriceMock.mockResolvedValueOnce(
-          2100000000n
-        )
+        relayerGetNetworkGasPriceMock.mockResolvedValueOnce(2100000000n)
       })
 
       describe('and the txn is an approve of the collection manager to spend mana on behalf of the user', () => {
