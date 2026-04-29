@@ -115,42 +115,14 @@ describe('when checking the gas price for a txn', () => {
           ).rejects.toThrow()
         })
 
-        describe('and the FF resolves the provider to gelato', () => {
-          beforeEach(() => {
-            resolveProviderMock.mockResolvedValue({
-              name: 'gelato',
-              provider: {},
-            })
-          })
+        it('should increment the high gas price metric', async () => {
+          await expect(
+            checkGasPrice(components, transactionData)
+          ).rejects.toThrow()
 
-          it('should increment the high gas price metric for gelato', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).rejects.toThrow()
-
-            expect(components.metrics.increment).toHaveBeenCalledWith(
-              'dcl_error_high_gas_price_gelato'
-            )
-          })
-        })
-
-        describe('and the FF resolves the provider to openzeppelin', () => {
-          beforeEach(() => {
-            resolveProviderMock.mockResolvedValue({
-              name: 'openzeppelin',
-              provider: {},
-            })
-          })
-
-          it('should increment the high gas price metric for openzeppelin', async () => {
-            await expect(
-              checkGasPrice(components, transactionData)
-            ).rejects.toThrow()
-
-            expect(components.metrics.increment).toHaveBeenCalledWith(
-              'dcl_error_high_gas_price_openzeppelin'
-            )
-          })
+          expect(components.metrics.increment).toHaveBeenCalledWith(
+            'dcl_error_high_gas_price'
+          )
         })
       })
 

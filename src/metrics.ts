@@ -39,8 +39,8 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
-  dcl_error_high_gas_price_gelato: {
-    help: 'Count errors when gas price exceeds allowed limit for Gelato transactions',
+  dcl_error_high_gas_price: {
+    help: 'Count transactions rejected because the network gas price exceeds the allowed limit',
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
@@ -75,16 +75,10 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
-  dcl_error_high_gas_price_openzeppelin: {
-    help: 'Count errors when gas price exceeds allowed limit for OpenZeppelin Relayer transactions',
+  dcl_error_transaction_high_retries_openzeppelin: {
+    help: 'Count errors of transactions that exceeded the configured max retry threshold for OpenZeppelin Relayer.',
     type: IMetricsComponent.CounterType,
     labelNames: [],
-  },
-  dcl_oz_transaction_retries: {
-    help: 'Number of retries (replacement broadcasts) observed per OpenZeppelin transaction. Inferred client-side by counting distinct hashes seen for the same tx.id.',
-    type: IMetricsComponent.HistogramType,
-    labelNames: [],
-    buckets: [0, 1, 2, 3, 5, 10, 15, 20, 30, 50],
   },
   dcl_error_simulate_transaction: {
     help: 'Count errors of simulate transaction',

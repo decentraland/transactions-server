@@ -649,7 +649,6 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
     hash?: string | null
     status?: string
     status_reason?: string | null
-    nonce?: number
     confirmed_at?: string | null
   }) {
     return createResponse({
@@ -660,7 +659,6 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
           hash: data.hash ?? null,
           status: data.status ?? 'submitted',
           status_reason: data.status_reason ?? null,
-          ...(data.nonce !== undefined ? { nonce: data.nonce } : {}),
           ...(data.confirmed_at !== undefined
             ? { confirmed_at: data.confirmed_at }
             : {}),
@@ -674,22 +672,11 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
       fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xsecondHash' }))
-      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xthirdHash' }))
       fetchMock.mockResolvedValueOnce(
         pollResponse({
           hash: '0xthirdHash',
           confirmed_at: '2026-01-01T00:00:00Z',
         })
-      )
-    })
-
-    it('should observe the retries histogram with the count of distinct hashes minus one', async () => {
-      await openzeppelin.sendMetaTransaction(transactionData)
-      await jest.advanceTimersByTimeAsync(5000 * 3)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        2
       )
     })
 
@@ -705,6 +692,14 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
         })
       )
     })
+
+    it('should not increment the high-retries counter when below the threshold', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 2)
+      expect(metrics.increment).not.toHaveBeenCalledWith(
+        'dcl_error_transaction_high_retries_openzeppelin'
+      )
+    })
   })
 
   describe('and the relayer keeps reporting the same hash', () => {
@@ -718,13 +713,11 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
       )
     })
 
-    it('should observe zero retries', async () => {
+    it('should not increment the high-retries counter', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
       await jest.advanceTimersByTimeAsync(5000)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        0
+      expect(metrics.increment).not.toHaveBeenCalledWith(
+        'dcl_error_transaction_high_retries_openzeppelin'
       )
     })
   })
@@ -737,69 +730,19 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
       )
     })
 
-    it('should stop polling and observe one retry', async () => {
+    it('should stop polling without incrementing the high-retries counter', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
       await jest.advanceTimersByTimeAsync(5000)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        1
-      )
       const callsBeforeStop = fetchMock.mock.calls.length
       await jest.advanceTimersByTimeAsync(5000 * 5)
       expect(fetchMock.mock.calls.length).toBe(callsBeforeStop)
-    })
-  })
-
-  describe('and the same nonce is observed across polls', () => {
-    beforeEach(() => {
-      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
-      fetchMock.mockResolvedValueOnce(
-        pollResponse({ hash: '0xsecondHash', nonce: 42 })
-      )
-      fetchMock.mockResolvedValueOnce(
-        pollResponse({
-          hash: '0xthirdHash',
-          nonce: 42,
-          confirmed_at: '2026-01-01T00:00:00Z',
-        })
-      )
-    })
-
-    it('should keep counting hashes as retries', async () => {
-      await openzeppelin.sendMetaTransaction(transactionData)
-      await jest.advanceTimersByTimeAsync(5000 * 2)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        2
+      expect(metrics.increment).not.toHaveBeenCalledWith(
+        'dcl_error_transaction_high_retries_openzeppelin'
       )
     })
   })
 
-  describe('and the nonce changes across polls', () => {
-    beforeEach(() => {
-      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
-      fetchMock.mockResolvedValueOnce(
-        pollResponse({ hash: '0xsecondHash', nonce: 42 })
-      )
-      fetchMock.mockResolvedValueOnce(
-        pollResponse({ hash: '0xthirdHash', nonce: 99 })
-      )
-    })
-
-    it('should stop tracking with the retries observed up to that point', async () => {
-      await openzeppelin.sendMetaTransaction(transactionData)
-      await jest.advanceTimersByTimeAsync(5000 * 2)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        1
-      )
-    })
-  })
-
-  describe('and the retry count crosses the warn threshold', () => {
+  describe('and the retry count exceeds the configured maximum', () => {
     let logger: { warn: jest.Mock; error: jest.Mock; info: jest.Mock }
 
     beforeEach(async () => {
@@ -818,8 +761,7 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
       } as ILoggerComponent
       ;(config.getNumber as jest.Mock).mockImplementation(
         async (key: string) => {
-          if (key === 'OZ_RETRY_WARN_THRESHOLD') return 2
-          if (key === 'OZ_RETRY_ALERT_THRESHOLD') return 4
+          if (key === 'OZ_MAX_RETRIES') return 2
           return undefined
         }
       )
@@ -829,74 +771,36 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
         metrics,
         fetcher,
       })
+      // FIRST_HASH (initial), 0xb (retry 1), 0xc (retry 2), 0xd (retry 3 → exceeds max=2)
       fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
       fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xb' }))
-      fetchMock.mockResolvedValueOnce(
-        pollResponse({
-          hash: '0xc',
-          confirmed_at: '2026-01-01T00:00:00Z',
-        })
-      )
+      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xc' }))
+      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xd' }))
     })
 
-    it('should log a warning naming the threshold', async () => {
+    it('should increment the high-retries counter exactly once', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
-      await jest.advanceTimersByTimeAsync(5000 * 2)
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(`${TX_ID} hit 2 retries`)
+      await jest.advanceTimersByTimeAsync(5000 * 3)
+      const calls = (metrics.increment as jest.Mock).mock.calls.filter(
+        ([name]) => name === 'dcl_error_transaction_high_retries_openzeppelin'
       )
-      expect(logger.error).not.toHaveBeenCalledWith(
-        expect.stringContaining('hit 4 retries')
-      )
-    })
-  })
-
-  describe('and the retry count crosses the alert threshold', () => {
-    let logger: { warn: jest.Mock; error: jest.Mock; info: jest.Mock }
-
-    beforeEach(async () => {
-      logger = {
-        warn: jest.fn(),
-        error: jest.fn(),
-        info: jest.fn(),
-      }
-      logs = {
-        getLogger: () =>
-          ({
-            ...logger,
-            log: jest.fn(),
-            debug: jest.fn(),
-          } as ReturnType<ILoggerComponent['getLogger']>),
-      } as ILoggerComponent
-      ;(config.getNumber as jest.Mock).mockImplementation(
-        async (key: string) => {
-          if (key === 'OZ_RETRY_WARN_THRESHOLD') return 1
-          if (key === 'OZ_RETRY_ALERT_THRESHOLD') return 2
-          return undefined
-        }
-      )
-      openzeppelin = await createOpenZeppelinComponent({
-        config,
-        logs,
-        metrics,
-        fetcher,
-      })
-      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
-      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xb' }))
-      fetchMock.mockResolvedValueOnce(
-        pollResponse({
-          hash: '0xc',
-          confirmed_at: '2026-01-01T00:00:00Z',
-        })
-      )
+      expect(calls).toHaveLength(1)
     })
 
-    it('should log an error naming the alert threshold', async () => {
+    it('should log an error naming the maximum and the transaction id', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
-      await jest.advanceTimersByTimeAsync(5000 * 2)
+      await jest.advanceTimersByTimeAsync(5000 * 3)
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining(`${TX_ID} hit 2 retries`)
+        expect.stringContaining(`${TX_ID} exceeded 2 retries`)
       )
+    })
+
+    it('should stop polling after the alert fires', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 3)
+      const callsAfterAlert = fetchMock.mock.calls.length
+      await jest.advanceTimersByTimeAsync(5000 * 5)
+      expect(fetchMock.mock.calls.length).toBe(callsAfterAlert)
     })
   })
 
@@ -915,10 +819,9 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
     it('should swallow the error and keep polling on the next tick', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
       await jest.advanceTimersByTimeAsync(5000 * 2)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        1
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+      expect(metrics.increment).not.toHaveBeenCalledWith(
+        'dcl_error_transaction_high_retries_openzeppelin'
       )
     })
   })
@@ -929,13 +832,14 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
       fetchMock.mockResolvedValue(pollResponse({ hash: FIRST_HASH }))
     })
 
-    it('should stop tracking after the configured TTL', async () => {
+    it('should stop tracking after the configured TTL without alerting', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
       await jest.advanceTimersByTimeAsync(1800000)
-      expect(metrics.observe).toHaveBeenCalledWith(
-        'dcl_oz_transaction_retries',
-        {},
-        0
+      const callsAtDeadline = fetchMock.mock.calls.length
+      await jest.advanceTimersByTimeAsync(5000 * 5)
+      expect(fetchMock.mock.calls.length).toBe(callsAtDeadline)
+      expect(metrics.increment).not.toHaveBeenCalledWith(
+        'dcl_error_transaction_high_retries_openzeppelin'
       )
     })
   })
@@ -946,9 +850,12 @@ describe('when tracking retries for an OpenZeppelin transaction', () => {
       fetchMock.mockResolvedValue(pollResponse({ hash: FIRST_HASH }))
     })
 
-    it('should not have observed the retries histogram yet', async () => {
+    it('should not have polled the tracker endpoint yet', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
-      expect(metrics.observe).not.toHaveBeenCalled()
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(metrics.increment).not.toHaveBeenCalledWith(
+        'dcl_error_transaction_high_retries_openzeppelin'
+      )
     })
   })
 })
