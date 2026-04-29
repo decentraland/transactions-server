@@ -80,6 +80,12 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
+  dcl_oz_transaction_retries: {
+    help: 'Number of retries (replacement broadcasts) observed per OpenZeppelin transaction. Inferred client-side by counting distinct hashes seen for the same tx.id.',
+    type: IMetricsComponent.HistogramType,
+    labelNames: [],
+    buckets: [0, 1, 2, 3, 5, 10, 15, 20, 30, 50],
+  },
   dcl_error_simulate_transaction: {
     help: 'Count errors of simulate transaction',
     type: IMetricsComponent.CounterType,

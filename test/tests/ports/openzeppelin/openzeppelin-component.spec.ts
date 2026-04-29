@@ -60,6 +60,10 @@ let getStringMock: jest.Mock
 let transactionData: TransactionData
 
 beforeEach(async () => {
+  // Fake timers globally so the fire-and-forget retry tracker (started by
+  // sendMetaTransaction) never schedules a real setTimeout that would leak
+  // across tests.
+  jest.useFakeTimers()
   mockGetGasPrice.mockReset()
   fetchMock = jest.fn()
   getStringMock = jest.fn(async (key: string) => {
@@ -119,6 +123,7 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
+  jest.useRealTimers()
   jest.restoreAllMocks()
 })
 
@@ -616,6 +621,334 @@ describe('when sending a meta transaction', () => {
           'dcl_error_timeout_openzeppelin'
         )
       })
+    })
+  })
+})
+
+describe('when tracking retries for an OpenZeppelin transaction', () => {
+  const TX_ID = 'oz-tx-id'
+  const FIRST_HASH = '0xfirstHash'
+  const TX_DETAIL_ENDPOINT = `${TX_ENDPOINT}/${TX_ID}`
+
+  function postResponseWithHash(hash: string | null) {
+    return createResponse({
+      json: jest.fn().mockResolvedValueOnce({
+        success: true,
+        data: {
+          id: TX_ID,
+          hash,
+          status: 'submitted',
+          status_reason: null,
+        },
+        error: null,
+      }),
+    })
+  }
+
+  function pollResponse(data: {
+    hash?: string | null
+    status?: string
+    status_reason?: string | null
+    nonce?: number
+    confirmed_at?: string | null
+  }) {
+    return createResponse({
+      json: jest.fn().mockResolvedValueOnce({
+        success: true,
+        data: {
+          id: TX_ID,
+          hash: data.hash ?? null,
+          status: data.status ?? 'submitted',
+          status_reason: data.status_reason ?? null,
+          ...(data.nonce !== undefined ? { nonce: data.nonce } : {}),
+          ...(data.confirmed_at !== undefined
+            ? { confirmed_at: data.confirmed_at }
+            : {}),
+        },
+        error: null,
+      }),
+    })
+  }
+
+  describe('and the relayer reports two new hashes before confirming on chain', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xsecondHash' }))
+      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xthirdHash' }))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({
+          hash: '0xthirdHash',
+          confirmed_at: '2026-01-01T00:00:00Z',
+        })
+      )
+    })
+
+    it('should observe the retries histogram with the count of distinct hashes minus one', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 3)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        2
+      )
+    })
+
+    it('should poll the transaction detail endpoint with the bearer token', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000)
+      expect(fetchMock).toHaveBeenCalledWith(
+        TX_DETAIL_ENDPOINT,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer api-key',
+          }),
+        })
+      )
+    })
+  })
+
+  describe('and the relayer keeps reporting the same hash', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValue(
+        pollResponse({
+          hash: FIRST_HASH,
+          confirmed_at: '2026-01-01T00:00:00Z',
+        })
+      )
+    })
+
+    it('should observe zero retries', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        0
+      )
+    })
+  })
+
+  describe('and the relayer settles into a terminal failed status', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({ hash: '0xreplaced', status: 'failed' })
+      )
+    })
+
+    it('should stop polling and observe one retry', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        1
+      )
+      const callsBeforeStop = fetchMock.mock.calls.length
+      await jest.advanceTimersByTimeAsync(5000 * 5)
+      expect(fetchMock.mock.calls.length).toBe(callsBeforeStop)
+    })
+  })
+
+  describe('and the same nonce is observed across polls', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({ hash: '0xsecondHash', nonce: 42 })
+      )
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({
+          hash: '0xthirdHash',
+          nonce: 42,
+          confirmed_at: '2026-01-01T00:00:00Z',
+        })
+      )
+    })
+
+    it('should keep counting hashes as retries', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 2)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        2
+      )
+    })
+  })
+
+  describe('and the nonce changes across polls', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({ hash: '0xsecondHash', nonce: 42 })
+      )
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({ hash: '0xthirdHash', nonce: 99 })
+      )
+    })
+
+    it('should stop tracking with the retries observed up to that point', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 2)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        1
+      )
+    })
+  })
+
+  describe('and the retry count crosses the warn threshold', () => {
+    let logger: { warn: jest.Mock; error: jest.Mock; info: jest.Mock }
+
+    beforeEach(async () => {
+      logger = {
+        warn: jest.fn(),
+        error: jest.fn(),
+        info: jest.fn(),
+      }
+      logs = {
+        getLogger: () =>
+          ({
+            ...logger,
+            log: jest.fn(),
+            debug: jest.fn(),
+          } as ReturnType<ILoggerComponent['getLogger']>),
+      } as ILoggerComponent
+      ;(config.getNumber as jest.Mock).mockImplementation(
+        async (key: string) => {
+          if (key === 'OZ_RETRY_WARN_THRESHOLD') return 2
+          if (key === 'OZ_RETRY_ALERT_THRESHOLD') return 4
+          return undefined
+        }
+      )
+      openzeppelin = await createOpenZeppelinComponent({
+        config,
+        logs,
+        metrics,
+        fetcher,
+      })
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xb' }))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({
+          hash: '0xc',
+          confirmed_at: '2026-01-01T00:00:00Z',
+        })
+      )
+    })
+
+    it('should log a warning naming the threshold', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 2)
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(`${TX_ID} hit 2 retries`)
+      )
+      expect(logger.error).not.toHaveBeenCalledWith(
+        expect.stringContaining('hit 4 retries')
+      )
+    })
+  })
+
+  describe('and the retry count crosses the alert threshold', () => {
+    let logger: { warn: jest.Mock; error: jest.Mock; info: jest.Mock }
+
+    beforeEach(async () => {
+      logger = {
+        warn: jest.fn(),
+        error: jest.fn(),
+        info: jest.fn(),
+      }
+      logs = {
+        getLogger: () =>
+          ({
+            ...logger,
+            log: jest.fn(),
+            debug: jest.fn(),
+          } as ReturnType<ILoggerComponent['getLogger']>),
+      } as ILoggerComponent
+      ;(config.getNumber as jest.Mock).mockImplementation(
+        async (key: string) => {
+          if (key === 'OZ_RETRY_WARN_THRESHOLD') return 1
+          if (key === 'OZ_RETRY_ALERT_THRESHOLD') return 2
+          return undefined
+        }
+      )
+      openzeppelin = await createOpenZeppelinComponent({
+        config,
+        logs,
+        metrics,
+        fetcher,
+      })
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValueOnce(pollResponse({ hash: '0xb' }))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({
+          hash: '0xc',
+          confirmed_at: '2026-01-01T00:00:00Z',
+        })
+      )
+    })
+
+    it('should log an error naming the alert threshold', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 2)
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining(`${TX_ID} hit 2 retries`)
+      )
+    })
+  })
+
+  describe('and a poll request rejects with a network error', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockRejectedValueOnce(new Error('connection reset'))
+      fetchMock.mockResolvedValueOnce(
+        pollResponse({
+          hash: '0xrecovered',
+          confirmed_at: '2026-01-01T00:00:00Z',
+        })
+      )
+    })
+
+    it('should swallow the error and keep polling on the next tick', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(5000 * 2)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        1
+      )
+    })
+  })
+
+  describe('and the hash never changes nor settles', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValue(pollResponse({ hash: FIRST_HASH }))
+    })
+
+    it('should stop tracking after the configured TTL', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      await jest.advanceTimersByTimeAsync(1800000)
+      expect(metrics.observe).toHaveBeenCalledWith(
+        'dcl_oz_transaction_retries',
+        {},
+        0
+      )
+    })
+  })
+
+  describe('and sendMetaTransaction has just returned the first hash', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(postResponseWithHash(FIRST_HASH))
+      fetchMock.mockResolvedValue(pollResponse({ hash: FIRST_HASH }))
+    })
+
+    it('should not have observed the retries histogram yet', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      expect(metrics.observe).not.toHaveBeenCalled()
     })
   })
 })

@@ -21,6 +21,8 @@ type OZTransactionData = {
   hash: string | null
   status: string
   status_reason: string | null
+  nonce?: number
+  confirmed_at?: string | null
 }
 
 // Terminal transaction statuses that indicate the tx will never get a hash
@@ -54,6 +56,15 @@ export async function createOpenZeppelinComponent(
   const relayerId = await config.requireString('OZ_RELAYER_ID')
   const speed = (await config.getString('OZ_RELAYER_SPEED')) || 'fast'
   const rpcURL = await config.getString('RPC_URL')
+
+  const retryTrackIntervalMs =
+    (await config.getNumber('OZ_RETRY_TRACK_INTERVAL_MS')) ?? 5000
+  const retryTrackMaxDurationMs =
+    (await config.getNumber('OZ_RETRY_TRACK_MAX_DURATION_MS')) ?? 1800000
+  const retryWarnThreshold =
+    (await config.getNumber('OZ_RETRY_WARN_THRESHOLD')) ?? 10
+  const retryAlertThreshold =
+    (await config.getNumber('OZ_RETRY_ALERT_THRESHOLD')) ?? 20
 
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -117,6 +128,82 @@ export async function createOpenZeppelinComponent(
 
     metrics.increment('dcl_error_timeout_openzeppelin')
     throw new RelayerTimeout('The limit of status checks was reached')
+  }
+
+  // Observe-only: counts how many times OZ replaces/bumps a transaction
+  // (each replacement broadcasts a new hash for the same tx.id) and emits
+  // a histogram observation when the tx settles. Never calls cancel/replace.
+  // Pollers die on process exit; that's acceptable for metrics.
+  async function trackTransactionRetries(
+    txId: string,
+    firstHash: string
+  ): Promise<void> {
+    const seen = new Set<string>([firstHash])
+    let retries = 0
+    let nonce: number | undefined
+    const deadline = Date.now() + retryTrackMaxDurationMs
+
+    try {
+      while (Date.now() < deadline) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryTrackIntervalMs)
+        )
+
+        let response: any
+        try {
+          response = await fetcher.fetch(
+            `${relayerURL}/api/v1/relayers/${relayerId}/transactions/${txId}`,
+            { headers: authHeaders }
+          )
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Unknown error'
+          logger.warn(
+            `OpenZeppelin retry tracker fetch failed for ${txId}: ${message}`
+          )
+          continue
+        }
+
+        if (!response || !response.ok) continue
+
+        const { data } =
+          (await response.json()) as OZResponse<OZTransactionData>
+
+        if (!data) continue
+
+        if (typeof data.nonce === 'number') {
+          if (nonce === undefined) {
+            nonce = data.nonce
+          } else if (nonce !== data.nonce) {
+            logger.warn(
+              `OpenZeppelin retry tracker observed nonce change for ${txId}: ${nonce} -> ${data.nonce}; stopping`
+            )
+            break
+          }
+        }
+
+        if (data.hash && !seen.has(data.hash)) {
+          seen.add(data.hash)
+          retries++
+          if (retries === retryWarnThreshold) {
+            logger.warn(
+              `OpenZeppelin transaction ${txId} hit ${retryWarnThreshold} retries`
+            )
+          }
+          if (retries === retryAlertThreshold) {
+            logger.error(
+              `OpenZeppelin transaction ${txId} hit ${retryAlertThreshold} retries`
+            )
+          }
+        }
+
+        if (FAILED_STATUSES.has(data.status) || data.confirmed_at) {
+          break
+        }
+      }
+    } finally {
+      metrics.observe('dcl_oz_transaction_retries', {}, retries)
+    }
   }
 
   async function sendMetaTransaction(
@@ -183,6 +270,14 @@ export async function createOpenZeppelinComponent(
     logger.info(
       `OpenZeppelin relayed transaction ${txData.id} with hash ${hash}`
     )
+
+    trackTransactionRetries(txData.id, hash).catch((error) => {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      logger.warn(
+        `OpenZeppelin retry tracker for ${txData.id} crashed: ${message}`
+      )
+    })
+
     return hash
   }
 
