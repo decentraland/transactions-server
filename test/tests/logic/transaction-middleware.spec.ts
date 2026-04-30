@@ -4,6 +4,7 @@ import { createTransactionMiddleware } from '../../../src/logic/transaction-midd
 import {
   HighCongestionError,
   InvalidContractAddressError,
+  InvalidFunctionSelectorError,
   InvalidSalePriceError,
   InvalidSchemaError,
   InvalidTransactionError,
@@ -238,7 +239,10 @@ describe('when checkData throws an InvalidSalePriceError', () => {
   let error: InvalidSalePriceError
 
   beforeEach(() => {
-    error = new InvalidSalePriceError('1000000000000000000', '500000000000000000')
+    error = new InvalidSalePriceError(
+      '1000000000000000000',
+      '500000000000000000'
+    )
     checkDataMock.mockRejectedValueOnce(error)
   })
 
@@ -298,6 +302,40 @@ describe('when checkData throws an InvalidContractAddressError', () => {
       {
         from: '0x9Ab8A53AA9695dAb57e62684aBA6978E5225ED0b',
         contractAddress: '0xdeadbeef',
+      }
+    )
+  })
+})
+
+describe('when checkData throws an InvalidFunctionSelectorError', () => {
+  let error: InvalidFunctionSelectorError
+
+  beforeEach(() => {
+    error = new InvalidFunctionSelectorError('0xa9059cbb')
+    checkDataMock.mockRejectedValueOnce(error)
+  })
+
+  it('should respond with a 400 and the error', async () => {
+    const result = await middleware(context, next)
+
+    expect(result).toEqual({
+      status: StatusCode.BAD_REQUEST,
+      body: {
+        ok: false,
+        message: error.message,
+        code: ErrorCode.INVALID_TRANSACTION,
+      },
+    })
+  })
+
+  it('should log a warning with the address and selector', async () => {
+    await middleware(context, next)
+
+    expect(loggerWarn).toHaveBeenCalledWith(
+      'Transaction rejected due to invalid function selector',
+      {
+        from: '0x9Ab8A53AA9695dAb57e62684aBA6978E5225ED0b',
+        selector: '0xa9059cbb',
       }
     )
   })

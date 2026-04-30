@@ -39,6 +39,16 @@ export class InvalidContractAddressError extends Error {
   }
 }
 
+export class InvalidFunctionSelectorError extends Error {
+  public code = ErrorCode.INVALID_TRANSACTION
+
+  constructor(public selector: string) {
+    super(
+      `Invalid function selector. Only executeMetaTransaction (0x0c53c51c or 0xd8ed1acc) is allowed. Received: ${selector}`
+    )
+  }
+}
+
 export class QuotaReachedError extends Error {
   public code = ErrorCode.QUOTA_REACHED
 
