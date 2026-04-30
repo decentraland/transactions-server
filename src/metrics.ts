@@ -11,7 +11,7 @@ export const metricDeclarations = {
   dcl_error_invalid_function_selector: {
     help: 'Count transactions rejected because the calldata does not invoke executeMetaTransaction',
     type: IMetricsComponent.CounterType,
-    labelNames: ['selector'],
+    labelNames: [],
   },
   // Per-relayer metrics. The `relayer` label takes one of the values from
   // `ProviderName` ('gelato' | 'openzeppelin') — see src/ports/relay-router/types.ts.

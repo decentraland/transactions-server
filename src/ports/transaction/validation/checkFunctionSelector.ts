@@ -16,12 +16,11 @@ export const checkFunctionSelector: ITransactionValidator = async (
 ) => {
   const { metrics } = components
   const data = transactionData.params[1]
-  const selector = data.slice(0, 10).toLowerCase()
 
   try {
     decodeFunctionData({ abi: META_TX_ABI, data: data as Hex })
   } catch {
-    metrics.increment('dcl_error_invalid_function_selector', { selector })
-    throw new InvalidFunctionSelectorError(selector)
+    metrics.increment('dcl_error_invalid_function_selector')
+    throw new InvalidFunctionSelectorError(data.slice(0, 10).toLowerCase())
   }
 }

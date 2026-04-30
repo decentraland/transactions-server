@@ -82,17 +82,16 @@ describe('when checking the function selector', () => {
       ).rejects.toThrow(InvalidFunctionSelectorError)
     })
 
-    it('should increment the metric with the offending selector', async () => {
+    it('should increment the rejection counter and surface the offending selector on the error', async () => {
       await expect(
         checkFunctionSelector(
           components as Parameters<typeof checkFunctionSelector>[0],
           transactionData
         )
-      ).rejects.toThrow()
+      ).rejects.toMatchObject({ selector: '0xa9059cbb' })
 
       expect(incrementMock).toHaveBeenCalledWith(
-        'dcl_error_invalid_function_selector',
-        { selector: '0xa9059cbb' }
+        'dcl_error_invalid_function_selector'
       )
     })
   })
@@ -116,17 +115,16 @@ describe('when checking the function selector', () => {
       ).rejects.toThrow(InvalidFunctionSelectorError)
     })
 
-    it('should increment the metric with the truncated selector slice', async () => {
+    it('should increment the rejection counter and surface the truncated slice on the error', async () => {
       await expect(
         checkFunctionSelector(
           components as Parameters<typeof checkFunctionSelector>[0],
           transactionData
         )
-      ).rejects.toThrow()
+      ).rejects.toMatchObject({ selector: '0x' })
 
       expect(incrementMock).toHaveBeenCalledWith(
-        'dcl_error_invalid_function_selector',
-        { selector: '0x' }
+        'dcl_error_invalid_function_selector'
       )
     })
   })
@@ -174,17 +172,16 @@ describe('when checking the function selector', () => {
       ).rejects.toThrow(InvalidFunctionSelectorError)
     })
 
-    it('should increment the metric with the matching selector', async () => {
+    it('should increment the rejection counter and surface the matching selector on the error', async () => {
       await expect(
         checkFunctionSelector(
           components as Parameters<typeof checkFunctionSelector>[0],
           transactionData
         )
-      ).rejects.toThrow()
+      ).rejects.toMatchObject({ selector: '0x0c53c51c' })
 
       expect(incrementMock).toHaveBeenCalledWith(
-        'dcl_error_invalid_function_selector',
-        { selector: '0x0c53c51c' }
+        'dcl_error_invalid_function_selector'
       )
     })
   })
@@ -193,7 +190,7 @@ describe('when checking the function selector', () => {
     let transactionData: TransactionData
 
     beforeEach(() => {
-      // viem accepts mixed-case hex; the metric label should be normalized to lowercase
+      // viem accepts mixed-case hex; the selector surfaced on the error should be normalized to lowercase
       transactionData = {
         from: '0xe539E0AED3C1971560517D58277f8dd9aC296281',
         params: [
@@ -203,18 +200,13 @@ describe('when checking the function selector', () => {
       }
     })
 
-    it('should normalize the selector label to lowercase', async () => {
+    it('should normalize the selector on the error to lowercase', async () => {
       await expect(
         checkFunctionSelector(
           components as Parameters<typeof checkFunctionSelector>[0],
           transactionData
         )
-      ).rejects.toThrow()
-
-      expect(incrementMock).toHaveBeenCalledWith(
-        'dcl_error_invalid_function_selector',
-        { selector: '0xa9059cbb' }
-      )
+      ).rejects.toMatchObject({ selector: '0xa9059cbb' })
     })
   })
 })
@@ -310,16 +302,15 @@ describe('blocks known drain attack scenarios', () => {
       params: [RELAYER_ALLOWLISTED_CONTRACT, data],
     }
 
-    await expect(
-      checkFunctionSelector(
-        components as Parameters<typeof checkFunctionSelector>[0],
-        transactionData
-      )
-    ).rejects.toThrow(InvalidFunctionSelectorError)
+    const error = await checkFunctionSelector(
+      components as Parameters<typeof checkFunctionSelector>[0],
+      transactionData
+    ).catch((err) => err)
 
+    expect(error).toBeInstanceOf(InvalidFunctionSelectorError)
+    expect((error as InvalidFunctionSelectorError).selector).toBe(selector)
     expect(incrementMock).toHaveBeenCalledWith(
-      'dcl_error_invalid_function_selector',
-      { selector }
+      'dcl_error_invalid_function_selector'
     )
   })
 })
