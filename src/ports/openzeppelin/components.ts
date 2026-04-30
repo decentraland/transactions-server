@@ -17,19 +17,47 @@ type OZResponse<T> = {
   error: string | null
 }
 
+// OpenZeppelin Relayer transaction status enum.
+// See https://docs.openzeppelin.com/relayer/1.4.x/api/getTransactionById
+export enum OZTransactionStatus {
+  Pending = 'pending',
+  Sent = 'sent',
+  Submitted = 'submitted',
+  Mined = 'mined',
+  Confirmed = 'confirmed',
+  Canceled = 'canceled',
+  Failed = 'failed',
+  Expired = 'expired',
+}
+
 type OZTransactionData = {
   id: string
   hash: string | null
   status: string
   status_reason: string | null
-  confirmed_at?: string | null
 }
 
-// Terminal transaction statuses that indicate the tx will never get a hash
-const FAILED_STATUSES = new Set(['failed', 'invalid', 'cancelled'])
+// Statuses that indicate the relayer has actually broadcast the tx to the
+// network. 'sent' is intentionally excluded: in the OZ Relayer state machine,
+// 'sent' means "a Submit job was started" — the RPC may still reject it (e.g.
+// insufficient funds), in which case the relayer keeps the tx parked in
+// 'sent' while retrying. Returning a hash from a 'sent' tx hands the caller a
+// hash that may never land on-chain.
+const BROADCAST_STATUSES: ReadonlySet<string> = new Set([
+  OZTransactionStatus.Submitted,
+  OZTransactionStatus.Mined,
+  OZTransactionStatus.Confirmed,
+])
+// Terminal failure statuses from the OZ Relayer transaction status enum.
+const FAILED_STATUSES: ReadonlySet<string> = new Set([
+  OZTransactionStatus.Canceled,
+  OZTransactionStatus.Failed,
+  OZTransactionStatus.Expired,
+])
 
-const HASH_POLL_MAX_ATTEMPTS = 30
-const HASH_POLL_INTERVAL_MS = 2000
+const DEFAULT_MAX_STATUS_CHECKS = 150
+const DEFAULT_SLEEP_TIME_BETWEEN_CHECKS_MS = 800
+const CANCEL_REQUEST_TIMEOUT_MS = 5000
 
 const BALANCE_KEYWORDS = [
   'insufficient',
@@ -51,11 +79,6 @@ function containsAny(
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Unknown error'
 
-const isRetryThresholdExceeded = (
-  seenHashes: Set<string>,
-  maxRetries: number
-): boolean => seenHashes.size - 1 > maxRetries
-
 export async function createOpenZeppelinComponent(
   components: Pick<AppComponents, 'config' | 'logs' | 'metrics' | 'fetcher'>
 ): Promise<OpenZeppelinMetaTransactionComponent> {
@@ -68,38 +91,81 @@ export async function createOpenZeppelinComponent(
   const speed = (await config.getString('OZ_RELAYER_SPEED')) || 'fast'
   const rpcURL = await config.getString('RPC_URL')
 
-  const retryTrackIntervalMs =
-    (await config.getNumber('OZ_RETRY_TRACK_INTERVAL_MS')) ?? 5 * 1000
-  const retryTrackMaxDurationMs =
-    (await config.getNumber('OZ_RETRY_TRACK_MAX_DURATION_MS')) ?? 2 * 60 * 1000
-  const maxRetries = (await config.getNumber('OZ_MAX_RETRIES')) ?? 20
+  const maxStatusChecks =
+    (await config.getNumber('OZ_MAX_STATUS_CHECKS')) ??
+    DEFAULT_MAX_STATUS_CHECKS
+  const sleepTimeBetweenChecks =
+    (await config.getNumber('OZ_SLEEP_TIME_BETWEEN_CHECKS_MS')) ??
+    DEFAULT_SLEEP_TIME_BETWEEN_CHECKS_MS
 
   const authHeaders = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${apiKey}`,
   }
 
-  // Shared polling loop for the OZ tx detail endpoint. Yields each parsed
-  // transaction so the caller drives its own exit conditions via plain
-  // return / throw — no callback ceremony.
-  async function* pollTransactionDetail(
-    txId: string,
-    options: {
-      maxAttempts: number
-      intervalMs: number
-      onError: (attempt: number, error: unknown) => void
+  /**
+   * Best-effort DELETE against the OZ Relayer to cancel a transaction that
+   * never broadcast. Never throws — failures are logged and counted under
+   * dcl_error_service_errors_openzeppelin so the surrounding timeout error
+   * still propagates to the caller.
+   *
+   * @param txId - OZ Relayer transaction id to cancel.
+   */
+  async function cancelTransaction(txId: string): Promise<void> {
+    try {
+      const response = await fetcher.fetch(
+        `${relayerURL}/api/v1/relayers/${relayerId}/transactions/${txId}`,
+        {
+          method: 'DELETE',
+          headers: authHeaders,
+          timeout: CANCEL_REQUEST_TIMEOUT_MS,
+        }
+      )
+      if (!response.ok) {
+        const body = await response.text()
+        logger.error('OpenZeppelin cancel responded with a non-2xx status', {
+          txId,
+          status: response.status,
+          body,
+        })
+        metrics.increment('dcl_error_service_errors_openzeppelin')
+      }
+    } catch (error: unknown) {
+      logger.error('OpenZeppelin cancel request failed', {
+        txId,
+        error: getErrorMessage(error),
+      })
+      metrics.increment('dcl_error_service_errors_openzeppelin')
     }
-  ): AsyncGenerator<{ transaction: OZTransactionData; attempt: number }> {
+  }
+
+  /**
+   * Polls the OZ tx-detail endpoint until the relayer either broadcasts the
+   * transaction (a hash plus a submitted/mined/confirmed status) or reports
+   * a terminal failure (canceled/failed/expired). On budget exhaustion the
+   * function asks OZ to cancel the stuck transaction (best-effort) and
+   * throws RelayerTimeout.
+   *
+   * @param txId - OZ Relayer transaction id returned from the POST.
+   * @returns The on-chain hash assigned by the relayer.
+   * @throws InvalidTransactionError when the relayer reports a terminal failure.
+   * @throws RelayerTimeout when the polling budget is exhausted.
+   */
+  async function waitForBroadcast(txId: string): Promise<string> {
     const url = `${relayerURL}/api/v1/relayers/${relayerId}/transactions/${txId}`
 
-    for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
-      await sleep(options.intervalMs)
+    for (let checks = 0; checks < maxStatusChecks; checks++) {
+      await sleep(sleepTimeBetweenChecks)
 
       let response: any
       try {
         response = await fetcher.fetch(url, { headers: authHeaders })
       } catch (error: unknown) {
-        options.onError(attempt, error)
+        logger.error('OpenZeppelin poll attempt failed', {
+          txId,
+          attempt: checks + 1,
+          error: getErrorMessage(error),
+        })
         continue
       }
 
@@ -108,96 +174,46 @@ export async function createOpenZeppelinComponent(
       const { data } = (await response.json()) as OZResponse<OZTransactionData>
       if (!data) continue
 
-      yield { transaction: data, attempt }
-    }
-  }
+      if (FAILED_STATUSES.has(data.status)) {
+        const reason = data.status_reason || data.status
+        logger.error('OpenZeppelin transaction reached a terminal failure', {
+          txId,
+          status: data.status,
+          reason,
+        })
 
-  async function pollForHash(txId: string): Promise<string> {
-    for await (const { transaction } of pollTransactionDetail(txId, {
-      maxAttempts: HASH_POLL_MAX_ATTEMPTS,
-      intervalMs: HASH_POLL_INTERVAL_MS,
-      onError: (attempt, error) =>
-        logger.error(
-          `OpenZeppelin poll attempt ${attempt} failed: ${getErrorMessage(
-            error
-          )}`
-        ),
-    })) {
-      if (FAILED_STATUSES.has(transaction.status)) {
-        const reason = transaction.status_reason || transaction.status
-        logger.error(`OpenZeppelin transaction ${txId} failed: ${reason}`)
-
-        if (transaction.status === 'cancelled') {
+        if (data.status === OZTransactionStatus.Canceled) {
           metrics.increment('dcl_error_cancelled_transactions_openzeppelin')
-          if (containsAny(transaction.status_reason, BALANCE_KEYWORDS)) {
+          if (containsAny(data.status_reason, BALANCE_KEYWORDS)) {
             metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
           }
-        } else if (containsAny(transaction.status_reason, REVERT_KEYWORDS)) {
+        } else if (containsAny(data.status_reason, REVERT_KEYWORDS)) {
           metrics.increment('dcl_error_reverted_transactions_openzeppelin')
-        } else if (containsAny(transaction.status_reason, BALANCE_KEYWORDS)) {
+        } else if (containsAny(data.status_reason, BALANCE_KEYWORDS)) {
           metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
         } else {
           metrics.increment('dcl_error_service_errors_openzeppelin')
         }
 
         throw new InvalidTransactionError(
-          `Transaction ${transaction.status}: ${reason}`,
+          `Transaction ${data.status}: ${reason}`,
           ErrorCode.EXPECTATION_FAILED
         )
       }
 
-      if (transaction.hash) {
-        return transaction.hash
+      if (BROADCAST_STATUSES.has(data.status) && data.hash) {
+        return data.hash
       }
+      // status is still 'pending'/'sent' or hash not yet assigned — keep polling.
     }
 
+    logger.error('OpenZeppelin polling budget exhausted', {
+      txId,
+      attempts: maxStatusChecks,
+    })
     metrics.increment('dcl_error_timeout_openzeppelin')
+    await cancelTransaction(txId)
     throw new RelayerTimeout('The limit of status checks was reached')
-  }
-
-  // Polls OZ to count transaction replacements.
-  // Every replacement generates a new hash for the same tx.id.
-  // Retry count = distinct hashes - 1.
-  // Read-only: never cancels or replaces transactions.
-  const trackTransactionRetries = async (
-    txId: string,
-    firstHash: string
-  ): Promise<void> => {
-    if (retryTrackIntervalMs <= 0 || retryTrackMaxDurationMs <= 0) {
-      logger.warn(
-        'OpenZeppelin retry tracker disabled due to invalid timing config'
-      )
-      return
-    }
-
-    const seenHashes = new Set<string>([firstHash])
-
-    for await (const { transaction } of pollTransactionDetail(txId, {
-      maxAttempts: Math.ceil(retryTrackMaxDurationMs / retryTrackIntervalMs),
-      intervalMs: retryTrackIntervalMs,
-      onError: (attempt, error) =>
-        logger.warn(
-          `OpenZeppelin retry poll ${attempt} for ${txId} failed: ${getErrorMessage(
-            error
-          )}`
-        ),
-    })) {
-      if (transaction.hash) {
-        seenHashes.add(transaction.hash)
-
-        if (isRetryThresholdExceeded(seenHashes, maxRetries)) {
-          logger.error(
-            `OpenZeppelin transaction ${txId} exceeded ${maxRetries} retries`
-          )
-          metrics.increment('dcl_error_transaction_high_retries_openzeppelin')
-          return
-        }
-      }
-
-      if (FAILED_STATUSES.has(transaction.status) || transaction.confirmed_at) {
-        return
-      }
-    }
   }
 
   async function sendMetaTransaction(
@@ -257,20 +273,17 @@ export async function createOpenZeppelinComponent(
       )
     }
 
-    // hash may be null initially — poll until the relayer signs and submits it
-    const hash = txData.hash ?? (await pollForHash(txData.id))
+    // Only short-circuit when the POST already reports a broadcast status —
+    // a 'pending'/'sent' status with a hash would still be in OZ's queue.
+    const hash =
+      txData.hash && BROADCAST_STATUSES.has(txData.status)
+        ? txData.hash
+        : await waitForBroadcast(txData.id)
 
     metrics.increment('dcl_sent_transactions_openzeppelin')
-    logger.info(
-      `OpenZeppelin relayed transaction ${txData.id} with hash ${hash}`
-    )
-
-    trackTransactionRetries(txData.id, hash).catch((error: unknown) => {
-      logger.warn(
-        `OpenZeppelin retry tracker for ${txData.id} crashed: ${getErrorMessage(
-          error
-        )}`
-      )
+    logger.info('OpenZeppelin relayed transaction', {
+      txId: txData.id,
+      hash,
     })
 
     return hash

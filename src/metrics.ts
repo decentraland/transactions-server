@@ -75,11 +75,6 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
-  dcl_error_transaction_high_retries_openzeppelin: {
-    help: 'Count errors of transactions that exceeded the configured max retry threshold for OpenZeppelin Relayer.',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
   dcl_error_simulate_transaction: {
     help: 'Count errors of simulate transaction',
     type: IMetricsComponent.CounterType,
