@@ -23,15 +23,18 @@ describe('when checking the function selector', () => {
   describe('and the calldata is a valid legacy executeMetaTransaction call (0x0c53c51c)', () => {
     it.each(
       Object.entries(TransactionDataMock).map(([name, txn]) => [name, txn])
-    )('should not throw for %s', async (_name, txn) => {
-      await expect(
-        checkFunctionSelector(
-          components as Parameters<typeof checkFunctionSelector>[0],
-          txn as TransactionData
-        )
-      ).resolves.not.toThrow()
-      expect(incrementMock).not.toHaveBeenCalled()
-    })
+    )(
+      'should resolve and not increment the rejection counter for %s',
+      async (_name, txn) => {
+        await expect(
+          checkFunctionSelector(
+            components as Parameters<typeof checkFunctionSelector>[0],
+            txn as TransactionData
+          )
+        ).resolves.not.toThrow()
+        expect(incrementMock).not.toHaveBeenCalled()
+      }
+    )
   })
 
   describe('and the calldata is a valid OffChainMarketplace executeMetaTransaction call (0xd8ed1acc)', () => {
@@ -48,7 +51,7 @@ describe('when checking the function selector', () => {
       }
     })
 
-    it('should not throw', async () => {
+    it('should resolve and not increment the rejection counter', async () => {
       await expect(
         checkFunctionSelector(
           components as Parameters<typeof checkFunctionSelector>[0],
@@ -218,7 +221,7 @@ describe('when checking the function selector', () => {
 // Wrapping in executeMetaTransaction would strip the relayer's identity via the
 // meta-tx pattern; raw calls bypass that protection — which is why we reject
 // any calldata whose 4-byte selector isn't an executeMetaTransaction overload.
-describe('blocks known drain attack scenarios', () => {
+describe('when the selector matches a known drain attack', () => {
   const RELAYER_ALLOWLISTED_CONTRACT =
     '0x7ad72b9f944ea9793cf4055d88f81138cc2c63a0' // MANAToken on amoy
   const ATTACKER = '0x1111111111111111111111111111111111111111'
@@ -296,21 +299,24 @@ describe('blocks known drain attack scenarios', () => {
     },
   ]
 
-  it.each(scenarios)('rejects when $label', async ({ selector, data }) => {
-    const transactionData: TransactionData = {
-      from: ATTACKER,
-      params: [RELAYER_ALLOWLISTED_CONTRACT, data],
+  it.each(scenarios)(
+    'should reject with InvalidFunctionSelectorError and increment the rejection counter ($label)',
+    async ({ selector, data }) => {
+      const transactionData: TransactionData = {
+        from: ATTACKER,
+        params: [RELAYER_ALLOWLISTED_CONTRACT, data],
+      }
+
+      const error = await checkFunctionSelector(
+        components as Parameters<typeof checkFunctionSelector>[0],
+        transactionData
+      ).catch((err) => err)
+
+      expect(error).toBeInstanceOf(InvalidFunctionSelectorError)
+      expect((error as InvalidFunctionSelectorError).selector).toBe(selector)
+      expect(incrementMock).toHaveBeenCalledWith(
+        'dcl_error_invalid_function_selector'
+      )
     }
-
-    const error = await checkFunctionSelector(
-      components as Parameters<typeof checkFunctionSelector>[0],
-      transactionData
-    ).catch((err) => err)
-
-    expect(error).toBeInstanceOf(InvalidFunctionSelectorError)
-    expect((error as InvalidFunctionSelectorError).selector).toBe(selector)
-    expect(incrementMock).toHaveBeenCalledWith(
-      'dcl_error_invalid_function_selector'
-    )
-  })
+  )
 })
