@@ -747,3 +747,211 @@ describe('when RPC_URL is not configured', () => {
     })
   })
 })
+
+describe('when fetching the relayer addresses', () => {
+  const LIST_RELAYERS_URL = `${RELAYER_URL}/api/v1/relayers/`
+
+  describe('and the API responds with two relayers', () => {
+    let response: MockResponse
+
+    beforeEach(() => {
+      response = createResponse({
+        json: jest.fn().mockResolvedValueOnce({
+          success: true,
+          data: [
+            { address: '0xAAAA1111aaaa2222AAAA3333aaaa4444AAAA5555' },
+            { address: '0xBBBB1111bbbb2222BBBB3333bbbb4444BBBB5555' },
+          ],
+          error: null,
+        }),
+      })
+      fetchMock.mockResolvedValueOnce(response)
+    })
+
+    it('should return both addresses lowercased in a Set', async () => {
+      const addresses = await openzeppelin.getRelayerAddresses()
+      expect(addresses).toEqual(
+        new Set([
+          '0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555',
+          '0xbbbb1111bbbb2222bbbb3333bbbb4444bbbb5555',
+        ])
+      )
+    })
+
+    it('should call the OZ listRelayers endpoint with bearer auth and a timeout', async () => {
+      await openzeppelin.getRelayerAddresses()
+      expect(fetchMock).toHaveBeenCalledWith(
+        LIST_RELAYERS_URL,
+        expect.objectContaining({
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer api-key',
+          },
+          timeout: expect.any(Number),
+        })
+      )
+    })
+
+    describe('and getRelayerAddresses is called again before the cache expires', () => {
+      beforeEach(async () => {
+        await openzeppelin.getRelayerAddresses()
+      })
+
+      it('should return the cached set without re-fetching', async () => {
+        const addresses = await openzeppelin.getRelayerAddresses()
+        expect(addresses).toEqual(
+          new Set([
+            '0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555',
+            '0xbbbb1111bbbb2222bbbb3333bbbb4444bbbb5555',
+          ])
+        )
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    describe('and getRelayerAddresses is called again after the cache TTL elapses', () => {
+      let secondResponse: MockResponse
+
+      beforeEach(async () => {
+        await openzeppelin.getRelayerAddresses()
+        // Default TTL is 1h; advance the wall clock past it.
+        jest.setSystemTime(Date.now() + 60 * 60 * 1000 + 1)
+        secondResponse = createResponse({
+          json: jest.fn().mockResolvedValueOnce({
+            success: true,
+            data: [{ address: '0xCCCC1111cccc2222CCCC3333cccc4444CCCC5555' }],
+            error: null,
+          }),
+        })
+        fetchMock.mockResolvedValueOnce(secondResponse)
+      })
+
+      it('should re-fetch and replace the cached set', async () => {
+        const addresses = await openzeppelin.getRelayerAddresses()
+        expect(addresses).toEqual(
+          new Set(['0xcccc1111cccc2222cccc3333cccc4444cccc5555'])
+        )
+        expect(fetchMock).toHaveBeenCalledTimes(2)
+      })
+    })
+  })
+
+  describe('and the API responds with a non-2xx status on cold start', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        createResponse({
+          ok: false,
+          status: 503,
+          text: jest.fn().mockResolvedValueOnce('Service Unavailable'),
+        })
+      )
+    })
+
+    it('should return an empty Set without throwing', async () => {
+      await expect(openzeppelin.getRelayerAddresses()).resolves.toEqual(
+        new Set()
+      )
+    })
+
+    it('should increment the refresh-failed metric', async () => {
+      await openzeppelin.getRelayerAddresses()
+      expect(metrics.increment).toHaveBeenCalledWith(
+        'dcl_error_relayer_addresses_refresh_failed'
+      )
+    })
+  })
+
+  describe('and the fetcher throws on cold start', () => {
+    beforeEach(() => {
+      fetchMock.mockRejectedValueOnce(new Error('connection reset'))
+    })
+
+    it('should return an empty Set and increment the refresh-failed metric', async () => {
+      await expect(openzeppelin.getRelayerAddresses()).resolves.toEqual(
+        new Set()
+      )
+      expect(metrics.increment).toHaveBeenCalledWith(
+        'dcl_error_relayer_addresses_refresh_failed'
+      )
+    })
+  })
+
+  describe('and the fetcher throws after a successful warm cache', () => {
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(
+        createResponse({
+          json: jest.fn().mockResolvedValueOnce({
+            success: true,
+            data: [{ address: '0xAAAA1111aaaa2222AAAA3333aaaa4444AAAA5555' }],
+            error: null,
+          }),
+        })
+      )
+      await openzeppelin.getRelayerAddresses()
+      jest.setSystemTime(Date.now() + 60 * 60 * 1000 + 1)
+      fetchMock.mockRejectedValueOnce(new Error('connection reset'))
+    })
+
+    it('should return the previously cached set instead of an empty one', async () => {
+      const addresses = await openzeppelin.getRelayerAddresses()
+      expect(addresses).toEqual(
+        new Set(['0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555'])
+      )
+    })
+
+    it('should increment the refresh-failed metric', async () => {
+      await openzeppelin.getRelayerAddresses()
+      expect(metrics.increment).toHaveBeenCalledWith(
+        'dcl_error_relayer_addresses_refresh_failed'
+      )
+    })
+  })
+
+  describe('and the API returns a payload with no data field', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        createResponse({
+          json: jest.fn().mockResolvedValueOnce({
+            success: false,
+            data: null,
+            error: 'something broke',
+          }),
+        })
+      )
+    })
+
+    it('should return an empty Set and increment the refresh-failed metric', async () => {
+      await expect(openzeppelin.getRelayerAddresses()).resolves.toEqual(
+        new Set()
+      )
+      expect(metrics.increment).toHaveBeenCalledWith(
+        'dcl_error_relayer_addresses_refresh_failed'
+      )
+    })
+  })
+
+  describe('and an entry in the response is missing an address', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        createResponse({
+          json: jest.fn().mockResolvedValueOnce({
+            success: true,
+            data: [
+              { address: '0xAAAA1111aaaa2222AAAA3333aaaa4444AAAA5555' },
+              { address: undefined },
+              { address: '' },
+            ],
+            error: null,
+          }),
+        })
+      )
+    })
+
+    it('should drop the empty entries and keep the valid ones lowercased', async () => {
+      const addresses = await openzeppelin.getRelayerAddresses()
+      expect(addresses).toEqual(
+        new Set(['0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555'])
+      )
+    })
+  })
+})

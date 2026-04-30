@@ -1,21 +1,37 @@
+import { encodeFunctionData, Hex, parseAbi } from 'viem'
 import { IMetricsComponent } from '@well-known-components/interfaces'
 import { metricDeclarations } from '../../../../src/metrics'
 import { checkFunctionSelector } from '../../../../src/ports/transaction/validation/checkFunctionSelector'
-import { InvalidFunctionSelectorError } from '../../../../src/types/transactions/errors'
+import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import {
+  InvalidFunctionSelectorError,
+  SelfRelayUserAddressError,
+} from '../../../../src/types/transactions/errors'
 import { TransactionData } from '../../../../src/types/transactions/transactions'
 import TransactionDataMock from '../../../mocks/transactionData'
 
+const META_TX_ABI = parseAbi([
+  'function executeMetaTransaction(address userAddress, bytes functionSignature, bytes32 sigR, bytes32 sigS, uint8 sigV) returns (bytes)',
+  'function executeMetaTransaction(address userAddress, bytes functionData, bytes signature) returns (bytes)',
+])
+
 let components: {
   metrics: IMetricsComponent<keyof typeof metricDeclarations>
+  relayer: Pick<IRelayRouterComponent, 'getRelayerAddresses'>
 }
 let incrementMock: jest.Mock
+let getRelayerAddressesMock: jest.Mock
 
 beforeEach(() => {
   incrementMock = jest.fn()
+  getRelayerAddressesMock = jest.fn().mockResolvedValue(new Set<string>())
   components = {
     metrics: {
       increment: incrementMock,
     } as unknown as IMetricsComponent<keyof typeof metricDeclarations>,
+    relayer: {
+      getRelayerAddresses: getRelayerAddressesMock,
+    },
   }
 })
 
@@ -210,6 +226,161 @@ describe('when checking the function selector', () => {
           transactionData
         )
       ).rejects.toMatchObject({ selector: '0xa9059cbb' })
+    })
+  })
+
+  describe('and the userAddress matches one of the relayer EOAs', () => {
+    const RELAYER_EOA = '0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555'
+    const CONTRACT = '0x7ad72b9f944ea9793cf4055d88f81138cc2c63a0'
+
+    describe('and the calldata uses the legacy split-sig overload (0x0c53c51c)', () => {
+      let transactionData: TransactionData
+
+      beforeEach(() => {
+        getRelayerAddressesMock.mockResolvedValueOnce(
+          new Set([RELAYER_EOA.toLowerCase()])
+        )
+        transactionData = {
+          from: '0xe539E0AED3C1971560517D58277f8dd9aC296281',
+          params: [
+            CONTRACT,
+            encodeFunctionData({
+              abi: META_TX_ABI,
+              functionName: 'executeMetaTransaction',
+              args: [
+                RELAYER_EOA,
+                ('0x095ea7b3' + '00'.repeat(64)) as Hex,
+                `0x${'00'.repeat(32)}` as Hex,
+                `0x${'00'.repeat(32)}` as Hex,
+                27,
+              ],
+            }),
+          ],
+        }
+      })
+
+      it('should reject with a SelfRelayUserAddressError', async () => {
+        await expect(
+          checkFunctionSelector(
+            components as Parameters<typeof checkFunctionSelector>[0],
+            transactionData
+          )
+        ).rejects.toThrow(SelfRelayUserAddressError)
+      })
+
+      it('should surface the offending userAddress on the error', async () => {
+        await expect(
+          checkFunctionSelector(
+            components as Parameters<typeof checkFunctionSelector>[0],
+            transactionData
+          )
+        ).rejects.toMatchObject({ userAddress: RELAYER_EOA.toLowerCase() })
+      })
+
+      it('should increment the self-relay rejection counter without labels', async () => {
+        await expect(
+          checkFunctionSelector(
+            components as Parameters<typeof checkFunctionSelector>[0],
+            transactionData
+          )
+        ).rejects.toThrow()
+        expect(incrementMock).toHaveBeenCalledWith(
+          'dcl_error_self_relay_user_address'
+        )
+        expect(incrementMock).toHaveBeenCalledTimes(1)
+      })
+
+      it('should not leak the relayer EOA or the word "relayer" in the public message', async () => {
+        let caught: unknown
+        try {
+          await checkFunctionSelector(
+            components as Parameters<typeof checkFunctionSelector>[0],
+            transactionData
+          )
+        } catch (err) {
+          caught = err
+        }
+
+        expect(caught).toBeInstanceOf(SelfRelayUserAddressError)
+        const message = (caught as SelfRelayUserAddressError).message.toLowerCase()
+        expect(message).not.toContain('relayer')
+        expect(message).not.toContain(RELAYER_EOA.toLowerCase())
+      })
+    })
+
+    describe('and the calldata uses the combined-sig overload (0xd8ed1acc)', () => {
+      let transactionData: TransactionData
+
+      beforeEach(() => {
+        getRelayerAddressesMock.mockResolvedValueOnce(
+          new Set([RELAYER_EOA.toLowerCase()])
+        )
+        transactionData = {
+          from: '0xe539E0AED3C1971560517D58277f8dd9aC296281',
+          params: [
+            CONTRACT,
+            encodeFunctionData({
+              abi: META_TX_ABI,
+              functionName: 'executeMetaTransaction',
+              args: [
+                RELAYER_EOA,
+                ('0x095ea7b3' + '00'.repeat(64)) as Hex,
+                '0xdeadbeef',
+              ],
+            }),
+          ],
+        }
+      })
+
+      it('should reject with a SelfRelayUserAddressError', async () => {
+        await expect(
+          checkFunctionSelector(
+            components as Parameters<typeof checkFunctionSelector>[0],
+            transactionData
+          )
+        ).rejects.toThrow(SelfRelayUserAddressError)
+      })
+    })
+
+  })
+
+  describe('and the userAddress does not match any relayer EOA', () => {
+    let transactionData: TransactionData
+
+    beforeEach(() => {
+      getRelayerAddressesMock.mockResolvedValueOnce(
+        new Set(['0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555'])
+      )
+      transactionData = TransactionDataMock.approveMana
+    })
+
+    it('should resolve and not increment the self-relay counter', async () => {
+      await expect(
+        checkFunctionSelector(
+          components as Parameters<typeof checkFunctionSelector>[0],
+          transactionData
+        )
+      ).resolves.not.toThrow()
+      expect(incrementMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('and the relayer address set is empty (provider unavailable or Gelato-only)', () => {
+    let transactionData: TransactionData
+
+    beforeEach(() => {
+      getRelayerAddressesMock.mockResolvedValueOnce(new Set<string>())
+      transactionData = TransactionDataMock.approveMana
+    })
+
+    it('should resolve without checking userAddress', async () => {
+      await expect(
+        checkFunctionSelector(
+          components as Parameters<typeof checkFunctionSelector>[0],
+          transactionData
+        )
+      ).resolves.not.toThrow()
+      expect(incrementMock).not.toHaveBeenCalled()
     })
   })
 })

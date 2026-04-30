@@ -41,6 +41,7 @@ beforeEach(() => {
     resolveProvider: jest
       .fn()
       .mockResolvedValue({ name: 'gelato', provider: {} }),
+    getRelayerAddresses: jest.fn().mockResolvedValue(new Set<string>()),
   }
   contracts = {} as IContractsComponent
   pg = {

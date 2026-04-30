@@ -58,6 +58,7 @@ beforeEach(() => {
     sendMetaTransaction: jest.fn(),
     getNetworkGasPrice: relayerGetNetworkGasPriceMock,
     resolveProvider: resolveProviderMock,
+    getRelayerAddresses: jest.fn().mockResolvedValue(new Set<string>()),
   }
 
   components = {

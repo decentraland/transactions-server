@@ -49,6 +49,14 @@ export class InvalidFunctionSelectorError extends Error {
   }
 }
 
+export class SelfRelayUserAddressError extends Error {
+  public code = ErrorCode.INVALID_TRANSACTION
+
+  constructor(public userAddress: string) {
+    super('Invalid transaction data.')
+  }
+}
+
 export class QuotaReachedError extends Error {
   public code = ErrorCode.QUOTA_REACHED
 

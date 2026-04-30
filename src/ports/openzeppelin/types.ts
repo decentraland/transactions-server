@@ -1,4 +1,6 @@
 import { IMetaTransactionProviderComponent } from '../../types/transactions/transactions'
 
 export type OpenZeppelinMetaTransactionComponent =
-  IMetaTransactionProviderComponent
+  IMetaTransactionProviderComponent & {
+    getRelayerAddresses(): Promise<Set<string>>
+  }

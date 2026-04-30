@@ -1,5 +1,8 @@
 import { decodeFunctionData, Hex, parseAbi } from 'viem'
-import { InvalidFunctionSelectorError } from '../../../types/transactions/errors'
+import {
+  InvalidFunctionSelectorError,
+  SelfRelayUserAddressError,
+} from '../../../types/transactions/errors'
 import { ITransactionValidator } from './types'
 
 // Two executeMetaTransaction overloads exist across DCL contracts:
@@ -14,13 +17,22 @@ export const checkFunctionSelector: ITransactionValidator = async (
   components,
   transactionData
 ) => {
-  const { metrics } = components
+  const { metrics, relayer } = components
   const data = transactionData.params[1]
 
+  // Both overloads share `userAddress` as the first argument.
+  let userAddress: string
   try {
-    decodeFunctionData({ abi: META_TX_ABI, data: data as Hex })
+    const decoded = decodeFunctionData({ abi: META_TX_ABI, data: data as Hex })
+    userAddress = decoded.args[0].toLowerCase()
   } catch {
     metrics.increment('dcl_error_invalid_function_selector')
     throw new InvalidFunctionSelectorError(data.slice(0, 10).toLowerCase())
+  }
+
+  const relayerAddresses = await relayer.getRelayerAddresses()
+  if (relayerAddresses.size > 0 && relayerAddresses.has(userAddress)) {
+    metrics.increment('dcl_error_self_relay_user_address')
+    throw new SelfRelayUserAddressError(userAddress)
   }
 }

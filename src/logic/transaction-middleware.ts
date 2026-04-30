@@ -7,6 +7,7 @@ import {
   InvalidSchemaError,
   InvalidTransactionError,
   QuotaReachedError,
+  SelfRelayUserAddressError,
   SimulateTransactionError,
 } from '../types/transactions/errors'
 import { AppComponents, Context } from '../types'
@@ -133,6 +134,21 @@ export function createTransactionMiddleware(
         logger.warn('Transaction rejected due to invalid function selector', {
           from,
           selector: error.selector,
+        })
+        return {
+          status: StatusCode.BAD_REQUEST,
+          body: {
+            ok: false,
+            message: error.message,
+            code: error.code,
+          },
+        }
+      }
+
+      if (error instanceof SelfRelayUserAddressError) {
+        logger.warn('Transaction rejected due to self-relay user address', {
+          from,
+          userAddress: error.userAddress,
         })
         return {
           status: StatusCode.BAD_REQUEST,
