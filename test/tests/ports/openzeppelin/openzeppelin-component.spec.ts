@@ -289,34 +289,6 @@ describe('when sending a meta transaction', () => {
     })
   })
 
-  describe('and the relayer responds with a 422 status whose body mentions insufficient balance', () => {
-    beforeEach(() => {
-      fetchMock.mockResolvedValueOnce(
-        createResponse({
-          ok: false,
-          status: 422,
-          text: jest
-            .fn()
-            .mockResolvedValueOnce(
-              'insufficient balance to fund the transaction'
-            ),
-        })
-      )
-    })
-
-    it('should increment both service errors and no-balance metrics', async () => {
-      await expect(
-        openzeppelin.sendMetaTransaction(transactionData)
-      ).rejects.toThrow()
-      expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
-      )
-      expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_no_balance_transactions_openzeppelin'
-      )
-    })
-  })
-
   describe('and the relayer responds with a 400 status', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
@@ -382,32 +354,6 @@ describe('when sending a meta transaction', () => {
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
         'dcl_error_service_errors_openzeppelin'
-      )
-    })
-  })
-
-  describe('and the relayer responds with success=false carrying a balance error message', () => {
-    beforeEach(() => {
-      fetchMock.mockResolvedValueOnce(
-        createResponse({
-          json: jest.fn().mockResolvedValueOnce({
-            success: false,
-            data: null,
-            error: 'no available token balance to relay',
-          }),
-        })
-      )
-    })
-
-    it('should increment both service errors and no-balance metrics', async () => {
-      await expect(
-        openzeppelin.sendMetaTransaction(transactionData)
-      ).rejects.toThrow()
-      expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
-      )
-      expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_no_balance_transactions_openzeppelin'
       )
     })
   })
@@ -535,7 +481,7 @@ describe('when sending a meta transaction', () => {
       })
     })
 
-    describe('and polling returns a canceled status without a balance reason', () => {
+    describe('and polling returns a canceled status', () => {
       beforeEach(() => {
         fetchMock.mockResolvedValueOnce(
           pollResponse({
@@ -546,69 +492,13 @@ describe('when sending a meta transaction', () => {
         )
       })
 
-      it('should increment only the cancelled transactions metric', async () => {
+      it('should increment the cancelled transactions metric', async () => {
         const promise = openzeppelin.sendMetaTransaction(transactionData)
         promise.catch(() => undefined)
         await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
           'dcl_error_cancelled_transactions_openzeppelin'
-        )
-        expect(metrics.increment).not.toHaveBeenCalledWith(
-          'dcl_error_no_balance_transactions_openzeppelin'
-        )
-      })
-    })
-
-    describe('and polling returns a canceled status with a balance reason', () => {
-      beforeEach(() => {
-        fetchMock.mockResolvedValueOnce(
-          pollResponse({
-            hash: null,
-            status: 'canceled',
-            status_reason: 'insufficient balance to relay transaction',
-          })
-        )
-      })
-
-      it('should increment both the cancelled and no-balance metrics', async () => {
-        const promise = openzeppelin.sendMetaTransaction(transactionData)
-        promise.catch(() => undefined)
-        await jest.advanceTimersByTimeAsync(SLEEP_MS)
-        await expect(promise).rejects.toThrow()
-        expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_cancelled_transactions_openzeppelin'
-        )
-        expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_no_balance_transactions_openzeppelin'
-        )
-      })
-    })
-
-    describe('and polling returns a failed status with a balance reason', () => {
-      beforeEach(() => {
-        fetchMock.mockResolvedValueOnce(
-          pollResponse({
-            hash: null,
-            status: 'failed',
-            status_reason: 'insufficient funds for gas',
-          })
-        )
-      })
-
-      it('should increment only the no-balance metric', async () => {
-        const promise = openzeppelin.sendMetaTransaction(transactionData)
-        promise.catch(() => undefined)
-        await jest.advanceTimersByTimeAsync(SLEEP_MS)
-        await expect(promise).rejects.toThrow()
-        expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_no_balance_transactions_openzeppelin'
-        )
-        expect(metrics.increment).not.toHaveBeenCalledWith(
-          'dcl_error_reverted_transactions_openzeppelin'
-        )
-        expect(metrics.increment).not.toHaveBeenCalledWith(
-          'dcl_error_service_errors_openzeppelin'
         )
       })
     })

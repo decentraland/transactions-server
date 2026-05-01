@@ -70,11 +70,6 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
-  dcl_error_no_balance_transactions_openzeppelin: {
-    help: 'Count errors of no balance when trying to relay a transaction to OpenZeppelin Relayer',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
   dcl_error_simulate_transaction: {
     help: 'Count errors of simulate transaction',
     type: IMetricsComponent.CounterType,

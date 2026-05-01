@@ -59,12 +59,6 @@ const DEFAULT_MAX_STATUS_CHECKS = 150
 const DEFAULT_SLEEP_TIME_BETWEEN_CHECKS_MS = 800
 const CANCEL_REQUEST_TIMEOUT_MS = 5000
 
-const BALANCE_KEYWORDS = [
-  'insufficient',
-  'balance',
-  'funds',
-  'no available token',
-]
 const REVERT_KEYWORDS = ['revert', 'reverted', 'execution reverted']
 
 function containsAny(
@@ -184,13 +178,8 @@ export async function createOpenZeppelinComponent(
 
         if (data.status === OZTransactionStatus.Canceled) {
           metrics.increment('dcl_error_cancelled_transactions_openzeppelin')
-          if (containsAny(data.status_reason, BALANCE_KEYWORDS)) {
-            metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
-          }
         } else if (containsAny(data.status_reason, REVERT_KEYWORDS)) {
           metrics.increment('dcl_error_reverted_transactions_openzeppelin')
-        } else if (containsAny(data.status_reason, BALANCE_KEYWORDS)) {
-          metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
         } else {
           metrics.increment('dcl_error_service_errors_openzeppelin')
         }
@@ -246,9 +235,6 @@ export async function createOpenZeppelinComponent(
         `OpenZeppelin relayer responded with ${response.status}: ${body}`
       )
       metrics.increment('dcl_error_service_errors_openzeppelin')
-      if (containsAny(body, BALANCE_KEYWORDS)) {
-        metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
-      }
 
       if (response.status === 422 || response.status === 400) {
         throw new InvalidTransactionError(body, ErrorCode.EXPECTATION_FAILED)
@@ -264,9 +250,6 @@ export async function createOpenZeppelinComponent(
 
     if (!success || !txData) {
       metrics.increment('dcl_error_service_errors_openzeppelin')
-      if (containsAny(error, BALANCE_KEYWORDS)) {
-        metrics.increment('dcl_error_no_balance_transactions_openzeppelin')
-      }
       throw new RelayerError(
         500,
         error || 'Unexpected response from OZ Relayer'
