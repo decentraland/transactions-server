@@ -194,7 +194,8 @@ describe('when sending a meta transaction', () => {
     it('should increment the sent transactions metric', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_sent_transactions_openzeppelin'
+        'dcl_sent_transactions',
+        { relayer: 'openzeppelin' }
       )
     })
 
@@ -252,7 +253,8 @@ describe('when sending a meta transaction', () => {
         openzeppelin.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
+        'dcl_error_service_errors',
+        { relayer: 'openzeppelin' }
       )
     })
   })
@@ -284,7 +286,8 @@ describe('when sending a meta transaction', () => {
         openzeppelin.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
+        'dcl_error_service_errors',
+        { relayer: 'openzeppelin' }
       )
     })
   })
@@ -353,7 +356,8 @@ describe('when sending a meta transaction', () => {
         openzeppelin.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
+        'dcl_error_service_errors',
+        { relayer: 'openzeppelin' }
       )
     })
   })
@@ -442,7 +446,8 @@ describe('when sending a meta transaction', () => {
         await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_reverted_transactions_openzeppelin'
+          'dcl_error_reverted_transactions',
+          { relayer: 'openzeppelin' }
         )
       })
     })
@@ -476,7 +481,8 @@ describe('when sending a meta transaction', () => {
         await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_service_errors_openzeppelin'
+          'dcl_error_service_errors',
+          { relayer: 'openzeppelin' }
         )
       })
     })
@@ -498,7 +504,8 @@ describe('when sending a meta transaction', () => {
         await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_cancelled_transactions_openzeppelin'
+          'dcl_error_cancelled_transactions',
+          { relayer: 'openzeppelin' }
         )
       })
     })
@@ -569,7 +576,8 @@ describe('when sending a meta transaction', () => {
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
           expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_timeout_openzeppelin'
+            'dcl_error_timeout',
+            { relayer: 'openzeppelin' }
           )
         })
 
@@ -579,7 +587,8 @@ describe('when sending a meta transaction', () => {
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
           expect(metrics.increment).not.toHaveBeenCalledWith(
-            'dcl_error_service_errors_openzeppelin'
+            'dcl_error_service_errors',
+            { relayer: 'openzeppelin' }
           )
         })
       })
@@ -617,7 +626,8 @@ describe('when sending a meta transaction', () => {
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
           expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_service_errors_openzeppelin'
+            'dcl_error_service_errors',
+            { relayer: 'openzeppelin' }
           )
         })
 
@@ -627,7 +637,8 @@ describe('when sending a meta transaction', () => {
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
           expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_timeout_openzeppelin'
+            'dcl_error_timeout',
+            { relayer: 'openzeppelin' }
           )
         })
       })
@@ -661,7 +672,8 @@ describe('when sending a meta transaction', () => {
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
           expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_service_errors_openzeppelin'
+            'dcl_error_service_errors',
+            { relayer: 'openzeppelin' }
           )
         })
       })

@@ -8,6 +8,7 @@ import {
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
+import { ProviderName } from '../relay-router/types'
 import { OpenZeppelinMetaTransactionComponent } from './types'
 
 // All OZ Relayer responses are wrapped in { success, data, error }
@@ -73,6 +74,8 @@ function containsAny(
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Unknown error'
 
+const RELAYER: ProviderName = 'openzeppelin'
+
 export async function createOpenZeppelinComponent(
   components: Pick<AppComponents, 'config' | 'logs' | 'metrics' | 'fetcher'>
 ): Promise<OpenZeppelinMetaTransactionComponent> {
@@ -100,8 +103,8 @@ export async function createOpenZeppelinComponent(
   /**
    * Best-effort DELETE against the OZ Relayer to cancel a transaction that
    * never broadcast. Never throws — failures are logged and counted under
-   * dcl_error_service_errors_openzeppelin so the surrounding timeout error
-   * still propagates to the caller.
+   * dcl_error_service_errors{relayer="openzeppelin"} so the surrounding
+   * timeout error still propagates to the caller.
    *
    * @param txId - OZ Relayer transaction id to cancel.
    */
@@ -122,14 +125,14 @@ export async function createOpenZeppelinComponent(
           status: response.status,
           body,
         })
-        metrics.increment('dcl_error_service_errors_openzeppelin')
+        metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
       }
     } catch (error: unknown) {
       logger.error('OpenZeppelin cancel request failed', {
         txId,
         error: getErrorMessage(error),
       })
-      metrics.increment('dcl_error_service_errors_openzeppelin')
+      metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
     }
   }
 
@@ -177,11 +180,15 @@ export async function createOpenZeppelinComponent(
         })
 
         if (data.status === OZTransactionStatus.Canceled) {
-          metrics.increment('dcl_error_cancelled_transactions_openzeppelin')
+          metrics.increment('dcl_error_cancelled_transactions', {
+            relayer: RELAYER,
+          })
         } else if (containsAny(data.status_reason, REVERT_KEYWORDS)) {
-          metrics.increment('dcl_error_reverted_transactions_openzeppelin')
+          metrics.increment('dcl_error_reverted_transactions', {
+            relayer: RELAYER,
+          })
         } else {
-          metrics.increment('dcl_error_service_errors_openzeppelin')
+          metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
         }
 
         throw new InvalidTransactionError(
@@ -200,7 +207,7 @@ export async function createOpenZeppelinComponent(
       txId,
       attempts: maxStatusChecks,
     })
-    metrics.increment('dcl_error_timeout_openzeppelin')
+    metrics.increment('dcl_error_timeout', { relayer: RELAYER })
     await cancelTransaction(txId)
     throw new RelayerTimeout('The limit of status checks was reached')
   }
@@ -225,7 +232,7 @@ export async function createOpenZeppelinComponent(
     } catch (error: unknown) {
       const message = getErrorMessage(error)
       logger.error(`OpenZeppelin failed to relay the transaction: ${message}`)
-      metrics.increment('dcl_error_service_errors_openzeppelin')
+      metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
       throw new RelayerError(500, message)
     }
 
@@ -234,7 +241,7 @@ export async function createOpenZeppelinComponent(
       logger.error(
         `OpenZeppelin relayer responded with ${response.status}: ${body}`
       )
-      metrics.increment('dcl_error_service_errors_openzeppelin')
+      metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
 
       if (response.status === 422 || response.status === 400) {
         throw new InvalidTransactionError(body, ErrorCode.EXPECTATION_FAILED)
@@ -249,7 +256,7 @@ export async function createOpenZeppelinComponent(
     } = (await response.json()) as OZResponse<OZTransactionData>
 
     if (!success || !txData) {
-      metrics.increment('dcl_error_service_errors_openzeppelin')
+      metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
       throw new RelayerError(
         500,
         error || 'Unexpected response from OZ Relayer'
@@ -263,7 +270,7 @@ export async function createOpenZeppelinComponent(
         ? txData.hash
         : await waitForBroadcast(txData.id)
 
-    metrics.increment('dcl_sent_transactions_openzeppelin')
+    metrics.increment('dcl_sent_transactions', { relayer: RELAYER })
     logger.info('OpenZeppelin relayed transaction', {
       txId: txData.id,
       hash,

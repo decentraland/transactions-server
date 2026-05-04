@@ -133,7 +133,8 @@ describe('when sending a meta transaction', () => {
       it('should increment the sent transactions metric', async () => {
         await gelato.sendMetaTransaction(transactionData)
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_sent_transactions_gelato'
+          'dcl_sent_transactions',
+          { relayer: 'gelato' }
         )
       })
 
@@ -188,7 +189,8 @@ describe('when sending a meta transaction', () => {
         ).rejects.toThrow()
 
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_reverted_transactions_gelato'
+          'dcl_error_reverted_transactions',
+          { relayer: 'gelato' }
         )
       })
     })
@@ -223,7 +225,8 @@ describe('when sending a meta transaction', () => {
         ).rejects.toThrow()
 
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_cancelled_transactions_gelato'
+          'dcl_error_cancelled_transactions',
+          { relayer: 'gelato' }
         )
       })
     })
@@ -247,10 +250,12 @@ describe('when sending a meta transaction', () => {
         ).rejects.toThrow()
 
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_cancelled_transactions_gelato'
+          'dcl_error_cancelled_transactions',
+          { relayer: 'gelato' }
         )
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_no_balance_transactions_gelato'
+          'dcl_error_no_balance_transactions',
+          { relayer: 'gelato' }
         )
       })
     })
@@ -267,7 +272,8 @@ describe('when sending a meta transaction', () => {
           gelato.sendMetaTransaction(transactionData)
         ).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_timeout_gelato'
+          'dcl_error_timeout',
+          { relayer: 'gelato' }
         )
       })
     })
@@ -290,7 +296,8 @@ describe('when sending a meta transaction', () => {
           gelato.sendMetaTransaction(transactionData)
         ).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_service_errors_gelato'
+          'dcl_error_service_errors',
+          { relayer: 'gelato' }
         )
       })
     })
@@ -314,7 +321,8 @@ describe('when sending a meta transaction', () => {
         gelato.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_gelato'
+        'dcl_error_service_errors',
+        { relayer: 'gelato' }
       )
     })
   })
@@ -332,10 +340,12 @@ describe('when sending a meta transaction', () => {
         gelato.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_gelato'
+        'dcl_error_service_errors',
+        { relayer: 'gelato' }
       )
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_no_balance_transactions_gelato'
+        'dcl_error_no_balance_transactions',
+        { relayer: 'gelato' }
       )
     })
   })

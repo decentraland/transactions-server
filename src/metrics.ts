@@ -8,65 +8,40 @@ export const metricDeclarations = {
     type: IMetricsComponent.CounterType,
     labelNames: ['minPrice', 'salePrice'],
   },
-  // Gelato metrics
-  dcl_sent_transactions_gelato: {
-    help: 'Count transactions sent to Gelato',
+  // Per-relayer metrics. The `relayer` label takes one of the values from
+  // `ProviderName` ('gelato' | 'openzeppelin') — see src/ports/relay-router/types.ts.
+  dcl_sent_transactions: {
+    help: 'Count transactions sent to a relayer',
     type: IMetricsComponent.CounterType,
-    labelNames: [],
+    labelNames: ['relayer'],
   },
-  dcl_error_cancelled_transactions_gelato: {
-    help: 'Count transactions cancelled by Gelato',
+  dcl_error_cancelled_transactions: {
+    help: 'Count transactions cancelled by a relayer',
     type: IMetricsComponent.CounterType,
-    labelNames: [],
+    labelNames: ['relayer'],
   },
-  dcl_error_reverted_transactions_gelato: {
-    help: 'Count transactions reverted by Gelato',
+  dcl_error_reverted_transactions: {
+    help: 'Count transactions reverted by a relayer',
     type: IMetricsComponent.CounterType,
-    labelNames: [],
+    labelNames: ['relayer'],
   },
-  dcl_error_service_errors_gelato: {
-    help: 'Count service errors when trying to relay a transaction to Gelato',
+  dcl_error_service_errors: {
+    help: 'Count service errors when trying to relay a transaction',
     type: IMetricsComponent.CounterType,
-    labelNames: [],
+    labelNames: ['relayer'],
   },
-  dcl_error_timeout_gelato: {
-    help: 'Count timeout errors when trying to get the status of a relayed transaction to Gelato',
+  dcl_error_timeout: {
+    help: 'Count timeout errors when waiting for a transaction status from a relayer',
     type: IMetricsComponent.CounterType,
-    labelNames: [],
+    labelNames: ['relayer'],
   },
-  dcl_error_no_balance_transactions_gelato: {
-    help: 'Count errors of no balance when trying to relay a transaction to Gelato',
+  dcl_error_no_balance_transactions: {
+    help: 'Count errors caused by a relayer running out of balance',
     type: IMetricsComponent.CounterType,
-    labelNames: [],
+    labelNames: ['relayer'],
   },
   dcl_error_high_gas_price: {
     help: 'Count transactions rejected because the network gas price exceeds the allowed limit',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  // OpenZeppelin Relayer metrics
-  dcl_sent_transactions_openzeppelin: {
-    help: 'Count transactions sent to OpenZeppelin Relayer',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  dcl_error_cancelled_transactions_openzeppelin: {
-    help: 'Count transactions cancelled by OpenZeppelin Relayer',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  dcl_error_reverted_transactions_openzeppelin: {
-    help: 'Count transactions reverted by OpenZeppelin Relayer',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  dcl_error_service_errors_openzeppelin: {
-    help: 'Count service errors when trying to relay a transaction to OpenZeppelin Relayer',
-    type: IMetricsComponent.CounterType,
-    labelNames: [],
-  },
-  dcl_error_timeout_openzeppelin: {
-    help: 'Count timeout errors when polling for a transaction hash from OpenZeppelin Relayer',
     type: IMetricsComponent.CounterType,
     labelNames: [],
   },
