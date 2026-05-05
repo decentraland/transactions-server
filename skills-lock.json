@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "dcl-backend-standards": {
+      "source": "decentraland/ai-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/dcl-backend-standards/SKILL.md",
+      "computedHash": "21156cdc0fa1e645e24f47cb873f5abb74f0c8bb6313871e9efd93151093e5b8"
+    },
+    "dcl-testing": {
+      "source": "decentraland/ai-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/dcl-testing/SKILL.md",
+      "computedHash": "a172a9acb50dd656325623648a5281f56eb6aef6fe295b5e5c944752ecaea175"
+    },
+    "dcl-wkc-components": {
+      "source": "decentraland/ai-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/dcl-wkc-components/SKILL.md",
+      "computedHash": "d6fbac079ab680cfe2b1128f52f0b4c651cd53a5c18620a6a99fc6d8865473ff"
+    }
+  }
+}
