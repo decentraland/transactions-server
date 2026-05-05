@@ -6,7 +6,7 @@ import {
   TransactionData,
 } from '../../types/transactions/transactions'
 import { Feature } from '../features'
-import { IRelayRouterComponent } from './types'
+import { IRelayRouterComponent, ProviderName, ResolvedProvider } from './types'
 
 // Routes each transaction based on the 'relay-provider' feature flag variant.
 // Accepted variant payload.value:
@@ -22,21 +22,20 @@ export function createRelayRouterComponent(
   const { logs, features, gelato, openzeppelin } = components
   const logger = logs.getLogger('relay-router')
 
-  const available: Record<string, IMetaTransactionProviderComponent> = {}
+  const available: Partial<
+    Record<ProviderName, IMetaTransactionProviderComponent>
+  > = {}
   if (gelato) available.gelato = gelato
   if (openzeppelin) available.openzeppelin = openzeppelin
 
-  const availableNames = Object.keys(available)
+  const availableNames = Object.keys(available) as ProviderName[]
   if (availableNames.length === 0) {
     throw new Error(
       'relay-router: no providers configured; set GELATO_API_KEY or OZ_RELAYER_URL to enable at least one relayer'
     )
   }
 
-  async function resolveProvider(): Promise<{
-    name: string
-    provider: IMetaTransactionProviderComponent
-  }> {
+  async function resolveProvider(): Promise<ResolvedProvider> {
     let desired: string | undefined
     try {
       const variant = await features.getFeatureVariant(
@@ -49,11 +48,16 @@ export function createRelayRouterComponent(
       logger.warn(`relay-provider FF lookup failed, falling back: ${message}`)
     }
 
-    if (desired && desired !== 'random' && available[desired]) {
-      return { name: desired, provider: available[desired] }
+    if (desired && desired !== 'random' && available[desired as ProviderName]) {
+      const name = desired as ProviderName
+      return { name, provider: available[name]! }
     }
 
-    if (desired && desired !== 'random' && !available[desired]) {
+    if (
+      desired &&
+      desired !== 'random' &&
+      !available[desired as ProviderName]
+    ) {
       logger.warn(
         `relay-provider FF asked for "${desired}" but it is not configured; falling back to random`
       )
@@ -61,7 +65,7 @@ export function createRelayRouterComponent(
 
     const name =
       availableNames[Math.floor(Math.random() * availableNames.length)]
-    return { name, provider: available[name] }
+    return { name, provider: available[name]! }
   }
 
   const sendMetaTransaction = async (tx: TransactionData): Promise<string> => {
@@ -88,5 +92,6 @@ export function createRelayRouterComponent(
   return {
     sendMetaTransaction,
     getNetworkGasPrice,
+    resolveProvider,
   }
 }

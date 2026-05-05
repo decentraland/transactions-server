@@ -10,17 +10,15 @@ import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { createTransactionComponent } from '../../../../src/ports/transaction/component'
 import { ITransactionComponent } from '../../../../src/ports/transaction/types'
-import {
-  IMetaTransactionProviderComponent,
-  TransactionData,
-} from '../../../../src/types/transactions/transactions'
+import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import { TransactionData } from '../../../../src/types/transactions/transactions'
 
 let transaction: ITransactionComponent
 let fetcher: IFetchComponent
 let metrics: IMetricsComponent<keyof typeof metricDeclarations>
 let config: IConfigComponent
 let logs: ILoggerComponent
-let relayer: IMetaTransactionProviderComponent
+let relayer: IRelayRouterComponent
 let transactionData: TransactionData
 let contracts: IContractsComponent
 let pg: IPgComponent
@@ -40,6 +38,9 @@ beforeEach(() => {
   relayer = {
     sendMetaTransaction: mockedRelayerSendMetaTransaction,
     getNetworkGasPrice: jest.fn(),
+    resolveProvider: jest
+      .fn()
+      .mockResolvedValue({ name: 'gelato', provider: {} }),
   }
   contracts = {} as IContractsComponent
   pg = {

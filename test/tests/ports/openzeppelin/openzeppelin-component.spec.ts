@@ -32,6 +32,10 @@ jest.mock('viem', () => {
 const RELAYER_URL = 'https://oz.example.com'
 const RELAYER_ID = 'relayer-1'
 const TX_ENDPOINT = `${RELAYER_URL}/api/v1/relayers/${RELAYER_ID}/transactions`
+const TX_ID = 'oz-tx-id'
+const TX_DETAIL_ENDPOINT = `${TX_ENDPOINT}/${TX_ID}`
+const SLEEP_MS = 100
+const MAX_CHECKS = 5
 
 type MockResponse = {
   ok: boolean
@@ -50,6 +54,44 @@ function createResponse(overrides: Partial<MockResponse> = {}): MockResponse {
   }
 }
 
+function postResponse(data: {
+  hash?: string | null
+  status?: string
+  status_reason?: string | null
+}) {
+  return createResponse({
+    json: jest.fn().mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: TX_ID,
+        hash: data.hash ?? null,
+        status: data.status ?? 'pending',
+        status_reason: data.status_reason ?? null,
+      },
+      error: null,
+    }),
+  })
+}
+
+function pollResponse(data: {
+  hash?: string | null
+  status?: string
+  status_reason?: string | null
+}) {
+  return createResponse({
+    json: jest.fn().mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: TX_ID,
+        hash: data.hash ?? null,
+        status: data.status ?? 'pending',
+        status_reason: data.status_reason ?? null,
+      },
+      error: null,
+    }),
+  })
+}
+
 let openzeppelin: OpenZeppelinMetaTransactionComponent
 let logs: ILoggerComponent
 let metrics: IMetricsComponent<keyof typeof metricDeclarations>
@@ -57,9 +99,11 @@ let config: IConfigComponent
 let fetcher: IFetchComponent
 let fetchMock: jest.Mock
 let getStringMock: jest.Mock
+let getNumberMock: jest.Mock
 let transactionData: TransactionData
 
 beforeEach(async () => {
+  jest.useFakeTimers()
   mockGetGasPrice.mockReset()
   fetchMock = jest.fn()
   getStringMock = jest.fn(async (key: string) => {
@@ -68,6 +112,16 @@ beforeEach(async () => {
         return 'fast'
       case 'RPC_URL':
         return 'https://rpc.example.com'
+      default:
+        return undefined
+    }
+  })
+  getNumberMock = jest.fn(async (key: string) => {
+    switch (key) {
+      case 'OZ_MAX_STATUS_CHECKS':
+        return MAX_CHECKS
+      case 'OZ_SLEEP_TIME_BETWEEN_CHECKS_MS':
+        return SLEEP_MS
       default:
         return undefined
     }
@@ -106,7 +160,7 @@ beforeEach(async () => {
     },
     requireNumber: jest.fn(),
     getString: getStringMock,
-    getNumber: jest.fn(),
+    getNumber: getNumberMock,
   } as IConfigComponent
   fetcher = { fetch: fetchMock } as IFetchComponent
   transactionData = createCollection
@@ -119,27 +173,16 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
+  jest.useRealTimers()
   jest.restoreAllMocks()
 })
 
 describe('when sending a meta transaction', () => {
-  describe('and the relayer responds immediately with a hash and success=true', () => {
-    let response: MockResponse
-
+  describe('and the relayer responds immediately with a hash and a broadcast status', () => {
     beforeEach(() => {
-      response = createResponse({
-        json: jest.fn().mockResolvedValueOnce({
-          success: true,
-          data: {
-            id: 'oz-tx-id',
-            hash: '0xaTransactionHash',
-            status: 'submitted',
-            status_reason: null,
-          },
-          error: null,
-        }),
-      })
-      fetchMock.mockResolvedValueOnce(response)
+      fetchMock.mockResolvedValueOnce(
+        postResponse({ hash: '0xaTransactionHash', status: 'submitted' })
+      )
     })
 
     it('should resolve to the transaction hash', () => {
@@ -151,7 +194,8 @@ describe('when sending a meta transaction', () => {
     it('should increment the sent transactions metric', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_sent_transactions_openzeppelin'
+        'dcl_sent_transactions',
+        { relayer: 'openzeppelin' }
       )
     })
 
@@ -183,6 +227,14 @@ describe('when sending a meta transaction', () => {
         })
       )
     })
+
+    it('should not issue a DELETE for the transaction', async () => {
+      await openzeppelin.sendMetaTransaction(transactionData)
+      const deleteCalls = fetchMock.mock.calls.filter(
+        ([, init]) => init?.method === 'DELETE'
+      )
+      expect(deleteCalls).toHaveLength(0)
+    })
   })
 
   describe('and the fetcher throws an error', () => {
@@ -201,7 +253,8 @@ describe('when sending a meta transaction', () => {
         openzeppelin.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
+        'dcl_error_service_errors',
+        { relayer: 'openzeppelin' }
       )
     })
   })
@@ -233,7 +286,8 @@ describe('when sending a meta transaction', () => {
         openzeppelin.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
+        'dcl_error_service_errors',
+        { relayer: 'openzeppelin' }
       )
     })
   })
@@ -302,7 +356,8 @@ describe('when sending a meta transaction', () => {
         openzeppelin.sendMetaTransaction(transactionData)
       ).rejects.toThrow()
       expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_error_service_errors_openzeppelin'
+        'dcl_error_service_errors',
+        { relayer: 'openzeppelin' }
       )
     })
   })
@@ -310,65 +365,65 @@ describe('when sending a meta transaction', () => {
   describe('and the relayer responds with success=true but no hash yet', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
-        createResponse({
-          json: jest.fn().mockResolvedValueOnce({
-            success: true,
-            data: {
-              id: 'oz-tx-id',
-              hash: null,
-              status: 'pending',
-              status_reason: null,
-            },
-            error: null,
-          }),
-        })
+        postResponse({ hash: null, status: 'pending' })
       )
-      jest.useFakeTimers()
     })
 
-    afterEach(() => {
-      jest.useRealTimers()
-    })
-
-    describe('and polling the transaction returns a hash', () => {
+    describe('and polling returns a broadcast status with a hash', () => {
       beforeEach(() => {
         fetchMock.mockResolvedValueOnce(
-          createResponse({
-            json: jest.fn().mockResolvedValueOnce({
-              success: true,
-              data: {
-                id: 'oz-tx-id',
-                hash: '0xpolledHash',
-                status: 'submitted',
-                status_reason: null,
-              },
-              error: null,
-            }),
-          })
+          pollResponse({ hash: '0xpolledHash', status: 'submitted' })
         )
       })
 
       it('should resolve to the polled transaction hash', async () => {
         const promise = openzeppelin.sendMetaTransaction(transactionData)
-        await jest.advanceTimersByTimeAsync(2000)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).resolves.toBe('0xpolledHash')
       })
     })
 
-    describe('and polling the transaction returns a terminal failed status', () => {
+    describe('and polling returns a hash but the status is still pending', () => {
       beforeEach(() => {
         fetchMock.mockResolvedValueOnce(
-          createResponse({
-            json: jest.fn().mockResolvedValueOnce({
-              success: true,
-              data: {
-                id: 'oz-tx-id',
-                hash: null,
-                status: 'failed',
-                status_reason: 'execution reverted',
-              },
-              error: null,
-            }),
+          pollResponse({ hash: '0xpremature', status: 'pending' })
+        )
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({ hash: '0xpremature', status: 'submitted' })
+        )
+      })
+
+      it('should keep polling until the status reports broadcast', async () => {
+        const promise = openzeppelin.sendMetaTransaction(transactionData)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS * 2)
+        await expect(promise).resolves.toBe('0xpremature')
+      })
+    })
+
+    describe('and polling returns a hash with status sent (relayer attempted but RPC may have rejected)', () => {
+      beforeEach(() => {
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({ hash: '0xstuck', status: 'sent' })
+        )
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({ hash: '0xstuck', status: 'submitted' })
+        )
+      })
+
+      it('should keep polling until the status advances to submitted', async () => {
+        const promise = openzeppelin.sendMetaTransaction(transactionData)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS * 2)
+        await expect(promise).resolves.toBe('0xstuck')
+      })
+    })
+
+    describe('and polling returns a terminal failed status', () => {
+      beforeEach(() => {
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({
+            hash: null,
+            status: 'failed',
+            status_reason: 'execution reverted',
           })
         )
       })
@@ -376,7 +431,7 @@ describe('when sending a meta transaction', () => {
       it('should reject with an InvalidTransactionError carrying the status reason', async () => {
         const promise = openzeppelin.sendMetaTransaction(transactionData)
         promise.catch(() => undefined)
-        await jest.advanceTimersByTimeAsync(2000)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow(
           new InvalidTransactionError(
             'Transaction failed: execution reverted',
@@ -385,54 +440,257 @@ describe('when sending a meta transaction', () => {
         )
       })
 
-      it('should increment the service errors metric', async () => {
+      it('should increment the reverted transactions metric', async () => {
         const promise = openzeppelin.sendMetaTransaction(transactionData)
         promise.catch(() => undefined)
-        await jest.advanceTimersByTimeAsync(2000)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_service_errors_openzeppelin'
+          'dcl_error_reverted_transactions',
+          { relayer: 'openzeppelin' }
         )
       })
     })
 
-    describe('and polling exhausts the maximum number of attempts', () => {
+    describe('and polling returns a terminal expired status', () => {
       beforeEach(() => {
-        // Every poll attempt returns a non-terminal status with no hash
-        fetchMock.mockResolvedValue(
-          createResponse({
-            json: jest.fn().mockResolvedValue({
-              success: true,
-              data: {
-                id: 'oz-tx-id',
-                hash: null,
-                status: 'pending',
-                status_reason: null,
-              },
-              error: null,
-            }),
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({
+            hash: null,
+            status: 'expired',
+            status_reason: 'gas price oracle refused to bump further',
           })
         )
       })
 
-      it('should reject with a RelayerTimeout', async () => {
+      it('should reject with an InvalidTransactionError naming the status', async () => {
         const promise = openzeppelin.sendMetaTransaction(transactionData)
-        // Suppress unhandled rejection until we assert on it
         promise.catch(() => undefined)
-        await jest.advanceTimersByTimeAsync(2000 * 30)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow(
-          new RelayerTimeout('The limit of status checks was reached')
+          new InvalidTransactionError(
+            'Transaction expired: gas price oracle refused to bump further',
+            ErrorCode.EXPECTATION_FAILED
+          )
         )
       })
 
-      it('should increment the timeout metric', async () => {
+      it('should fall back to the service errors metric when the reason is unmapped', async () => {
         const promise = openzeppelin.sendMetaTransaction(transactionData)
         promise.catch(() => undefined)
-        await jest.advanceTimersByTimeAsync(2000 * 30)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS)
         await expect(promise).rejects.toThrow()
         expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_timeout_openzeppelin'
+          'dcl_error_service_errors',
+          { relayer: 'openzeppelin' }
         )
+      })
+    })
+
+    describe('and polling returns a canceled status', () => {
+      beforeEach(() => {
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({
+            hash: null,
+            status: 'canceled',
+            status_reason: 'user requested cancellation',
+          })
+        )
+      })
+
+      it('should increment the cancelled transactions metric', async () => {
+        const promise = openzeppelin.sendMetaTransaction(transactionData)
+        promise.catch(() => undefined)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS)
+        await expect(promise).rejects.toThrow()
+        expect(metrics.increment).toHaveBeenCalledWith(
+          'dcl_error_cancelled_transactions',
+          { relayer: 'openzeppelin' }
+        )
+      })
+    })
+
+    describe('and polling exhausts the maximum number of status checks', () => {
+      // Each child describe sets a full fetchMock implementation keyed off the
+      // request method so that POST, GET (poll), and DELETE (cancel) responses
+      // never get swapped by mock-queue ordering.
+
+      describe('and the cancel request succeeds', () => {
+        beforeEach(() => {
+          fetchMock.mockReset()
+          fetchMock.mockImplementation(async (_url: string, init: any) => {
+            if (init?.method === 'POST') {
+              return postResponse({ hash: null, status: 'pending' })
+            }
+            if (init?.method === 'DELETE') {
+              return createResponse({ ok: true, status: 200 })
+            }
+            return pollResponse({ hash: null, status: 'pending' })
+          })
+        })
+
+        it('should issue a DELETE on the transaction detail endpoint with the bearer token', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          expect(fetchMock).toHaveBeenCalledWith(
+            TX_DETAIL_ENDPOINT,
+            expect.objectContaining({
+              method: 'DELETE',
+              headers: expect.objectContaining({
+                Authorization: 'Bearer api-key',
+              }),
+            })
+          )
+        })
+
+        it('should pass an explicit timeout on the DELETE request', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          const deleteCall = fetchMock.mock.calls.find(
+            ([, init]) => init?.method === 'DELETE'
+          )
+          expect(deleteCall).toBeDefined()
+          expect(deleteCall?.[1]).toEqual(
+            expect.objectContaining({
+              timeout: expect.any(Number),
+            })
+          )
+        })
+
+        it('should reject with a RelayerTimeout', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow(
+            new RelayerTimeout('The limit of status checks was reached')
+          )
+        })
+
+        it('should increment the timeout metric', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          expect(metrics.increment).toHaveBeenCalledWith(
+            'dcl_error_timeout',
+            { relayer: 'openzeppelin' }
+          )
+        })
+
+        it('should not increment the service errors metric for the cancel', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          expect(metrics.increment).not.toHaveBeenCalledWith(
+            'dcl_error_service_errors',
+            { relayer: 'openzeppelin' }
+          )
+        })
+      })
+
+      describe('and the cancel request responds with a non-2xx status', () => {
+        beforeEach(() => {
+          fetchMock.mockReset()
+          fetchMock.mockImplementation(async (_url: string, init: any) => {
+            if (init?.method === 'POST') {
+              return postResponse({ hash: null, status: 'pending' })
+            }
+            if (init?.method === 'DELETE') {
+              return createResponse({
+                ok: false,
+                status: 500,
+                text: jest.fn().mockResolvedValueOnce('relayer unavailable'),
+              })
+            }
+            return pollResponse({ hash: null, status: 'pending' })
+          })
+        })
+
+        it('should still reject with a RelayerTimeout', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow(
+            new RelayerTimeout('The limit of status checks was reached')
+          )
+        })
+
+        it('should increment the service errors metric for the failed cancel', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          expect(metrics.increment).toHaveBeenCalledWith(
+            'dcl_error_service_errors',
+            { relayer: 'openzeppelin' }
+          )
+        })
+
+        it('should still increment the timeout metric', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          expect(metrics.increment).toHaveBeenCalledWith(
+            'dcl_error_timeout',
+            { relayer: 'openzeppelin' }
+          )
+        })
+      })
+
+      describe('and the cancel request throws', () => {
+        beforeEach(() => {
+          fetchMock.mockReset()
+          fetchMock.mockImplementation(async (_url: string, init: any) => {
+            if (init?.method === 'POST') {
+              return postResponse({ hash: null, status: 'pending' })
+            }
+            if (init?.method === 'DELETE') {
+              throw new Error('connection reset')
+            }
+            return pollResponse({ hash: null, status: 'pending' })
+          })
+        })
+
+        it('should still reject with a RelayerTimeout', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow(
+            new RelayerTimeout('The limit of status checks was reached')
+          )
+        })
+
+        it('should increment the service errors metric for the failed cancel', async () => {
+          const promise = openzeppelin.sendMetaTransaction(transactionData)
+          promise.catch(() => undefined)
+          await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
+          await expect(promise).rejects.toThrow()
+          expect(metrics.increment).toHaveBeenCalledWith(
+            'dcl_error_service_errors',
+            { relayer: 'openzeppelin' }
+          )
+        })
+      })
+    })
+
+    describe('and a poll request rejects with a network error before the relayer broadcasts', () => {
+      beforeEach(() => {
+        fetchMock.mockRejectedValueOnce(new Error('connection reset'))
+        fetchMock.mockResolvedValueOnce(
+          pollResponse({ hash: '0xrecovered', status: 'submitted' })
+        )
+      })
+
+      it('should swallow the error and resolve once the next poll succeeds', async () => {
+        const promise = openzeppelin.sendMetaTransaction(transactionData)
+        await jest.advanceTimersByTimeAsync(SLEEP_MS * 2)
+        await expect(promise).resolves.toBe('0xrecovered')
       })
     })
   })
@@ -489,4 +747,3 @@ describe('when RPC_URL is not configured', () => {
     })
   })
 })
-

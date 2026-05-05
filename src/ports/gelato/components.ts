@@ -13,7 +13,10 @@ import {
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
+import { ProviderName } from '../relay-router/types'
 import { GelatoMetaTransactionComponent } from './types'
+
+const RELAYER: ProviderName = 'gelato'
 
 export async function createGelatoComponent(
   components: Pick<AppComponents, 'config' | 'logs' | 'metrics'>
@@ -40,12 +43,14 @@ export async function createGelatoComponent(
         data: transactionData.params[1] as `0x${string}`,
       })
     } catch (error) {
-      metrics.increment('dcl_error_service_errors_gelato')
+      metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
       const message = error instanceof Error ? error.message : 'Unknown error'
       logger.error(`Gelato failed to relay the transaction: ${message}`)
 
       if (error instanceof InsufficientBalanceRpcError) {
-        metrics.increment('dcl_error_no_balance_transactions_gelato')
+        metrics.increment('dcl_error_no_balance_transactions', {
+          relayer: RELAYER,
+        })
       }
 
       throw new RelayerError(500, message)
@@ -56,12 +61,14 @@ export async function createGelatoComponent(
         { id: taskId },
         { throwOnReverted: true }
       )
-      metrics.increment('dcl_sent_transactions_gelato')
+      metrics.increment('dcl_sent_transactions', { relayer: RELAYER })
       return receipt.transactionHash
     } catch (error) {
       if (error instanceof TransactionRevertedError) {
         logger.error(`Gelato task ${taskId} reverted: ${error.errorMessage}`)
-        metrics.increment('dcl_error_reverted_transactions_gelato')
+        metrics.increment('dcl_error_reverted_transactions', {
+          relayer: RELAYER,
+        })
         throw new InvalidTransactionError(
           'Transaction reverted',
           ErrorCode.EXPECTATION_FAILED
@@ -70,14 +77,18 @@ export async function createGelatoComponent(
 
       if (error instanceof TransactionRejectedError) {
         logger.error(`Gelato task ${taskId} cancelled: ${error.errorMessage}`)
-        metrics.increment('dcl_error_cancelled_transactions_gelato')
+        metrics.increment('dcl_error_cancelled_transactions', {
+          relayer: RELAYER,
+        })
 
         const errorMsg = error.errorMessage || ''
         if (
           errorMsg.includes('No available token balance') ||
           errorMsg.includes('1Balance tokens could not be selected')
         ) {
-          metrics.increment('dcl_error_no_balance_transactions_gelato')
+          metrics.increment('dcl_error_no_balance_transactions', {
+            relayer: RELAYER,
+          })
         }
 
         throw new InvalidTransactionError(
@@ -90,11 +101,11 @@ export async function createGelatoComponent(
       const message = error instanceof Error ? error.message : 'Unknown error'
       if (message.includes('Timeout')) {
         logger.error('Gelato task status checks limit reached')
-        metrics.increment('dcl_error_timeout_gelato')
+        metrics.increment('dcl_error_timeout', { relayer: RELAYER })
         throw new RelayerTimeout('The limit of status checks was reached')
       }
 
-      metrics.increment('dcl_error_service_errors_gelato')
+      metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
       logger.error(
         `Gelato failed to get the status of the related transaction: ${message}`
       )
