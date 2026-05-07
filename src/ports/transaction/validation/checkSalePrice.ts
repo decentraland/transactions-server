@@ -1,6 +1,10 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import { decodeFunctionData as viemDecodeFunctionData, Hex, parseAbi } from 'viem'
+import {
+  decodeFunctionData as viemDecodeFunctionData,
+  Hex,
+  parseAbi,
+} from 'viem'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,

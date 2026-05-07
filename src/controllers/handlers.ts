@@ -87,7 +87,8 @@ export async function sendTransaction(
       error instanceof BroadcastFailedError || error instanceof RelayerTimeout
     const isPreBroadcast =
       !isPostBroadcast &&
-      (error instanceof InvalidTransactionError || error instanceof RelayerError)
+      (error instanceof InvalidTransactionError ||
+        error instanceof RelayerError)
 
     if (reserved && isPreBroadcast) {
       try {
