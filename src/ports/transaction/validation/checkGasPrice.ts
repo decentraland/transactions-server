@@ -23,34 +23,37 @@ export const checkGasPrice: IGasPriceValidator = async (
     Feature.MAX_GAS_PRICE_ALLOWED_IN_WEI
   )
 
-  if (isGasPriceAllowedFFEnabled) {
-    const chainId = getMaticChainIdFromChainName(chainName)
+  if (!isGasPriceAllowedFFEnabled) {
+    return
+  }
 
-    if (
-      !(await isMethodAllowedToSkipMaxGasPriceCheck(
-        components,
-        transactionData,
-        chainId
-      ))
-    ) {
-      const maxGasPriceAllowed = await getMaxGasPriceAllowed(components)
+  const chainId = getMaticChainIdFromChainName(chainName)
 
-      const currentGasPrice = await getNetworkGasPrice(components, chainId)
+  if (
+    await isMethodAllowedToSkipMaxGasPriceCheck(
+      components,
+      transactionData,
+      chainId
+    )
+  ) {
+    return
+  }
 
-      if (!currentGasPrice) {
-        throw new Error(
-          `Could not get current gas price for the network: ${chainName}.`
-        )
-      }
+  const maxGasPriceAllowed = await getMaxGasPriceAllowed(components)
+  const currentGasPrice = await getNetworkGasPrice(components, chainId)
 
-      if (currentGasPrice > maxGasPriceAllowed) {
-        metrics.increment('dcl_error_high_gas_price')
-        throw new HighCongestionError(
-          currentGasPrice.toString(),
-          maxGasPriceAllowed.toString()
-        )
-      }
-    }
+  if (!currentGasPrice) {
+    throw new Error(
+      `Could not get current gas price for the network: ${chainName}.`
+    )
+  }
+
+  if (currentGasPrice > maxGasPriceAllowed) {
+    metrics.increment('dcl_error_high_gas_price')
+    throw new HighCongestionError(
+      currentGasPrice.toString(),
+      maxGasPriceAllowed.toString()
+    )
   }
 }
 

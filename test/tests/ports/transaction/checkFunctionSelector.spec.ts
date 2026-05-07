@@ -302,7 +302,9 @@ describe('when checking the function selector', () => {
         }
 
         expect(caught).toBeInstanceOf(SelfRelayUserAddressError)
-        const message = (caught as SelfRelayUserAddressError).message.toLowerCase()
+        const message = (
+          caught as SelfRelayUserAddressError
+        ).message.toLowerCase()
         expect(message).not.toContain('relayer')
         expect(message).not.toContain(RELAYER_EOA.toLowerCase())
       })
@@ -341,7 +343,6 @@ describe('when checking the function selector', () => {
         ).rejects.toThrow(SelfRelayUserAddressError)
       })
     })
-
   })
 
   describe('and the userAddress does not match any relayer EOA', () => {

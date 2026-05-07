@@ -5,6 +5,7 @@ import { AppComponents } from '../../types'
 import { sleep } from '../../logic/time'
 import {
   TransactionData,
+  BroadcastFailedError,
   InvalidTransactionError,
   RelayerError,
   RelayerTimeout,
@@ -258,7 +259,7 @@ export async function createOpenZeppelinComponent(
           metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
         }
 
-        throw new InvalidTransactionError(
+        throw new BroadcastFailedError(
           `Transaction ${data.status}: ${reason}`,
           ErrorCode.EXPECTATION_FAILED
         )

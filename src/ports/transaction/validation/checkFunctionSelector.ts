@@ -24,7 +24,7 @@ export const checkFunctionSelector: ITransactionValidator = async (
   let userAddress: string
   try {
     const decoded = decodeFunctionData({ abi: META_TX_ABI, data: data as Hex })
-    userAddress = decoded.args[0].toLowerCase()
+    userAddress = (decoded.args[0] as string).toLowerCase()
   } catch {
     metrics.increment('dcl_error_invalid_function_selector')
     throw new InvalidFunctionSelectorError(data.slice(0, 10).toLowerCase())

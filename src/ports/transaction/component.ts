@@ -1,6 +1,7 @@
 import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
 import { AppComponents } from '../../types'
+import { QuotaReachedError } from '../../types/transactions/errors'
 import { TransactionData } from '../../types/transactions/transactions'
 import {
   checkSchema,
@@ -26,7 +27,7 @@ export function createTransactionComponent(
     | 'relayer'
   >
 ): ITransactionComponent {
-  const { relayer, pg } = components
+  const { config, relayer, pg } = components
 
   async function sendMetaTransaction(
     transactionData: TransactionData
@@ -34,35 +35,95 @@ export function createTransactionComponent(
     return relayer.sendMetaTransaction(transactionData)
   }
 
-  async function insert(
-    row: Omit<TransactionRow, 'id' | 'created_at'>
+  async function reserveQuota(
+    userAddress: string,
+    sessionId: string
   ): Promise<void> {
-    await pg.query(
-      SQL`INSERT INTO transactions(tx_hash, user_address) VALUES (${row.tx_hash}, ${row.user_address})`
+    const maxTransactionsPerDay = await config.requireNumber(
+      'MAX_TRANSACTIONS_PER_DAY'
     )
+
+    const pool = pg.getPool()
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        userAddress,
+      ])
+
+      const countResult = await client.query<{ count: string }>(
+        `SELECT COUNT(*)::int AS count
+         FROM transactions
+         WHERE user_address = $1
+           AND created_at >= NOW() - INTERVAL '1 day'`,
+        [userAddress]
+      )
+      const count = Number(countResult.rows[0].count)
+
+      if (count >= maxTransactionsPerDay) {
+        await client.query('ROLLBACK')
+        throw new QuotaReachedError(userAddress, count)
+      }
+
+      await client.query(
+        `INSERT INTO transactions (user_address, session_id) VALUES ($1, $2)`,
+        [userAddress, sessionId]
+      )
+      await client.query('COMMIT')
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK')
+      } catch {
+        // ignore — preserve the original error
+      }
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  async function confirmReservation(
+    sessionId: string,
+    txHash: string
+  ): Promise<void> {
+    await pg.query(SQL`
+      UPDATE transactions SET tx_hash = ${txHash}, session_id = NULL
+      WHERE session_id = ${sessionId}
+    `)
+  }
+
+  async function releaseReservation(sessionId: string): Promise<void> {
+    await pg.query(SQL`
+      DELETE FROM transactions WHERE session_id = ${sessionId}
+    `)
   }
 
   async function getByUserAddress(
     userAddress: string
   ): Promise<IDatabase.IQueryResult<TransactionRow>> {
     return pg.query<TransactionRow>(
-      SQL`SELECT * FROM transactions WHERE user_address = ${userAddress}`
+      SQL`SELECT id, tx_hash, user_address, created_at
+          FROM transactions
+          WHERE user_address = ${userAddress}
+            AND tx_hash IS NOT NULL`
     )
   }
 
   async function checkData(transactionData: TransactionData): Promise<void> {
     await checkSchema(components, transactionData)
     await checkFunctionSelector(components, transactionData)
+    await checkContractAddress(components, transactionData)
+    await checkQuota(components, transactionData)
     await checkGasPrice(components, transactionData)
     await checkTransaction(components, transactionData)
     await checkSalePrice(components, transactionData)
-    await checkContractAddress(components, transactionData)
-    await checkQuota(components, transactionData)
   }
 
   return {
     sendMetaTransaction,
-    insert,
+    reserveQuota,
+    confirmReservation,
+    releaseReservation,
     getByUserAddress,
     checkData,
   }

@@ -10,6 +10,11 @@ export class InvalidTransactionError extends Error {
     this.code = _code || ErrorCode.INVALID_TRANSACTION
   }
 }
+export class BroadcastFailedError extends InvalidTransactionError {
+  constructor(message: string, _code?: ErrorCode) {
+    super(message, _code)
+  }
+}
 
 export class InvalidSalePriceError extends Error {
   public code = ErrorCode.SALE_PRICE_TOO_LOW

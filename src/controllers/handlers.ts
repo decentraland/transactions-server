@@ -1,7 +1,12 @@
+import { randomUUID } from 'crypto'
 import { ErrorCode } from 'decentraland-transactions'
 import { isErrorWithMessage } from '../logic/errors'
+import { extractMetaTxUserAddress } from '../ports/transaction/validation/extractMetaTxUserAddress'
 import {
+  BroadcastFailedError,
   InvalidTransactionError,
+  QuotaReachedError,
+  RelayerError,
   RelayerTimeout,
 } from '../types/transactions/errors'
 import { SendTransactionRequest } from '../ports/transaction/types'
@@ -44,21 +49,72 @@ export async function sendTransaction(
   const { transactionData } = sendTransactionRequest
   globalLogger.info(`Finish cloning the request for transaction ${id}}`)
 
+  const userAddress = extractMetaTxUserAddress(transactionData.params[1])
+  const sessionId = randomUUID()
+  let reserved = false
+
   try {
+    await transaction.reserveQuota(userAddress, sessionId)
+    reserved = true
+
     globalLogger.info(`Sending transaction ${JSON.stringify(transactionData)}`)
     const txHash = await transaction.sendMetaTransaction(transactionData)
 
-    await transaction.insert({
-      tx_hash: txHash,
-      user_address: transactionData.from.toLowerCase(),
-    })
+    await transaction.confirmReservation(sessionId, txHash)
 
     return {
       status: StatusCode.OK,
       body: { ok: true, txHash },
     }
   } catch (error) {
-    globalLogger.error(error as Error)
+    globalLogger.error('Failed to send transaction', {
+      transactionId: id,
+      userAddress,
+      sessionId,
+      error: isErrorWithMessage(error) ? error.message : 'Unknown error',
+    })
+
+    // Reservation lifecycle:
+    //  - QuotaReachedError: thrown by reserveQuota itself → no row exists,
+    //    nothing to release.
+    //  - InvalidTransactionError / RelayerError: pre-broadcast failure, the
+    //    upstream relayer never broadcast → release the slot.
+    //  - BroadcastFailedError / RelayerTimeout: post-broadcast or
+    //    indeterminate → keep the slot consumed.
+    // BroadcastFailedError extends InvalidTransactionError, so the
+    // BroadcastFailedError check must come first.
+    const isPostBroadcast =
+      error instanceof BroadcastFailedError || error instanceof RelayerTimeout
+    const isPreBroadcast =
+      !isPostBroadcast &&
+      (error instanceof InvalidTransactionError || error instanceof RelayerError)
+
+    if (reserved && isPreBroadcast) {
+      try {
+        await transaction.releaseReservation(sessionId)
+      } catch (releaseError) {
+        globalLogger.error('Failed to release reservation', {
+          transactionId: id,
+          userAddress,
+          sessionId,
+          error: isErrorWithMessage(releaseError)
+            ? releaseError.message
+            : 'Unknown error',
+        })
+      }
+    }
+
+    if (error instanceof QuotaReachedError) {
+      return {
+        status: StatusCode.TOO_MANY_REQUESTS,
+        body: {
+          ok: false,
+          message: error.message,
+          code: error.code,
+        },
+      }
+    }
+
     if (error instanceof InvalidTransactionError) {
       return {
         status: StatusCode.ERROR,
