@@ -6,7 +6,10 @@ import { TransactionData } from '../../../types/transactions/transactions'
  * It should throw when the data is invalid
  */
 export type ITransactionValidator = (
-  components: Pick<AppComponents, 'config' | 'pg' | 'contracts' | 'metrics'>,
+  components: Pick<
+    AppComponents,
+    'config' | 'pg' | 'contracts' | 'metrics' | 'relayer'
+  >,
   transactionData: TransactionData
 ) => Promise<void>
 

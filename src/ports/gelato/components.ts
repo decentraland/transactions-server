@@ -9,7 +9,7 @@ import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
 import {
   TransactionData,
-  InvalidTransactionError,
+  BroadcastFailedError,
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
@@ -69,7 +69,7 @@ export async function createGelatoComponent(
         metrics.increment('dcl_error_reverted_transactions', {
           relayer: RELAYER,
         })
-        throw new InvalidTransactionError(
+        throw new BroadcastFailedError(
           'Transaction reverted',
           ErrorCode.EXPECTATION_FAILED
         )
@@ -91,7 +91,7 @@ export async function createGelatoComponent(
           })
         }
 
-        throw new InvalidTransactionError(
+        throw new BroadcastFailedError(
           'Transaction cancelled',
           ErrorCode.EXPECTATION_FAILED
         )

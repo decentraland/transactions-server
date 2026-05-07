@@ -4,34 +4,40 @@ import {
   IPgComponent,
 } from '@well-known-components/pg-component'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
+import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import { checkQuota } from '../../../../src/ports/transaction/validation'
 import {
   QuotaReachedError,
   TransactionData,
 } from '../../../../src/types/transactions'
+import { approveMana } from '../../../mocks/transactionData'
 
-let from: string
+let userAddress: string
 let transactionData: TransactionData
-let requiredNumberMock: jest.Mock
+let requireNumberMock: jest.Mock
 let queryMock: jest.Mock
 let components: {
   config: IConfigComponent
   pg: IPgComponent
   contracts: IContractsComponent
   metrics: IMetricsComponent
+  relayer: IRelayRouterComponent
 }
 
 beforeEach(() => {
-  requiredNumberMock = jest.fn()
+  requireNumberMock = jest.fn()
   queryMock = jest.fn()
-  from = '0x9Ab8A53AA9695dAb57e62684aBA6978E5225ED0b'
-  transactionData = {
-    from,
-    params: ['', ''],
-  }
+
+  // Quota is keyed on the userAddress decoded from the meta-tx calldata, not
+  // on the JSON `from` field. We use the approveMana mock (a real,
+  // decodable executeMetaTransaction payload) so the helper can decode
+  // params[1].
+  userAddress = '0xf7b0e5d753747f102369cc6f8f33cc3feacf7c62'
+  transactionData = approveMana
+
   components = {
     config: {
-      requireNumber: requiredNumberMock,
+      requireNumber: requireNumberMock,
       requireString: jest.fn(),
       getString: jest.fn(),
       getNumber: jest.fn(),
@@ -51,44 +57,67 @@ beforeEach(() => {
       clearCache: jest.fn(),
     },
     metrics: {} as IMetricsComponent,
+    relayer: {
+      sendMetaTransaction: jest.fn(),
+      getNetworkGasPrice: jest.fn(),
+      resolveProvider: jest.fn(),
+      getRelayerAddresses: jest.fn().mockResolvedValue(new Set<string>()),
+    },
   }
 })
 
-describe('when checking the quota for a new address', () => {
-  beforeEach(() => {
-    const databaseResult = {
-      rows: [{ count: 1 }],
-    } as IDatabase.IQueryResult<{
-      count: number
-    }>
-    requiredNumberMock.mockResolvedValueOnce(100)
-    queryMock.mockResolvedValueOnce(databaseResult)
-  })
-
-  it('should not throw an error', async () => {
-    await expect(checkQuota(components, transactionData)).resolves.not.toThrow()
-  })
+afterEach(() => {
+  jest.resetAllMocks()
 })
 
-describe('when the quota limit is reached for a single day', () => {
-  const maxTransactionsPerDay = 2
+describe('when checking the quota for a user', () => {
+  describe('and the user is under the daily limit', () => {
+    beforeEach(() => {
+      const databaseResult = {
+        rows: [{ count: 1 }],
+      } as IDatabase.IQueryResult<{ count: number }>
+      requireNumberMock.mockResolvedValueOnce(100)
+      queryMock.mockResolvedValueOnce(databaseResult)
+    })
 
-  beforeEach(() => {
-    const databaseResult = {
-      rows: [{ count: maxTransactionsPerDay }],
-    } as IDatabase.IQueryResult<{
-      count: number
-    }>
+    it('should not throw an error', async () => {
+      await expect(
+        checkQuota(components, transactionData)
+      ).resolves.not.toThrow()
+    })
 
-    requiredNumberMock.mockResolvedValueOnce(maxTransactionsPerDay)
-    queryMock.mockResolvedValueOnce(databaseResult)
+    it('should issue a single SELECT COUNT keyed on the userAddress', async () => {
+      await checkQuota(components, transactionData)
+      expect(queryMock).toHaveBeenCalledTimes(1)
+      const call = queryMock.mock.calls[0][0]
+      expect(call.text).toContain('SELECT COUNT(*)')
+      expect(call.text).toContain('user_address')
+      expect(call.values).toEqual(expect.arrayContaining([userAddress]))
+    })
   })
 
-  it('should throw an error signaling that the quota was reached', async () => {
-    const error = new QuotaReachedError(from, maxTransactionsPerDay)
+  describe('and the user has reached the daily limit', () => {
+    const maxTransactionsPerDay = 2
 
-    await expect(checkQuota(components, transactionData)).rejects.toThrow(
-      error.message
-    )
+    beforeEach(() => {
+      const databaseResult = {
+        rows: [{ count: maxTransactionsPerDay }],
+      } as IDatabase.IQueryResult<{ count: number }>
+      requireNumberMock.mockResolvedValueOnce(maxTransactionsPerDay)
+      queryMock.mockResolvedValueOnce(databaseResult)
+    })
+
+    it('should throw a QuotaReachedError carrying the userAddress and current count', async () => {
+      const error = new QuotaReachedError(userAddress, maxTransactionsPerDay)
+      await expect(checkQuota(components, transactionData)).rejects.toThrow(
+        error.message
+      )
+    })
+
+    it('should reject with a QuotaReachedError instance', async () => {
+      await expect(
+        checkQuota(components, transactionData)
+      ).rejects.toBeInstanceOf(QuotaReachedError)
+    })
   })
 })

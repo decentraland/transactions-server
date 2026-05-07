@@ -1,7 +1,11 @@
 import SQL from 'sql-template-strings'
 import { QuotaReachedError } from '../../../types/transactions/errors'
+import { extractMetaTxUserAddress } from './extractMetaTxUserAddress'
 import { ITransactionValidator } from './types'
 
+// Read-only fast-fail. The authoritative gate is the handler's atomic
+// reserveQuota — this validator just rejects obviously-over-limit requests
+// before they consume RPC calls in checkGasPrice / checkTransaction.
 export const checkQuota: ITransactionValidator = async (
   components,
   transactionData
@@ -11,17 +15,18 @@ export const checkQuota: ITransactionValidator = async (
   const maxTransactionsPerDay = await config.requireNumber(
     'MAX_TRANSACTIONS_PER_DAY'
   )
-  const { from } = transactionData
 
-  const todayAddressTransactions = await pg.query<{ count: number }>(
-    SQL`SELECT COUNT (*) as count
-        FROM transactions
-        WHERE user_address = ${from}
-          AND created_at >= NOW()`
-  )
+  const userAddress = extractMetaTxUserAddress(transactionData.params[1])
 
-  const dbResult = todayAddressTransactions.rows[0]
-  if (dbResult.count >= maxTransactionsPerDay) {
-    throw new QuotaReachedError(from, dbResult.count)
+  const result = await pg.query<{ count: number }>(SQL`
+    SELECT COUNT(*)::int AS count
+    FROM transactions
+    WHERE user_address = ${userAddress}
+      AND created_at >= NOW() - INTERVAL '1 day'
+  `)
+
+  const count = Number(result.rows[0].count)
+  if (count >= maxTransactionsPerDay) {
+    throw new QuotaReachedError(userAddress, count)
   }
 }

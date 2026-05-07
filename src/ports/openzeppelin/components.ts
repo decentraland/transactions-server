@@ -1,9 +1,11 @@
 import { createPublicClient, http } from 'viem'
+import { IFetchComponent } from '@well-known-components/http-server'
 import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
 import { sleep } from '../../logic/time'
 import {
   TransactionData,
+  BroadcastFailedError,
   InvalidTransactionError,
   RelayerError,
   RelayerTimeout,
@@ -56,6 +58,13 @@ const FAILED_STATUSES: ReadonlySet<string> = new Set([
   OZTransactionStatus.Expired,
 ])
 
+type OZRelayerInfo = {
+  address: string
+}
+
+const RELAYERS_FETCH_TIMEOUT_MS = 5_000
+const DEFAULT_RELAYERS_FETCH_INTERVAL_MS = 60 * 60 * 1000
+
 const DEFAULT_MAX_STATUS_CHECKS = 150
 const DEFAULT_SLEEP_TIME_BETWEEN_CHECKS_MS = 800
 const CANCEL_REQUEST_TIMEOUT_MS = 5000
@@ -76,6 +85,35 @@ const getErrorMessage = (error: unknown): string =>
 
 const RELAYER: ProviderName = 'openzeppelin'
 
+async function fetchRelayerAddressesFromOZ(
+  fetcher: IFetchComponent,
+  relayerURL: string,
+  authHeaders: Record<string, string>
+): Promise<Set<string>> {
+  const response = await fetcher.fetch(`${relayerURL}/api/v1/relayers/`, {
+    headers: authHeaders,
+    timeout: RELAYERS_FETCH_TIMEOUT_MS,
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(
+      `OZ listRelayers responded with ${response.status}: ${body}`
+    )
+  }
+
+  const { data } = (await response.json()) as OZResponse<OZRelayerInfo[]>
+  if (!data) {
+    throw new Error('OZ listRelayers returned an empty payload')
+  }
+
+  return new Set(
+    data
+      .map((relayer) => relayer.address?.toLowerCase())
+      .filter((address): address is string => Boolean(address))
+  )
+}
+
 export async function createOpenZeppelinComponent(
   components: Pick<AppComponents, 'config' | 'logs' | 'metrics' | 'fetcher'>
 ): Promise<OpenZeppelinMetaTransactionComponent> {
@@ -94,6 +132,9 @@ export async function createOpenZeppelinComponent(
   const sleepTimeBetweenChecks =
     (await config.getNumber('OZ_SLEEP_TIME_BETWEEN_CHECKS_MS')) ??
     DEFAULT_SLEEP_TIME_BETWEEN_CHECKS_MS
+  const relayersFetchIntervalMs =
+    (await config.getNumber('OZ_RELAYERS_FETCH_INTERVAL_MS')) ??
+    DEFAULT_RELAYERS_FETCH_INTERVAL_MS
 
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -134,6 +175,45 @@ export async function createOpenZeppelinComponent(
       })
       metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
     }
+  }
+
+  let cachedRelayerAddresses: Set<string> = new Set()
+  let lastRelayersFetchAt = 0
+  // Single-flight guard: concurrent callers on a cache miss share one fetch
+  // instead of stampeding the OZ API. Cleared in the inner `finally` so the
+  // next caller after completion re-evaluates cache freshness.
+  let inFlightFetch: Promise<Set<string>> | null = null
+
+  const getRelayerAddresses = async (): Promise<Set<string>> => {
+    const isStale = Date.now() - lastRelayersFetchAt > relayersFetchIntervalMs
+    if (cachedRelayerAddresses.size > 0 && !isStale) {
+      return cachedRelayerAddresses
+    }
+    if (inFlightFetch) {
+      return inFlightFetch
+    }
+
+    inFlightFetch = (async () => {
+      try {
+        cachedRelayerAddresses = await fetchRelayerAddressesFromOZ(
+          fetcher,
+          relayerURL,
+          authHeaders
+        )
+        lastRelayersFetchAt = Date.now()
+        return cachedRelayerAddresses
+      } catch (error) {
+        logger.warn('Failed to refresh OZ relayer addresses', {
+          message: getErrorMessage(error),
+          cachedCount: cachedRelayerAddresses.size,
+        })
+        metrics.increment('dcl_error_relayer_addresses_refresh_failed')
+        return cachedRelayerAddresses
+      } finally {
+        inFlightFetch = null
+      }
+    })()
+    return inFlightFetch
   }
 
   /**
@@ -191,7 +271,7 @@ export async function createOpenZeppelinComponent(
           metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
         }
 
-        throw new InvalidTransactionError(
+        throw new BroadcastFailedError(
           `Transaction ${data.status}: ${reason}`,
           ErrorCode.EXPECTATION_FAILED
         )
@@ -295,5 +375,6 @@ export async function createOpenZeppelinComponent(
   return {
     getNetworkGasPrice,
     sendMetaTransaction,
+    getRelayerAddresses,
   }
 }

@@ -4,6 +4,7 @@ import {
   IPgComponent,
 } from '@well-known-components/pg-component'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
+import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import { checkTransaction } from '../../../../src/ports/transaction/validation/checkTransaction'
 
 const mockEstimateGas = jest.fn()
@@ -25,6 +26,7 @@ let components: {
   pg: IPgComponent
   contracts: IContractsComponent
   metrics: IMetricsComponent
+  relayer: IRelayRouterComponent
 }
 
 beforeEach(() => {
@@ -59,6 +61,12 @@ beforeEach(() => {
       clearCache: jest.fn(),
     },
     metrics: { increment: jest.fn() } as unknown as IMetricsComponent,
+    relayer: {
+      sendMetaTransaction: jest.fn(),
+      getNetworkGasPrice: jest.fn(),
+      resolveProvider: jest.fn(),
+      getRelayerAddresses: jest.fn().mockResolvedValue(new Set<string>()),
+    },
   }
 })
 

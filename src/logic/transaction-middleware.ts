@@ -2,10 +2,12 @@ import { IHttpServerComponent } from '@well-known-components/interfaces'
 import {
   HighCongestionError,
   InvalidContractAddressError,
+  InvalidFunctionSelectorError,
   InvalidSalePriceError,
   InvalidSchemaError,
   InvalidTransactionError,
   QuotaReachedError,
+  SelfRelayUserAddressError,
   SimulateTransactionError,
 } from '../types/transactions/errors'
 import { AppComponents, Context } from '../types'
@@ -117,6 +119,36 @@ export function createTransactionMiddleware(
           from,
 
           contractAddress: error.contractAddress,
+        })
+        return {
+          status: StatusCode.BAD_REQUEST,
+          body: {
+            ok: false,
+            message: error.message,
+            code: error.code,
+          },
+        }
+      }
+
+      if (error instanceof InvalidFunctionSelectorError) {
+        logger.warn('Transaction rejected due to invalid function selector', {
+          from,
+          selector: error.selector,
+        })
+        return {
+          status: StatusCode.BAD_REQUEST,
+          body: {
+            ok: false,
+            message: error.message,
+            code: error.code,
+          },
+        }
+      }
+
+      if (error instanceof SelfRelayUserAddressError) {
+        logger.warn('Transaction rejected due to self-relay user address', {
+          from,
+          userAddress: error.userAddress,
         })
         return {
           status: StatusCode.BAD_REQUEST,

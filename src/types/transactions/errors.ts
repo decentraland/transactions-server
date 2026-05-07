@@ -10,6 +10,11 @@ export class InvalidTransactionError extends Error {
     this.code = _code || ErrorCode.INVALID_TRANSACTION
   }
 }
+export class BroadcastFailedError extends InvalidTransactionError {
+  constructor(message: string, _code?: ErrorCode) {
+    super(message, _code)
+  }
+}
 
 export class InvalidSalePriceError extends Error {
   public code = ErrorCode.SALE_PRICE_TOO_LOW
@@ -36,6 +41,24 @@ export class InvalidContractAddressError extends Error {
 
   constructor(public contractAddress: string) {
     super(`Invalid contract address. Contract address: ${contractAddress}`)
+  }
+}
+
+export class InvalidFunctionSelectorError extends Error {
+  public code = ErrorCode.INVALID_TRANSACTION
+
+  constructor(public selector: string) {
+    super(
+      `Invalid function selector. Only executeMetaTransaction (0x0c53c51c or 0xd8ed1acc) is allowed. Received: ${selector}`
+    )
+  }
+}
+
+export class SelfRelayUserAddressError extends Error {
+  public code = ErrorCode.INVALID_TRANSACTION
+
+  constructor(public userAddress: string) {
+    super('Invalid transaction data.')
   }
 }
 

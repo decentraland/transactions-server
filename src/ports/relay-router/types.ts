@@ -9,4 +9,9 @@ export type ResolvedProvider = {
 
 export type IRelayRouterComponent = IMetaTransactionProviderComponent & {
   resolveProvider(): Promise<ResolvedProvider>
+  /**
+   * Aggregates broadcaster EOA addresses across all configured providers.
+   * Always returns a Set (possibly empty).
+   */
+  getRelayerAddresses(): Promise<Set<string>>
 }
