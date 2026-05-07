@@ -179,29 +179,41 @@ export async function createOpenZeppelinComponent(
 
   let cachedRelayerAddresses: Set<string> = new Set()
   let lastRelayersFetchAt = 0
+  // Single-flight guard: concurrent callers on a cache miss share one fetch
+  // instead of stampeding the OZ API. Cleared in the inner `finally` so the
+  // next caller after completion re-evaluates cache freshness.
+  let inFlightFetch: Promise<Set<string>> | null = null
 
   const getRelayerAddresses = async (): Promise<Set<string>> => {
     const isStale = Date.now() - lastRelayersFetchAt > relayersFetchIntervalMs
     if (cachedRelayerAddresses.size > 0 && !isStale) {
       return cachedRelayerAddresses
     }
-
-    try {
-      cachedRelayerAddresses = await fetchRelayerAddressesFromOZ(
-        fetcher,
-        relayerURL,
-        authHeaders
-      )
-      lastRelayersFetchAt = Date.now()
-      return cachedRelayerAddresses
-    } catch (error) {
-      logger.warn('Failed to refresh OZ relayer addresses', {
-        message: getErrorMessage(error),
-        cachedCount: cachedRelayerAddresses.size,
-      })
-      metrics.increment('dcl_error_relayer_addresses_refresh_failed')
-      return cachedRelayerAddresses
+    if (inFlightFetch) {
+      return inFlightFetch
     }
+
+    inFlightFetch = (async () => {
+      try {
+        cachedRelayerAddresses = await fetchRelayerAddressesFromOZ(
+          fetcher,
+          relayerURL,
+          authHeaders
+        )
+        lastRelayersFetchAt = Date.now()
+        return cachedRelayerAddresses
+      } catch (error) {
+        logger.warn('Failed to refresh OZ relayer addresses', {
+          message: getErrorMessage(error),
+          cachedCount: cachedRelayerAddresses.size,
+        })
+        metrics.increment('dcl_error_relayer_addresses_refresh_failed')
+        return cachedRelayerAddresses
+      } finally {
+        inFlightFetch = null
+      }
+    })()
+    return inFlightFetch
   }
 
   /**

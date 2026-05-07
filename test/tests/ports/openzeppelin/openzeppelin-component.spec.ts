@@ -193,10 +193,9 @@ describe('when sending a meta transaction', () => {
 
     it('should increment the sent transactions metric', async () => {
       await openzeppelin.sendMetaTransaction(transactionData)
-      expect(metrics.increment).toHaveBeenCalledWith(
-        'dcl_sent_transactions',
-        { relayer: 'openzeppelin' }
-      )
+      expect(metrics.increment).toHaveBeenCalledWith('dcl_sent_transactions', {
+        relayer: 'openzeppelin',
+      })
     })
 
     it('should call the relayer with to, data, speed, and a zero value', async () => {
@@ -575,10 +574,9 @@ describe('when sending a meta transaction', () => {
           promise.catch(() => undefined)
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
-          expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_timeout',
-            { relayer: 'openzeppelin' }
-          )
+          expect(metrics.increment).toHaveBeenCalledWith('dcl_error_timeout', {
+            relayer: 'openzeppelin',
+          })
         })
 
         it('should not increment the service errors metric for the cancel', async () => {
@@ -636,10 +634,9 @@ describe('when sending a meta transaction', () => {
           promise.catch(() => undefined)
           await jest.advanceTimersByTimeAsync(SLEEP_MS * MAX_CHECKS)
           await expect(promise).rejects.toThrow()
-          expect(metrics.increment).toHaveBeenCalledWith(
-            'dcl_error_timeout',
-            { relayer: 'openzeppelin' }
-          )
+          expect(metrics.increment).toHaveBeenCalledWith('dcl_error_timeout', {
+            relayer: 'openzeppelin',
+          })
         })
       })
 
@@ -833,6 +830,39 @@ describe('when fetching the relayer addresses', () => {
         )
         expect(fetchMock).toHaveBeenCalledTimes(2)
       })
+    })
+  })
+
+  describe('and getRelayerAddresses is called twice concurrently on a cold cache', () => {
+    let resolveFetch: (value: MockResponse) => void
+    let response: MockResponse
+
+    beforeEach(() => {
+      response = createResponse({
+        json: jest.fn().mockResolvedValueOnce({
+          success: true,
+          data: [{ address: '0xAAAA1111aaaa2222AAAA3333aaaa4444AAAA5555' }],
+          error: null,
+        }),
+      })
+      // Hold the fetcher in-flight so both callers race the same pending fetch.
+      fetchMock.mockImplementationOnce(
+        () =>
+          new Promise<MockResponse>((resolve) => {
+            resolveFetch = resolve
+          })
+      )
+    })
+
+    it('should invoke the fetcher exactly once and return the same set to both callers', async () => {
+      const first = openzeppelin.getRelayerAddresses()
+      const second = openzeppelin.getRelayerAddresses()
+      resolveFetch(response)
+      const [a, b] = await Promise.all([first, second])
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(a).toEqual(new Set(['0xaaaa1111aaaa2222aaaa3333aaaa4444aaaa5555']))
+      expect(b).toBe(a)
     })
   })
 

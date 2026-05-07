@@ -1,23 +1,14 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import {
-  decodeFunctionData as viemDecodeFunctionData,
-  Hex,
-  parseAbi,
-} from 'viem'
+import { decodeFunctionData as viemDecodeFunctionData, Hex } from 'viem'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
 import { InvalidSalePriceError } from '../../../types/transactions/errors'
 import { TransactionData } from '../../../types/transactions/transactions'
+import { META_TX_ABI } from './abis'
 import { ITransactionValidator } from './types'
-
-// Both executeMetaTransaction overloads place the inner call payload at args[1].
-const META_TX_ABI = parseAbi([
-  'function executeMetaTransaction(address userAddress, bytes functionSignature, bytes32 sigR, bytes32 sigS, uint8 sigV) returns (bytes)',
-  'function executeMetaTransaction(address userAddress, bytes functionData, bytes signature) returns (bytes)',
-])
 
 export const checkSalePrice: ITransactionValidator = async (
   components,
