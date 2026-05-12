@@ -55,11 +55,10 @@
     "@well-known-components/pg-component": "^0.2.1",
     "@well-known-components/thegraph-component": "^1.1.0",
     "@well-known-components/tracer-component": "^1.2.0",
-    "ajv": "8.12.0",
+    "ajv": "8.20.0",
     "decentraland-transactions": "^2.17.0",
     "node-fetch": "2.7.0",
     "sql-template-strings": "2.2.2",
-    "typescript": "5.3.3",
     "viem": "2.46.3"
   },
   "devDependencies": {
@@ -83,6 +82,7 @@
     "prettier": "3.8.3",
     "simple-git-hooks": "2.13.1",
     "ts-jest": "29.4.6",
-    "ts-node": "9.1.1"
+    "ts-node": "9.1.1",
+    "typescript": "5.3.3"
   }
 }
