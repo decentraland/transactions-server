@@ -41,6 +41,8 @@ Claude Code hooks (configured in `.claude/settings.json`, team-wide):
 
 ## Dependency bumps
 
+**Version pinning.** Per the [DCL dependency-management standard](https://docs.decentraland.org/contributor/contributor-guides/dependency-management), use **exact versions** for entries under `dependencies` and `devDependencies` (no `^`, no `~`). The exception is Decentraland-internal packages — `@dcl/*`, `decentraland-*`, and `@well-known-components/*` — which may keep `^` ranges so compatible patch/minor upgrades flow in automatically. When adding a new dependency, write the resolved version explicitly (`"pkg": "1.2.3"`, not `"^1.2.3"`).
+
 When changing entries under `dependencies` / `devDependencies`:
 
 1. Run `npm install` **once** to absorb the change.
