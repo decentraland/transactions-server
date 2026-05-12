@@ -23,7 +23,7 @@ RUN npm ci --only=production --ignore-scripts
 
 ########################## END OF BUILD STAGE ##########################
 
-FROM node:20-alpine
+FROM node:24-alpine
 
 RUN apk update
 RUN apk add --no-cache tini

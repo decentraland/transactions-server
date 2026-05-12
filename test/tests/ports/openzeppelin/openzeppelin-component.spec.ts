@@ -1,21 +1,21 @@
-import {
+import type { IFetchComponent } from '@well-known-components/http-server'
+import type {
   IConfigComponent,
   ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IFetchComponent } from '@well-known-components/http-server'
 import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
-import { metricDeclarations } from '../../../../src/metrics'
 import { createOpenZeppelinComponent } from '../../../../src/ports/openzeppelin'
-import { OpenZeppelinMetaTransactionComponent } from '../../../../src/ports/openzeppelin/types'
 import {
   InvalidTransactionError,
   RelayerError,
   RelayerTimeout,
-  TransactionData,
 } from '../../../../src/types/transactions'
 import { createCollection } from '../../../mocks/transactionData'
+import type { metricDeclarations } from '../../../../src/metrics'
+import type { OpenZeppelinMetaTransactionComponent } from '../../../../src/ports/openzeppelin/types'
+import type { TransactionData } from '../../../../src/types/transactions'
 
 const mockGetGasPrice = jest.fn()
 
@@ -37,7 +37,7 @@ const TX_DETAIL_ENDPOINT = `${TX_ENDPOINT}/${TX_ID}`
 const SLEEP_MS = 100
 const MAX_CHECKS = 5
 
-type MockResponse = {
+interface MockResponse {
   ok: boolean
   status: number
   json: jest.Mock
@@ -517,15 +517,17 @@ describe('when sending a meta transaction', () => {
       describe('and the cancel request succeeds', () => {
         beforeEach(() => {
           fetchMock.mockReset()
-          fetchMock.mockImplementation(async (_url: string, init: any) => {
-            if (init?.method === 'POST') {
-              return postResponse({ hash: null, status: 'pending' })
+          fetchMock.mockImplementation(
+            async (_url: string, init?: { method?: string }) => {
+              if (init?.method === 'POST') {
+                return postResponse({ hash: null, status: 'pending' })
+              }
+              if (init?.method === 'DELETE') {
+                return createResponse({ ok: true, status: 200 })
+              }
+              return pollResponse({ hash: null, status: 'pending' })
             }
-            if (init?.method === 'DELETE') {
-              return createResponse({ ok: true, status: 200 })
-            }
-            return pollResponse({ hash: null, status: 'pending' })
-          })
+          )
         })
 
         it('should issue a DELETE on the transaction detail endpoint with the bearer token', async () => {
@@ -594,19 +596,21 @@ describe('when sending a meta transaction', () => {
       describe('and the cancel request responds with a non-2xx status', () => {
         beforeEach(() => {
           fetchMock.mockReset()
-          fetchMock.mockImplementation(async (_url: string, init: any) => {
-            if (init?.method === 'POST') {
-              return postResponse({ hash: null, status: 'pending' })
+          fetchMock.mockImplementation(
+            async (_url: string, init?: { method?: string }) => {
+              if (init?.method === 'POST') {
+                return postResponse({ hash: null, status: 'pending' })
+              }
+              if (init?.method === 'DELETE') {
+                return createResponse({
+                  ok: false,
+                  status: 500,
+                  text: jest.fn().mockResolvedValueOnce('relayer unavailable'),
+                })
+              }
+              return pollResponse({ hash: null, status: 'pending' })
             }
-            if (init?.method === 'DELETE') {
-              return createResponse({
-                ok: false,
-                status: 500,
-                text: jest.fn().mockResolvedValueOnce('relayer unavailable'),
-              })
-            }
-            return pollResponse({ hash: null, status: 'pending' })
-          })
+          )
         })
 
         it('should still reject with a RelayerTimeout', async () => {
@@ -643,15 +647,17 @@ describe('when sending a meta transaction', () => {
       describe('and the cancel request throws', () => {
         beforeEach(() => {
           fetchMock.mockReset()
-          fetchMock.mockImplementation(async (_url: string, init: any) => {
-            if (init?.method === 'POST') {
-              return postResponse({ hash: null, status: 'pending' })
+          fetchMock.mockImplementation(
+            async (_url: string, init?: { method?: string }) => {
+              if (init?.method === 'POST') {
+                return postResponse({ hash: null, status: 'pending' })
+              }
+              if (init?.method === 'DELETE') {
+                throw new Error('connection reset')
+              }
+              return pollResponse({ hash: null, status: 'pending' })
             }
-            if (init?.method === 'DELETE') {
-              throw new Error('connection reset')
-            }
-            return pollResponse({ hash: null, status: 'pending' })
-          })
+          )
         })
 
         it('should still reject with a RelayerTimeout', async () => {

@@ -1,10 +1,11 @@
-import { decodeFunctionData, Hex } from 'viem'
+import { decodeFunctionData } from 'viem'
+import { META_TX_ABI } from './abis'
 import {
   InvalidFunctionSelectorError,
   SelfRelayUserAddressError,
 } from '../../../types/transactions/errors'
-import { META_TX_ABI } from './abis'
-import { ITransactionValidator } from './types'
+import type { ITransactionValidator } from './types'
+import type { Hex } from 'viem'
 
 export const checkFunctionSelector: ITransactionValidator = async (
   components,

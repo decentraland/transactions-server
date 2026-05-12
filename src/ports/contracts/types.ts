@@ -7,4 +7,6 @@ export interface IContractsComponent {
 }
 
 export type ContractsResponse = Record<string, string> // Record<ChainName, string>
-export type RemoteCollection = { id: string }
+export interface RemoteCollection {
+  id: string
+}

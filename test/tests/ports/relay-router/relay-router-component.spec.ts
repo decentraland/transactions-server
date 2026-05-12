@@ -1,14 +1,14 @@
-import { ILoggerComponent } from '@well-known-components/interfaces'
-import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 import { ApplicationName } from '@well-known-components/features-component'
+import type { ILoggerComponent } from '@well-known-components/interfaces'
 import { Feature } from '../../../../src/ports/features'
 import { createRelayRouterComponent } from '../../../../src/ports/relay-router'
-import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
-import {
+import { createCollection } from '../../../mocks/transactionData'
+import type { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import type {
   IMetaTransactionProviderComponent,
   TransactionData,
 } from '../../../../src/types/transactions/transactions'
-import { createCollection } from '../../../mocks/transactionData'
+import type { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 
 let logs: ILoggerComponent
 let features: IFeaturesComponent

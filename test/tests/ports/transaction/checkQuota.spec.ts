@@ -1,16 +1,17 @@
-import { IConfigComponent, IDatabase } from '@well-known-components/interfaces'
-import {
+import type {
+  IConfigComponent,
+  IDatabase,
+} from '@well-known-components/interfaces'
+import type {
   IMetricsComponent,
   IPgComponent,
 } from '@well-known-components/pg-component'
-import { IContractsComponent } from '../../../../src/ports/contracts/types'
-import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import { checkQuota } from '../../../../src/ports/transaction/validation'
-import {
-  QuotaReachedError,
-  TransactionData,
-} from '../../../../src/types/transactions'
+import { QuotaReachedError } from '../../../../src/types/transactions'
 import { approveMana } from '../../../mocks/transactionData'
+import type { IContractsComponent } from '../../../../src/ports/contracts/types'
+import type { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import type { TransactionData } from '../../../../src/types/transactions'
 
 let userAddress: string
 let transactionData: TransactionData

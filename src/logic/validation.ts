@@ -1,5 +1,6 @@
-import Ajv, { ValidateFunction } from 'ajv'
-import { Schema } from '../types/validation'
+import Ajv from 'ajv'
+import type { Schema } from '../types/validation'
+import type { ValidateFunction } from 'ajv'
 
 const ajv = new Ajv()
 

@@ -1,6 +1,7 @@
-import { IHttpServerComponent } from '@well-known-components/interfaces'
+import type { IHttpServerComponent } from '@well-known-components/interfaces'
 import { ErrorCode } from 'decentraland-transactions'
 import { createTransactionMiddleware } from '../../../src/logic/transaction-middleware'
+import { StatusCode } from '../../../src/types/HTTPResponse'
 import {
   HighCongestionError,
   InvalidContractAddressError,
@@ -11,8 +12,7 @@ import {
   QuotaReachedError,
   SimulateTransactionError,
 } from '../../../src/types/transactions/errors'
-import { StatusCode } from '../../../src/types/HTTPResponse'
-import { AppComponents } from '../../../src/types'
+import type { AppComponents } from '../../../src/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let middleware: IHttpServerComponent.IRequestHandler<any>

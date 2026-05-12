@@ -1,15 +1,15 @@
-import { ChainId, ChainName } from '@dcl/schemas'
-import { ContractName, getContract } from 'decentraland-transactions'
 import { ApplicationName } from '@well-known-components/features-component'
+import type { ChainId, ChainName } from '@dcl/schemas'
+import { ContractName, getContract } from 'decentraland-transactions'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
-import { AppComponents } from '../../../types'
-import { Feature } from '../../features'
 import { HighCongestionError } from '../../../types/transactions/errors'
-import { IGasPriceValidator } from './types'
-import { TransactionData } from '../../../types/transactions/transactions'
+import { Feature } from '../../features'
+import type { IGasPriceValidator } from './types'
+import type { AppComponents } from '../../../types'
+import type { TransactionData } from '../../../types/transactions/transactions'
 
 export const checkGasPrice: IGasPriceValidator = async (
   components,
@@ -161,7 +161,7 @@ const isMethodAllowedToSkipMaxGasPriceCheck = async (
           contract.toLowerCase() === store.address.toLowerCase()
       )
     }
-  } catch (error) {
+  } catch (_error) {
     // When the decode fails, we just return false
   }
 

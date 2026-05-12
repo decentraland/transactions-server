@@ -1,6 +1,6 @@
-import { IDatabase } from '@well-known-components/interfaces'
-import { Schema } from '../../types/validation'
-import { TransactionData } from '../../types/transactions/transactions'
+import type { IDatabase } from '@well-known-components/interfaces'
+import type { TransactionData } from '../../types/transactions/transactions'
+import type { Schema } from '../../types/validation'
 
 export interface ITransactionComponent {
   /**
@@ -57,11 +57,11 @@ export interface ITransactionComponent {
   checkData(transactionData: TransactionData): Promise<void>
 }
 
-export type SendTransactionRequest = {
+export interface SendTransactionRequest {
   transactionData: TransactionData
 }
 
-export type TransactionRow = {
+export interface TransactionRow {
   id: number
   tx_hash: string
   user_address: string

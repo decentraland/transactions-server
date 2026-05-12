@@ -1,6 +1,6 @@
-import { ValidateFunction } from 'ajv'
 import { ErrorCode } from 'decentraland-transactions'
-import { TransactionData } from './transactions'
+import type { TransactionData } from './transactions'
+import type { ValidateFunction } from 'ajv'
 
 export class InvalidTransactionError extends Error {
   public code: ErrorCode
@@ -19,7 +19,10 @@ export class BroadcastFailedError extends InvalidTransactionError {
 export class InvalidSalePriceError extends Error {
   public code = ErrorCode.SALE_PRICE_TOO_LOW
 
-  constructor(public minPrice: string, public salePrice: string) {
+  constructor(
+    public minPrice: string,
+    public salePrice: string
+  ) {
     super(
       `The transaction data contains a sale price that's lower than the allowed minimum. Sale price: ${salePrice} - Minimum price: ${minPrice}`
     )
@@ -65,7 +68,10 @@ export class SelfRelayUserAddressError extends Error {
 export class QuotaReachedError extends Error {
   public code = ErrorCode.QUOTA_REACHED
 
-  constructor(public from: string, public currentQuota: number) {
+  constructor(
+    public from: string,
+    public currentQuota: number
+  ) {
     super(
       `Max amount of transactions reached for address. Quota: ${currentQuota}`
     )
@@ -86,7 +92,10 @@ export class HighCongestionError extends Error {
 }
 
 export class RelayerError extends Error {
-  constructor(public statusCode: number, public message: string) {
+  constructor(
+    public statusCode: number,
+    public message: string
+  ) {
     super(`The relayer responded with a ${statusCode} status code: ${message}`)
   }
 }

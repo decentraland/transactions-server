@@ -1,7 +1,7 @@
 import { generateValidator } from '../../../logic/validation'
 import { InvalidSchemaError } from '../../../types/transactions/errors'
 import { transactionSchema } from '../types'
-import { ITransactionValidator } from './types'
+import type { ITransactionValidator } from './types'
 
 const validateSchema = generateValidator(transactionSchema)
 

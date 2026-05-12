@@ -1,7 +1,7 @@
 import SQL from 'sql-template-strings'
-import { QuotaReachedError } from '../../../types/transactions/errors'
 import { extractMetaTxUserAddress } from './extractMetaTxUserAddress'
-import { ITransactionValidator } from './types'
+import { QuotaReachedError } from '../../../types/transactions/errors'
+import type { ITransactionValidator } from './types'
 
 // Read-only fast-fail. The authoritative gate is the handler's atomic
 // reserveQuota — this validator just rejects obviously-over-limit requests

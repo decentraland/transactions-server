@@ -1,5 +1,6 @@
-import { decodeFunctionData, Hex } from 'viem'
+import { decodeFunctionData } from 'viem'
 import { META_TX_ABI } from './abis'
+import type { Hex } from 'viem'
 
 /**
  * Decodes params[1] as one of the executeMetaTransaction overloads and

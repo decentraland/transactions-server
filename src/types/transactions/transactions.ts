@@ -1,4 +1,4 @@
-import { ChainId } from '@dcl/schemas'
+import type { ChainId } from '@dcl/schemas'
 
 export interface IMetaTransactionProviderComponent {
   sendMetaTransaction(transactionData: TransactionData): Promise<string>
@@ -11,7 +11,7 @@ export interface IMetaTransactionProviderComponent {
   getRelayerAddresses?(): Promise<Set<string>>
 }
 
-export type TransactionData = {
+export interface TransactionData {
   from: string
   params: [string, string] // manaAddress, txData
 }

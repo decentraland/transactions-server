@@ -1,18 +1,18 @@
-import { IFetchComponent } from '@well-known-components/http-server'
-import {
+import type { IFetchComponent } from '@well-known-components/http-server'
+import type {
   IConfigComponent,
   ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IPgComponent } from '@well-known-components/pg-component'
-import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
-import { metricDeclarations } from '../../../../src/metrics'
-import { IContractsComponent } from '../../../../src/ports/contracts/types'
+import type { IPgComponent } from '@well-known-components/pg-component'
 import { createTransactionComponent } from '../../../../src/ports/transaction/component'
-import { ITransactionComponent } from '../../../../src/ports/transaction/types'
-import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import { QuotaReachedError } from '../../../../src/types/transactions/errors'
-import { TransactionData } from '../../../../src/types/transactions/transactions'
+import type { metricDeclarations } from '../../../../src/metrics'
+import type { IContractsComponent } from '../../../../src/ports/contracts/types'
+import type { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import type { ITransactionComponent } from '../../../../src/ports/transaction/types'
+import type { TransactionData } from '../../../../src/types/transactions/transactions'
+import type { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 
 let transaction: ITransactionComponent
 let fetcher: IFetchComponent
@@ -176,9 +176,10 @@ describe('when reserving a quota slot', () => {
         String(call[0]).startsWith('INSERT')
       )
       expect(insertCall).toBeDefined()
-      expect(String(insertCall![0])).toContain('(user_address, session_id)')
-      expect(String(insertCall![0])).not.toContain('tx_hash')
-      expect(insertCall![1]).toEqual([userAddress, sessionId])
+      if (!insertCall) throw new Error('INSERT call not found')
+      expect(String(insertCall[0])).toContain('(user_address, session_id)')
+      expect(String(insertCall[0])).not.toContain('tx_hash')
+      expect(insertCall[1]).toEqual([userAddress, sessionId])
     })
 
     it('should COMMIT the reserve transaction', async () => {

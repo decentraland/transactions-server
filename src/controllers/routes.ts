@@ -1,14 +1,16 @@
 import { Router } from '@well-known-components/http-server'
-import { createTransactionMiddleware } from '../logic/transaction-middleware'
-import { GlobalContext } from '../types'
 import {
+  contractsAddress,
   getUserTransactions,
   sendTransaction,
-  contractsAddress,
 } from './handlers'
+import { createTransactionMiddleware } from '../logic/transaction-middleware'
+import type { GlobalContext } from '../types'
 
 // We return the entire router because it will be easier to test than a whole server
-export async function setupRoutes(globalContext: GlobalContext) {
+export async function setupRoutes(
+  globalContext: GlobalContext
+): Promise<Router<GlobalContext>> {
   const { components } = globalContext
   const { config } = components
 

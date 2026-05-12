@@ -1,21 +1,23 @@
 import {
+  InsufficientBalanceRpcError,
+  TransactionRejectedError,
+  TransactionRevertedError,
+} from '@gelatocloud/gasless'
+import type {
   IConfigComponent,
   ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { metricDeclarations } from '@well-known-components/thegraph-component'
+import type { metricDeclarations } from '@well-known-components/thegraph-component'
 import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
-import {
-  TransactionRejectedError,
-  TransactionRevertedError,
-  InsufficientBalanceRpcError,
-} from '@gelatocloud/gasless'
 import { createGelatoComponent } from '../../../../src/ports/gelato'
 import {
-  IMetaTransactionProviderComponent,
   InvalidTransactionError,
   RelayerError,
+} from '../../../../src/types/transactions'
+import type {
+  IMetaTransactionProviderComponent,
   TransactionData,
 } from '../../../../src/types/transactions'
 
@@ -167,6 +169,7 @@ describe('when sending a meta transaction', () => {
             errorMessage: 'execution reverted',
             receipt: {
               transactionHash: 'aTransactionHash',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock receipt; full TransactionReceipt shape from gelato-relay-sdk has many irrelevant fields
             } as any,
           })
         )
@@ -271,18 +274,15 @@ describe('when sending a meta transaction', () => {
         await expect(
           gelato.sendMetaTransaction(transactionData)
         ).rejects.toThrow()
-        expect(metrics.increment).toHaveBeenCalledWith(
-          'dcl_error_timeout',
-          { relayer: 'gelato' }
-        )
+        expect(metrics.increment).toHaveBeenCalledWith('dcl_error_timeout', {
+          relayer: 'gelato',
+        })
       })
     })
 
     describe('and waiting for receipt fails with an unknown error', () => {
       beforeEach(() => {
-        mockWaitForReceipt.mockRejectedValueOnce(
-          new Error('Unknown error')
-        )
+        mockWaitForReceipt.mockRejectedValueOnce(new Error('Unknown error'))
       })
 
       it('should reject with a relayer error', () => {
@@ -329,6 +329,7 @@ describe('when sending a meta transaction', () => {
 
   describe('and the send transaction fails due to insufficient balance', () => {
     beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock viem error cause; only `code` and `message` matter for the InsufficientBalanceRpcError ctor
       const cause = { code: 4205, message: 'Insufficient balance' } as any
       mockSendTransaction.mockRejectedValueOnce(
         new InsufficientBalanceRpcError(cause)
@@ -358,9 +359,7 @@ describe('when getting the network gas price', () => {
     })
 
     it('should resolve to a bigint representing the network gas price in wei', () => {
-      return expect(gelato.getNetworkGasPrice(chainId)).resolves.toEqual(
-        20n
-      )
+      return expect(gelato.getNetworkGasPrice(chainId)).resolves.toEqual(20n)
     })
   })
 
@@ -374,4 +373,3 @@ describe('when getting the network gas price', () => {
     })
   })
 })
-

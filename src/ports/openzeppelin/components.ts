@@ -1,20 +1,21 @@
 import { createPublicClient, http } from 'viem'
-import { IFetchComponent } from '@well-known-components/http-server'
+import type { IFetchComponent } from '@well-known-components/http-server'
 import { ErrorCode } from 'decentraland-transactions'
-import { AppComponents } from '../../types'
 import { sleep } from '../../logic/time'
 import {
-  TransactionData,
   BroadcastFailedError,
   InvalidTransactionError,
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
-import { ProviderName } from '../relay-router/types'
-import { OpenZeppelinMetaTransactionComponent } from './types'
+import type { OpenZeppelinMetaTransactionComponent } from './types'
+import type { AppComponents } from '../../types'
+import type { TransactionData } from '../../types/transactions'
+import type { ProviderName } from '../relay-router/types'
+import type { Response as FetchResponse } from 'node-fetch'
 
 // All OZ Relayer responses are wrapped in { success, data, error }
-type OZResponse<T> = {
+interface OZResponse<T> {
   success: boolean
   data: T | null
   error: string | null
@@ -33,7 +34,7 @@ export enum OZTransactionStatus {
   Expired = 'expired',
 }
 
-type OZTransactionData = {
+interface OZTransactionData {
   id: string
   hash: string | null
   status: string
@@ -58,7 +59,7 @@ const FAILED_STATUSES: ReadonlySet<string> = new Set([
   OZTransactionStatus.Expired,
 ])
 
-type OZRelayerInfo = {
+interface OZRelayerInfo {
   address: string
 }
 
@@ -234,7 +235,7 @@ export async function createOpenZeppelinComponent(
     for (let checks = 0; checks < maxStatusChecks; checks++) {
       await sleep(sleepTimeBetweenChecks)
 
-      let response: any
+      let response: FetchResponse
       try {
         response = await fetcher.fetch(url, { headers: authHeaders })
       } catch (error: unknown) {
@@ -298,7 +299,7 @@ export async function createOpenZeppelinComponent(
     const to = transactionData.params[0]
     const data = transactionData.params[1]
 
-    let response: any
+    let response: FetchResponse
     try {
       response = await fetcher.fetch(
         `${relayerURL}/api/v1/relayers/${relayerId}/transactions`,
@@ -366,7 +367,7 @@ export async function createOpenZeppelinComponent(
     try {
       const client = createPublicClient({ transport: http(rpcURL) })
       return await client.getGasPrice()
-    } catch (error) {
+    } catch (_error) {
       logger.error('OpenZeppelin failed to get the network gas price')
       return null
     }

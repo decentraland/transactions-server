@@ -1,14 +1,15 @@
-import { ChainId, ChainName } from '@dcl/schemas'
+import { decodeFunctionData as viemDecodeFunctionData } from 'viem'
+import type { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import { decodeFunctionData as viemDecodeFunctionData, Hex } from 'viem'
+import { META_TX_ABI } from './abis'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,
 } from '../../../logic/ethereum'
 import { InvalidSalePriceError } from '../../../types/transactions/errors'
-import { TransactionData } from '../../../types/transactions/transactions'
-import { META_TX_ABI } from './abis'
-import { ITransactionValidator } from './types'
+import type { ITransactionValidator } from './types'
+import type { TransactionData } from '../../../types/transactions/transactions'
+import type { Hex } from 'viem'
 
 export const checkSalePrice: ITransactionValidator = async (
   components,

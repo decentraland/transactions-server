@@ -1,14 +1,15 @@
-import { encodeFunctionData, Hex, parseAbi } from 'viem'
-import { IMetricsComponent } from '@well-known-components/interfaces'
-import { metricDeclarations } from '../../../../src/metrics'
+import { encodeFunctionData, parseAbi } from 'viem'
+import type { IMetricsComponent } from '@well-known-components/interfaces'
 import { checkFunctionSelector } from '../../../../src/ports/transaction/validation/checkFunctionSelector'
-import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import {
   InvalidFunctionSelectorError,
   SelfRelayUserAddressError,
 } from '../../../../src/types/transactions/errors'
-import { TransactionData } from '../../../../src/types/transactions/transactions'
 import TransactionDataMock from '../../../mocks/transactionData'
+import type { metricDeclarations } from '../../../../src/metrics'
+import type { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import type { TransactionData } from '../../../../src/types/transactions/transactions'
+import type { Hex } from 'viem'
 
 const META_TX_ABI = parseAbi([
   'function executeMetaTransaction(address userAddress, bytes functionSignature, bytes32 sigR, bytes32 sigS, uint8 sigV) returns (bytes)',
@@ -407,7 +408,7 @@ describe('when the selector matches a known drain attack', () => {
   const SOME_AMOUNT =
     '00000000000000000000000000000000000000000000003635c9adc5dea00000' // 1000 ether
 
-  type Scenario = {
+  interface Scenario {
     label: string
     selector: string
     data: string
