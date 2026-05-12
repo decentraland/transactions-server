@@ -1,11 +1,12 @@
-import { IConfigComponent } from '@well-known-components/interfaces'
-import {
+import type { IConfigComponent } from '@well-known-components/interfaces'
+import type {
   IMetricsComponent,
   IPgComponent,
 } from '@well-known-components/pg-component'
-import { IContractsComponent } from '../../../../src/ports/contracts/types'
-import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import { checkTransaction } from '../../../../src/ports/transaction/validation/checkTransaction'
+import type { IContractsComponent } from '../../../../src/ports/contracts/types'
+import type { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import type { TransactionData } from '../../../../src/types/transactions'
 
 const mockEstimateGas = jest.fn()
 
@@ -19,7 +20,7 @@ jest.mock('viem', () => {
   }
 })
 
-let transactionData: any
+let transactionData: TransactionData
 let config: IConfigComponent
 let components: {
   config: IConfigComponent
@@ -94,9 +95,7 @@ describe('checkTransaction', () => {
         from: '0xonvalidAddress',
         params: ['a', 'b'],
       }
-      mockEstimateGas.mockRejectedValue(
-        new Error('Malformed transaction')
-      )
+      mockEstimateGas.mockRejectedValue(new Error('Malformed transaction'))
     })
 
     it('should throw an error', async () => {

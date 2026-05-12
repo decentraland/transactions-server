@@ -1,5 +1,5 @@
-import { AppComponents } from '../../../types'
-import { TransactionData } from '../../../types/transactions/transactions'
+import type { AppComponents } from '../../../types'
+import type { TransactionData } from '../../../types/transactions/transactions'
 
 /**
  * Checks for the validity of the transaction data.

@@ -1,27 +1,27 @@
-import { IFetchComponent } from '@well-known-components/http-server'
-import { ISubgraphComponent } from '@well-known-components/thegraph-component'
+import type { IFeaturesComponent } from '@well-known-components/features-component'
+import type { IFetchComponent } from '@well-known-components/http-server'
 import type {
-  IConfigComponent,
-  ILoggerComponent,
-  IHttpServerComponent,
   IBaseComponent,
+  IConfigComponent,
+  IHttpServerComponent,
+  ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IFeaturesComponent } from '@well-known-components/features-component'
-import { IPgComponent } from '@well-known-components/pg-component'
-import { metricDeclarations } from './metrics'
-import { ITestFetchComponent } from './ports/fetcher'
-import { IContractsComponent } from './ports/contracts/types'
-import { ITransactionComponent } from './ports/transaction/types'
-import { GelatoMetaTransactionComponent } from './ports/gelato'
-import { OpenZeppelinMetaTransactionComponent } from './ports/openzeppelin'
-import { IRelayRouterComponent } from './ports/relay-router/types'
+import type { IPgComponent } from '@well-known-components/pg-component'
+import type { ISubgraphComponent } from '@well-known-components/thegraph-component'
+import type { metricDeclarations } from './metrics'
+import type { IContractsComponent } from './ports/contracts/types'
+import type { ITestFetchComponent } from './ports/fetcher'
+import type { GelatoMetaTransactionComponent } from './ports/gelato'
+import type { OpenZeppelinMetaTransactionComponent } from './ports/openzeppelin'
+import type { IRelayRouterComponent } from './ports/relay-router/types'
+import type { ITransactionComponent } from './ports/transaction/types'
 
-export type GlobalContext = {
+export interface GlobalContext {
   components: AppComponents
 }
 
-export type BaseComponents = {
+export interface BaseComponents {
   config: IConfigComponent
   logs: ILoggerComponent
   globalLogger: ILoggerComponent.ILogger
@@ -49,7 +49,8 @@ export type AppComponents = BaseComponents
 
 export type HandlerContextWithPath<
   ComponentNames extends keyof AppComponents,
-  Path extends string = any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- default Path widened to any to match how callers conventionally specify untyped paths in @well-known-components handlers
+  Path extends string = any,
 > = IHttpServerComponent.PathAwareContext<
   IHttpServerComponent.DefaultContext<{
     components: Pick<AppComponents, ComponentNames>
@@ -57,5 +58,6 @@ export type HandlerContextWithPath<
   Path
 >
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see HandlerContextWithPath above
 export type Context<Path extends string = any> =
   IHttpServerComponent.PathAwareContext<GlobalContext, Path>

@@ -1,4 +1,5 @@
-import { IHttpServerComponent } from '@well-known-components/interfaces'
+import type { IHttpServerComponent } from '@well-known-components/interfaces'
+import { StatusCode } from '../types/HTTPResponse'
 import {
   HighCongestionError,
   InvalidContractAddressError,
@@ -10,8 +11,8 @@ import {
   SelfRelayUserAddressError,
   SimulateTransactionError,
 } from '../types/transactions/errors'
-import { AppComponents, Context } from '../types'
-import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
+import type { AppComponents, Context } from '../types'
+import type { HTTPResponse } from '../types/HTTPResponse'
 
 export function createTransactionMiddleware(
   components: Pick<AppComponents, 'logs' | 'transaction'>

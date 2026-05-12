@@ -1,13 +1,12 @@
+import { getNetworkMapping } from '@dcl/schemas/dist/dapps/chain-id'
 import {
   decodeFunctionData as viemDecodeFunctionData,
   encodeFunctionData as viemEncodeFunctionData,
-  Abi,
-  AbiFunction,
-  Hex,
 } from 'viem'
-import { ChainName, ChainId, getChainId } from '@dcl/schemas'
-import { ContractData } from 'decentraland-transactions'
-import { getNetworkMapping } from '@dcl/schemas/dist/dapps/chain-id'
+import type { ChainId, ChainName } from '@dcl/schemas'
+import { getChainId } from '@dcl/schemas'
+import type { ContractData } from 'decentraland-transactions'
+import type { Abi, AbiFunction, Hex } from 'viem'
 
 export function getMaticChainIdFromChainName(chainName: ChainName): ChainId {
   const chainId = getChainId(chainName)
@@ -30,6 +29,7 @@ export function decodeFunctionData(
   abi: ContractData['abi'],
   methodName: string,
   data: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mimics ethers.js Result shape (array with named string properties); callers rely on this dual indexing
 ): any[] & Record<string, any> {
   const viemAbi = abi as Abi
   const { args } = viemDecodeFunctionData({
@@ -52,6 +52,7 @@ export function decodeFunctionData(
 
   // Build a result array with named properties (like ethers' Result)
   const decodedArgs = args as readonly unknown[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mimics ethers.js Result shape; see exported function signature above
   const result: any[] & Record<string, any> = [...decodedArgs] as any
   abiFunction.inputs.forEach((input, i) => {
     if (input.name) {

@@ -1,9 +1,11 @@
-import { Lifecycle as _ } from '@well-known-components/interfaces'
+import type { Lifecycle as _ } from '@well-known-components/interfaces'
 import { setupRoutes } from './controllers/routes'
-import { AppComponents, GlobalContext } from './types'
+import type { AppComponents, GlobalContext } from './types'
 
 // this function wires the business logic (adapters & controllers) with the components (ports)
-export async function main(program: _.EntryPointParameters<AppComponents>) {
+export async function main(
+  program: _.EntryPointParameters<AppComponents>
+): Promise<void> {
   const { components, startComponents } = program
   const globalContext: GlobalContext = {
     components,

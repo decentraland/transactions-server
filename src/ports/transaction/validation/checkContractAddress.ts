@@ -1,5 +1,5 @@
 import { InvalidContractAddressError } from '../../../types/transactions/errors'
-import { ITransactionValidator } from './types'
+import type { ITransactionValidator } from './types'
 
 export const checkContractAddress: ITransactionValidator = async (
   components,

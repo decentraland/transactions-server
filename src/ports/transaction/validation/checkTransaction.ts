@@ -1,7 +1,7 @@
 import { createPublicClient, http } from 'viem'
 import { isErrorWithMessage } from '../../../logic/errors'
 import { SimulateTransactionError } from '../../../types/transactions/errors'
-import { ITransactionValidator } from './types'
+import type { ITransactionValidator } from './types'
 
 export const checkTransaction: ITransactionValidator = async (
   components,

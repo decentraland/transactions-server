@@ -1,12 +1,16 @@
 import { ApplicationName } from '@well-known-components/features-component'
-import { ChainId } from '@dcl/schemas'
-import { AppComponents } from '../../types'
-import {
+import type { ChainId } from '@dcl/schemas'
+import { Feature } from '../features'
+import type {
+  IRelayRouterComponent,
+  ProviderName,
+  ResolvedProvider,
+} from './types'
+import type { AppComponents } from '../../types'
+import type {
   IMetaTransactionProviderComponent,
   TransactionData,
 } from '../../types/transactions/transactions'
-import { Feature } from '../features'
-import { IRelayRouterComponent, ProviderName, ResolvedProvider } from './types'
 
 // Routes each transaction based on the 'relay-provider' feature flag variant.
 // Accepted variant payload.value:
@@ -50,7 +54,10 @@ export function createRelayRouterComponent(
 
     if (desired && desired !== 'random' && available[desired as ProviderName]) {
       const name = desired as ProviderName
-      return { name, provider: available[name]! }
+      const provider = available[name]
+      if (provider) {
+        return { name, provider }
+      }
     }
 
     if (
@@ -65,7 +72,11 @@ export function createRelayRouterComponent(
 
     const name =
       availableNames[Math.floor(Math.random() * availableNames.length)]
-    return { name, provider: available[name]! }
+    const provider = available[name]
+    if (!provider) {
+      throw new Error(`relay-router: provider "${name}" unexpectedly missing`)
+    }
+    return { name, provider }
   }
 
   const sendMetaTransaction = async (tx: TransactionData): Promise<string> => {

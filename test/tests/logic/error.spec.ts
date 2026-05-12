@@ -1,7 +1,7 @@
 import { isErrorWithMessage } from '../../../src/logic/errors'
 
 describe("when checking a value to see if it's an error with message", () => {
-  let error: any
+  let error: unknown
 
   describe('and the value is an Error', () => {
     beforeEach(() => {

@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { ErrorCode } from 'decentraland-transactions'
 import { isErrorWithMessage } from '../logic/errors'
 import { extractMetaTxUserAddress } from '../ports/transaction/validation/extractMetaTxUserAddress'
+import { StatusCode } from '../types/HTTPResponse'
 import {
   BroadcastFailedError,
   InvalidTransactionError,
@@ -9,9 +10,9 @@ import {
   RelayerError,
   RelayerTimeout,
 } from '../types/transactions/errors'
-import { SendTransactionRequest } from '../ports/transaction/types'
-import { HandlerContextWithPath } from '../types'
-import { HTTPResponse, StatusCode } from '../types/HTTPResponse'
+import type { SendTransactionRequest } from '../ports/transaction/types'
+import type { HandlerContextWithPath } from '../types'
+import type { HTTPResponse } from '../types/HTTPResponse'
 
 export async function getUserTransactions(
   context: HandlerContextWithPath<

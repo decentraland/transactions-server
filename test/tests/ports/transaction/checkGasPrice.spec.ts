@@ -1,14 +1,14 @@
-import {
+import type {
   IConfigComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
-import { metricDeclarations } from '../../../../src/metrics'
-import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'
-import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
-import { TransactionData } from '../../../../src/types/transactions/transactions'
 import TransactionDataMock from '../../../mocks/transactionData'
+import type { metricDeclarations } from '../../../../src/metrics'
+import type { IContractsComponent } from '../../../../src/ports/contracts/types'
+import type { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
+import type { TransactionData } from '../../../../src/types/transactions/transactions'
+import type { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
 
 let transactionData: TransactionData
 let config: IConfigComponent

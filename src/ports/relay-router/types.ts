@@ -1,8 +1,8 @@
-import { IMetaTransactionProviderComponent } from '../../types/transactions/transactions'
+import type { IMetaTransactionProviderComponent } from '../../types/transactions/transactions'
 
 export type ProviderName = 'gelato' | 'openzeppelin'
 
-export type ResolvedProvider = {
+export interface ResolvedProvider {
   name: ProviderName
   provider: IMetaTransactionProviderComponent
 }

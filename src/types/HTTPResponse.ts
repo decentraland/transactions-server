@@ -1,5 +1,5 @@
-import { ErrorCode } from 'decentraland-transactions'
-import { TransactionRow } from '../ports/transaction/types'
+import type { ErrorCode } from 'decentraland-transactions'
+import type { TransactionRow } from '../ports/transaction/types'
 
 export enum StatusCode {
   OK = 200,
@@ -15,20 +15,20 @@ export enum StatusCode {
 }
 
 type TransactionsResponseBody = TransactionRow[]
-type TxHashResponseBody = {
+interface TxHashResponseBody {
   ok: true
   txHash: string
 }
-type ValidationResponseBody = {
+interface ValidationResponseBody {
   ok: true
 }
-type ErrorResponseBody = {
+interface ErrorResponseBody {
   ok: false
   message: string
   code: ErrorCode
 }
 
-export type HTTPResponse = {
+export interface HTTPResponse {
   status: StatusCode
   body:
     | TxHashResponseBody

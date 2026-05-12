@@ -1,10 +1,10 @@
 import { ChainId, ChainName, getChainName } from '@dcl/schemas'
-import { AppComponents } from '../../types'
-import {
-  IContractsComponent,
+import type {
   ContractsResponse,
+  IContractsComponent,
   RemoteCollection,
 } from './types'
+import type { AppComponents } from '../../types'
 
 export async function createContractsComponent(
   components: Pick<AppComponents, 'config' | 'fetcher' | 'collectionsSubgraph'>
@@ -122,7 +122,11 @@ async function getCollectionChainName(chainId: ChainId): Promise<ChainName> {
     throw new Error(`Invalid chainId ${chainId}`)
   }
 
-  return getChainName(chainId)!
+  const chainName = getChainName(chainId)
+  if (!chainName) {
+    throw new Error(`Could not resolve chain name for chainId ${chainId}`)
+  }
+  return chainName
 }
 
 function isOlderThan(timestamp: number, intervalInMs: number): boolean {

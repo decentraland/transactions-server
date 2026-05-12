@@ -1,4 +1,4 @@
-import { TransactionData } from '../../src/types/transactions'
+import type { TransactionData } from '../../src/types/transactions'
 
 export const approveMana: TransactionData = {
   from: '0xe539E0AED3C1971560517D58277f8dd9aC296281',

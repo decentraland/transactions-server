@@ -1,9 +1,9 @@
 import { Response } from 'node-fetch'
-import { IFetchComponent } from '@well-known-components/http-server'
-import { IConfigComponent } from '@well-known-components/interfaces'
-import { ISubgraphComponent } from '@well-known-components/thegraph-component'
+import type { IFetchComponent } from '@well-known-components/http-server'
+import type { IConfigComponent } from '@well-known-components/interfaces'
+import type { ISubgraphComponent } from '@well-known-components/thegraph-component'
 import { createContractsComponent } from '../../../../src/ports/contracts/component'
-import {
+import type {
   IContractsComponent,
   RemoteCollection,
 } from '../../../../src/ports/contracts/types'
@@ -123,7 +123,7 @@ describe('when checking if an address belongs to a collection', () => {
   beforeEach(() => {
     collections = [{ id: address }]
     mockedQuery.mockImplementationOnce(async (_query, variables) => ({
-      collections: variables!.id === address ? collections : [],
+      collections: variables?.id === address ? collections : [],
     }))
   })
 

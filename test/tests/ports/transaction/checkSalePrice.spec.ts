@@ -1,15 +1,9 @@
+import { encodeFunctionData, parseAbi, parseUnits, zeroAddress } from 'viem'
 import { ChainId } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import {
-  Abi,
-  encodeFunctionData,
-  Hex,
-  parseAbi,
-  parseUnits,
-  zeroAddress,
-} from 'viem'
 import { getSalePrice } from '../../../../src/ports/transaction/validation/checkSalePrice'
-import { TransactionData } from '../../../../src/types/transactions'
+import type { TransactionData } from '../../../../src/types/transactions'
+import type { Abi, Hex } from 'viem'
 
 describe('getSalePrice', () => {
   let params: TransactionData['params']
@@ -123,7 +117,7 @@ describe('getSalePrice', () => {
       }
     }
 
-    function trade(received: ReturnType<typeof asset>[]) {
+    function trade(received: Array<ReturnType<typeof asset>>) {
       return {
         signer: zeroAddress,
         signature: '0x' as Hex,
@@ -136,14 +130,14 @@ describe('getSalePrice', () => {
           signerSignatureIndex: 0n,
           allowedRoot: ('0x' + '00'.repeat(32)) as Hex,
           allowedProof: [] as Hex[],
-          externalChecks: [] as {
+          externalChecks: [] as Array<{
             contractAddress: Hex
             selector: Hex
             value: Hex
             required: boolean
-          }[],
+          }>,
         },
-        sent: [] as ReturnType<typeof asset>[],
+        sent: [] as Array<ReturnType<typeof asset>>,
         received,
       }
     }
@@ -157,9 +151,7 @@ describe('getSalePrice', () => {
       return [offChain.address, wrapped]
     }
 
-    function buildAcceptCalldata(
-      trades: ReturnType<typeof trade>[]
-    ): Hex {
+    function buildAcceptCalldata(trades: Array<ReturnType<typeof trade>>): Hex {
       return encodeFunctionData({
         abi: offChain.abi as Abi,
         functionName: 'accept',

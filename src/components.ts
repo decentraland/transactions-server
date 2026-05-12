@@ -1,28 +1,28 @@
 import path from 'path'
 import { createDotEnvConfigComponent } from '@well-known-components/env-config-provider'
+import { createFeaturesComponent } from '@well-known-components/features-component'
+import {
+  Verbosity,
+  instrumentHttpServerWithRequestLogger,
+} from '@well-known-components/http-requests-logger-component'
 import {
   createServerComponent,
   createStatusCheckComponent,
 } from '@well-known-components/http-server'
-import { createTracerComponent } from '@well-known-components/tracer-component'
+import { createHttpTracerComponent } from '@well-known-components/http-tracer-component'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@well-known-components/metrics'
-import { createSubgraphComponent } from '@well-known-components/thegraph-component'
-import { createHttpTracerComponent } from '@well-known-components/http-tracer-component'
-import {
-  instrumentHttpServerWithRequestLogger,
-  Verbosity,
-} from '@well-known-components/http-requests-logger-component'
 import { createPgComponent } from '@well-known-components/pg-component'
-import { createFeaturesComponent } from '@well-known-components/features-component'
+import { createSubgraphComponent } from '@well-known-components/thegraph-component'
+import { createTracerComponent } from '@well-known-components/tracer-component'
+import { metricDeclarations } from './metrics'
 import { createContractsComponent } from './ports/contracts/component'
 import { createFetchComponent } from './ports/fetcher'
-import { createTransactionComponent } from './ports/transaction/component'
-import { metricDeclarations } from './metrics'
-import { AppComponents, GlobalContext } from './types'
 import { createGelatoComponent } from './ports/gelato'
 import { createOpenZeppelinComponent } from './ports/openzeppelin'
 import { createRelayRouterComponent } from './ports/relay-router'
+import { createTransactionComponent } from './ports/transaction/component'
+import type { AppComponents, GlobalContext } from './types'
 
 export async function initComponents(): Promise<AppComponents> {
   // default config from process.env + .env file

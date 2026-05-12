@@ -1,18 +1,18 @@
-import { IDatabase } from '@well-known-components/interfaces'
 import SQL from 'sql-template-strings'
-import { AppComponents } from '../../types'
-import { QuotaReachedError } from '../../types/transactions/errors'
-import { TransactionData } from '../../types/transactions/transactions'
+import type { IDatabase } from '@well-known-components/interfaces'
 import {
-  checkSchema,
-  checkFunctionSelector,
-  checkSalePrice,
   checkContractAddress,
-  checkQuota,
+  checkFunctionSelector,
   checkGasPrice,
+  checkQuota,
+  checkSalePrice,
+  checkSchema,
   checkTransaction,
 } from './validation'
-import { ITransactionComponent, TransactionRow } from './types'
+import { QuotaReachedError } from '../../types/transactions/errors'
+import type { ITransactionComponent, TransactionRow } from './types'
+import type { AppComponents } from '../../types'
+import type { TransactionData } from '../../types/transactions/transactions'
 
 export function createTransactionComponent(
   components: Pick<

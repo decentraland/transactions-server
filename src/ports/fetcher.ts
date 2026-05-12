@@ -1,6 +1,6 @@
-import { IFetchComponent } from '@well-known-components/http-server'
-import { ITracerComponent } from '@well-known-components/interfaces'
 import * as nodeFetch from 'node-fetch'
+import type { IFetchComponent } from '@well-known-components/http-server'
+import type { ITracerComponent } from '@well-known-components/interfaces'
 
 // Note:
 // fetcher component may be encapsulated in @well-known-components/fetcher
@@ -8,7 +8,7 @@ import * as nodeFetch from 'node-fetch'
 // it can be implemented as follow to enable customizations:
 export async function createFetchComponent(components: {
   tracer: ITracerComponent
-}) {
+}): Promise<IFetchComponent> {
   const { tracer } = components
   const fetch: IFetchComponent = {
     async fetch(
@@ -44,10 +44,10 @@ export type ITestFetchComponent = IFetchComponent & {
 export async function createTestFetchComponent(options: {
   localhost: string
 }): Promise<ITestFetchComponent> {
-  const mocks: {
+  const mocks: Array<{
     req: nodeFetch.RequestInit
     res: nodeFetch.Response
-  }[] = []
+  }> = []
 
   return {
     async fetch(
@@ -66,7 +66,10 @@ export async function createTestFetchComponent(options: {
           )
         }
 
-        const mock = mocks.shift()!
+        const mock = mocks.shift()
+        if (!mock) {
+          throw new Error('Mock queue unexpectedly empty')
+        }
 
         // TODO: assert that the request matches mock.req
 

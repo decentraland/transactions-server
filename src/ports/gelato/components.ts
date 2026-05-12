@@ -1,20 +1,20 @@
 import {
-  createGelatoEvmRelayerClient,
+  InsufficientBalanceRpcError,
   TransactionRejectedError,
   TransactionRevertedError,
-  InsufficientBalanceRpcError,
+  createGelatoEvmRelayerClient,
 } from '@gelatocloud/gasless'
 import { createPublicClient, http } from 'viem'
 import { ErrorCode } from 'decentraland-transactions'
-import { AppComponents } from '../../types'
 import {
-  TransactionData,
   BroadcastFailedError,
   RelayerError,
   RelayerTimeout,
 } from '../../types/transactions'
-import { ProviderName } from '../relay-router/types'
-import { GelatoMetaTransactionComponent } from './types'
+import type { GelatoMetaTransactionComponent } from './types'
+import type { AppComponents } from '../../types'
+import type { TransactionData } from '../../types/transactions'
+import type { ProviderName } from '../relay-router/types'
 
 const RELAYER: ProviderName = 'gelato'
 
@@ -118,7 +118,7 @@ export async function createGelatoComponent(
       const client = createPublicClient({ transport: http(rpcURL) })
       const gasPrice = await client.getGasPrice()
       return gasPrice
-    } catch (error) {
+    } catch (_error) {
       logger.error('Gelato failed to get the network gas price')
       return null
     }

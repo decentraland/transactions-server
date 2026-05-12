@@ -5,7 +5,6 @@ import {
   getMaticChainIdFromChainName,
 } from '../../../src/logic/ethereum'
 
-
 describe('getMaticChainIdFromNetwork', () => {
   describe('when using a valid chain name', () => {
     it('should return the mapped MAINNET Matic Chain Id for ETHEREUM MAINNET', () => {
@@ -50,9 +49,7 @@ describe('decodeFunctionData', () => {
       )
 
       // Check positional values
-      expect(result[0]).toBe(
-        '0x1D9aa2025b67f0F21d1603ce521bda7869098f8a'
-      )
+      expect(result[0]).toBe('0x1D9aa2025b67f0F21d1603ce521bda7869098f8a')
       expect(result[1]).toBe(
         '0x81281be80000000000000000000000005c8bf33e673dc712ba62c5459e59dd9a15d458ff000000000000000000000000000000000000000000000000000000000000000b0000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000000000000000000000000000000000000026adcc'
       )
