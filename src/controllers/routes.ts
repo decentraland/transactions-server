@@ -1,4 +1,4 @@
-import { Router } from '@well-known-components/http-server'
+import { Router } from '@dcl/http-server'
 import { createTransactionMiddleware } from '../logic/transaction-middleware'
 import { GlobalContext } from '../types'
 import {

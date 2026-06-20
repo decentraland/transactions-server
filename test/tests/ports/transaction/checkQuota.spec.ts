@@ -1,8 +1,5 @@
 import { IConfigComponent, IDatabase } from '@well-known-components/interfaces'
-import {
-  IMetricsComponent,
-  IPgComponent,
-} from '@well-known-components/pg-component'
+import { IMetricsComponent, IPgComponent } from '@dcl/pg-component'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'
 import { checkQuota } from '../../../../src/ports/transaction/validation'
@@ -47,6 +44,8 @@ beforeEach(() => {
       start: jest.fn(),
       stop: jest.fn(),
       streamQuery: jest.fn(),
+      withTransaction: jest.fn(),
+      withAsyncContextTransaction: jest.fn(),
       getPool: jest.fn(),
     },
     contracts: {

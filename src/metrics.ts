@@ -1,8 +1,10 @@
 import { IMetricsComponent } from '@well-known-components/interfaces'
-import { validateMetricsDeclaration } from '@well-known-components/metrics'
-import { metricDeclarations as thegraphMetrics } from '@well-known-components/thegraph-component'
+import { validateMetricsDeclaration } from '@dcl/metrics'
+import { getDefaultHttpMetrics } from '@dcl/http-server'
+import { metricDeclarations as thegraphMetrics } from '@dcl/thegraph-component'
 
 export const metricDeclarations = {
+  ...getDefaultHttpMetrics(),
   dcl_error_sale_price_too_low: {
     help: 'The transaction sale price trying to be executed is too low',
     type: IMetricsComponent.CounterType,

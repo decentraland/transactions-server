@@ -1,7 +1,6 @@
-import { Response } from 'node-fetch'
-import { IFetchComponent } from '@well-known-components/http-server'
+import { IFetchComponent } from '@dcl/core-commons'
 import { IConfigComponent } from '@well-known-components/interfaces'
-import { ISubgraphComponent } from '@well-known-components/thegraph-component'
+import { ISubgraphComponent } from '@dcl/thegraph-component'
 import { createContractsComponent } from '../../../../src/ports/contracts/component'
 import {
   IContractsComponent,
@@ -157,7 +156,7 @@ describe('when checking for a whitelisted address', () => {
 
   describe('when the remote resource fails', () => {
     beforeEach(() => {
-      mockedFetch.mockResolvedValueOnce(new Response('', { status: 500 }))
+      mockedFetch.mockResolvedValueOnce({ ok: false })
     })
 
     it('should throw an error', async () => {
@@ -175,7 +174,10 @@ describe('when checking for a whitelisted address', () => {
         },
       })
 
-      mockedFetch.mockResolvedValueOnce(new Response(body, { status: 200 }))
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => JSON.parse(body),
+      })
     })
 
     describe('and the address is whitelisted', () => {

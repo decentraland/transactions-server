@@ -3,7 +3,7 @@ import {
   ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IFetchComponent } from '@well-known-components/http-server'
+import { IFetchComponent } from '@dcl/core-commons'
 import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
 import { metricDeclarations } from '../../../../src/metrics'
