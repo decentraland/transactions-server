@@ -15,7 +15,10 @@ import {
   Verbosity,
 } from '@well-known-components/http-requests-logger-component'
 import { createPgComponent } from '@dcl/pg-component'
-import { createFeaturesComponent } from '@dcl/features-component'
+import {
+  ApplicationName,
+  createFeaturesComponent,
+} from '@dcl/features-component'
 import { createTracedFetcherComponent } from '@dcl/traced-fetch-component'
 import { createContractsComponent } from './ports/contracts/component'
 import { createTransactionComponent } from './ports/transaction/component'
@@ -66,13 +69,19 @@ export async function initComponents(): Promise<AppComponents> {
   )
   const statusChecks = await createStatusCheckComponent({ config, server })
   const fetcher = await createTracedFetcherComponent({ tracer })
+  // Register the applications whose feature flags we read (only `dapps`) so the
+  // component preloads them on start and refreshes them in the background every
+  // `FF_REFRESH_INTERVAL` (default 4 minutes). Reads are then served from the
+  // in-memory cache instead of hitting the feature-flags service on every
+  // `getIsFeatureEnabled` / `getFeatureVariant` call.
   const features = await createFeaturesComponent(
     {
       config,
       logs,
       fetch: fetcher,
     },
-    await config.requireString('TRANSACTIONS_SERVER_URL')
+    await config.requireString('TRANSACTIONS_SERVER_URL'),
+    { apps: [ApplicationName.DAPPS] }
   )
   const metrics = await createMetricsComponent(metricDeclarations, {
     config,
