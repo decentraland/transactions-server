@@ -3,7 +3,7 @@ import {
   ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { metricDeclarations } from '@well-known-components/thegraph-component'
+import { metricDeclarations } from '../../../../src/metrics'
 import { ChainId } from '@dcl/schemas'
 import { ErrorCode } from 'decentraland-transactions'
 import {

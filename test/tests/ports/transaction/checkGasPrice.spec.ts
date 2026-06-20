@@ -2,7 +2,7 @@ import {
   IConfigComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
+import { IFeaturesComponent } from '@dcl/features-component'
 import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { checkGasPrice } from '../../../../src/ports/transaction/validation/checkGasPrice'

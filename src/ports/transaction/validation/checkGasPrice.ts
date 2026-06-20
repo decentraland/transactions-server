@@ -1,6 +1,6 @@
 import { ChainId, ChainName } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
-import { ApplicationName } from '@well-known-components/features-component'
+import { ApplicationName } from '@dcl/features-component'
 import {
   decodeFunctionData,
   getMaticChainIdFromChainName,

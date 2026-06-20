@@ -1,4 +1,4 @@
-import { ApplicationName } from '@well-known-components/features-component'
+import { ApplicationName } from '@dcl/features-component'
 import { ChainId } from '@dcl/schemas'
 import { AppComponents } from '../../types'
 import {

@@ -1,11 +1,11 @@
-import { IFetchComponent } from '@well-known-components/http-server'
+import { IFetchComponent } from '@dcl/core-commons'
 import {
   IConfigComponent,
   ILoggerComponent,
   IMetricsComponent,
 } from '@well-known-components/interfaces'
-import { IPgComponent } from '@well-known-components/pg-component'
-import { IFeaturesComponent } from '@well-known-components/features-component/dist/types'
+import { IPgComponent } from '@dcl/pg-component'
+import { IFeaturesComponent } from '@dcl/features-component'
 import { metricDeclarations } from '../../../../src/metrics'
 import { IContractsComponent } from '../../../../src/ports/contracts/types'
 import { createTransactionComponent } from '../../../../src/ports/transaction/component'
@@ -68,6 +68,8 @@ beforeEach(() => {
     start: jest.fn(),
     stop: jest.fn(),
     streamQuery: jest.fn(),
+    withTransaction: jest.fn(),
+    withAsyncContextTransaction: jest.fn(),
     getPool: getPoolMock,
   }
   features = {

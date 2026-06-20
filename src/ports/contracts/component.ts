@@ -43,7 +43,7 @@ export async function createContractsComponent(
       isOlderThan(lastFetch, collectionsFetchInterval)
     ) {
       const remoteResult = await fetch(contractAddressesURL, {
-        headers: { 'content-type': 'application/json' },
+        headers: { accept: 'application/json' },
         method: 'GET',
       })
 

@@ -1,5 +1,5 @@
 import { createPublicClient, http } from 'viem'
-import { IFetchComponent } from '@well-known-components/http-server'
+import { IFetchComponent } from '@dcl/core-commons'
 import { ErrorCode } from 'decentraland-transactions'
 import { AppComponents } from '../../types'
 import { sleep } from '../../logic/time'
