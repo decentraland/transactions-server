@@ -1,6 +1,5 @@
 import { ILoggerComponent } from '@well-known-components/interfaces'
-import { IFeaturesComponent } from '@dcl/features-component'
-import { ApplicationName } from '@dcl/features-component'
+import { ApplicationName, IFeaturesComponent } from '@dcl/features-component'
 import { Feature } from '../../../../src/ports/features'
 import { createRelayRouterComponent } from '../../../../src/ports/relay-router'
 import { IRelayRouterComponent } from '../../../../src/ports/relay-router/types'

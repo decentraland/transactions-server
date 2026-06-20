@@ -90,11 +90,19 @@ export async function initComponents(): Promise<AppComponents> {
   // request instrumentation by itself (that was previously done by passing
   // `server` to `createMetricsComponent`). With the core components split this
   // is wired explicitly through the http-server helper.
+  //
+  // `registry` is typed as optional on IMetricsComponent but is always
+  // initialised by createMetricsComponent; guard it so the wiring fails loudly
+  // if that invariant ever changes, instead of silently passing `undefined`.
+  const { registry } = metrics
+  if (!registry) {
+    throw new Error('Metrics component is missing its prom-client registry')
+  }
   await instrumentHttpServerWithPromClientRegistry({
     server,
     config,
     metrics,
-    registry: metrics.registry!,
+    registry,
   })
 
   // The pg component resolves its connection from config
