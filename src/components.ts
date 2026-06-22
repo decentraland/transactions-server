@@ -13,7 +13,7 @@ import { createHttpTracerComponent } from '@dcl/http-tracer-component'
 import {
   instrumentHttpServerWithRequestLogger,
   Verbosity,
-} from '@well-known-components/http-requests-logger-component'
+} from '@dcl/http-requests-logger-component'
 import { createPgComponent } from '@dcl/pg-component'
 import {
   ApplicationName,
@@ -53,16 +53,9 @@ export async function initComponents(): Promise<AppComponents> {
     { cors }
   )
   createHttpTracerComponent({ server, tracer })
-  // The HTTP requests logger still types its server against the
-  // node-fetch-flavoured @well-known-components interfaces. It only reads the
-  // request method/url and the response status at runtime, so it is
-  // structurally compatible with the native-fetch core http-server; the cast
-  // bridges the two type worlds.
   instrumentHttpServerWithRequestLogger(
     {
-      server: server as unknown as Parameters<
-        typeof instrumentHttpServerWithRequestLogger
-      >[0]['server'],
+      server,
       logger: logs,
     },
     { verbosity: Verbosity.INFO }
