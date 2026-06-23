@@ -167,6 +167,8 @@ export async function createOpenZeppelinComponent(
           body,
         })
         metrics.increment('dcl_error_service_errors', { relayer: RELAYER })
+      } else {
+        await response.body?.cancel().catch(() => undefined)
       }
     } catch (error: unknown) {
       logger.error('OpenZeppelin cancel request failed', {
@@ -246,7 +248,10 @@ export async function createOpenZeppelinComponent(
         continue
       }
 
-      if (!response.ok) continue
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined)
+        continue
+      }
 
       const { data } = (await response.json()) as OZResponse<OZTransactionData>
       if (!data) continue

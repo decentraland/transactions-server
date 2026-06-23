@@ -48,6 +48,7 @@ export async function createContractsComponent(
       })
 
       if (!remoteResult.ok) {
+        await remoteResult.body?.cancel().catch(() => undefined)
         throw new Error(
           `Could not get the whitelisted addresses from ${contractAddressesURL}`
         )
