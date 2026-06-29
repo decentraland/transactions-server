@@ -5,7 +5,7 @@ import {
   createStatusCheckComponent,
   instrumentHttpServerWithPromClientRegistry,
 } from '@dcl/http-server'
-import { createTracerComponent } from '@well-known-components/tracer-component'
+import { createTracerComponent } from '@dcl/tracer-component'
 import { createLogComponent } from '@well-known-components/logger'
 import { createMetricsComponent } from '@dcl/metrics'
 import { createSubgraphComponent } from '@dcl/thegraph-component'
